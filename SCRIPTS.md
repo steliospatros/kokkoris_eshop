@@ -153,6 +153,57 @@ python manage.py import_club4paws --file "/path/to/OLA TA KEIMENA.docx"
 > **Ενημέρωση:** Τα multipack/variety pack προϊόντα **δεν παραλείπονται πλέον** — αναγνωρίζονται
 > αυτόματα και εισάγονται με `category = "Bundle"`. Στο dry-run output θα τα δεις με ετικέτα
 > `[BUNDLE]` στο τέλος της γραμμής. Δες την ενότητα 9 του `README.md` για αναλυτική εξήγηση.
+>
+> **Ενημέρωση (τόνοι):** Κατά το import, τα ονόματα περνούν από `fix_greek_accents()`. Για ήδη
+> εισαγμένα προϊόντα, τρέξε `fix_product_names` (ενότητα 3.1).
+
+---
+
+## 3.1 Custom Management Command: `fix_product_names`
+
+**Αρχείο:** `products/management/commands/fix_product_names.py`
+
+**Σκοπός:** Διορθώνει ελληνικούς τόνους στα `Product.name` που ήδη υπάρχουν στη βάση (π.χ. από
+παλιό import). Χρησιμοποιεί την ίδια `fix_greek_accents()` με το `import_club4paws`.
+
+**Είναι idempotent** — ασφαλές να ξανατρέξει.
+
+### Παράμετροι
+
+| Παράμετρος | Υποχρεωτικό | Περιγραφή |
+|---|---|---|
+| `--dry-run` | ❌ Όχι | Εμφανίζει τις αλλαγές χωρίς αποθήκευση |
+
+### Εκτέλεση
+
+```bash
+python manage.py fix_product_names --dry-run
+python manage.py fix_product_names
+```
+
+---
+
+## 3.2 Custom Management Command: `set_initial_stock`
+
+**Αρχείο:** `products/management/commands/set_initial_stock.py`
+
+**Σκοπός:** Ορίζει το ίδιο `stock` σε **όλα** τα `ProductVariant` (default: **20**). Χρήσιμο
+μετά από import (όπου αρχικά μπορεί να είναι 0) ή για μαζική ενημέρωση development.
+
+> ⚠️ Σε production χρησιμοποίησε πραγματικούς αριθμούς ανά SKU — όχι μαζικό 20.
+
+### Παράμετροι
+
+| Παράμετρος | Υποχρεωτικό | Περιγραφή |
+|---|---|---|
+| `--stock` | ❌ Όχι | Ποσότητα για όλα τα variants (default: 20) |
+
+### Εκτέλεση
+
+```bash
+python manage.py set_initial_stock
+python manage.py set_initial_stock --stock 50
+```
 
 ---
 
@@ -273,15 +324,22 @@ print('Total with logo:', Company.objects.exclude(logo='').count())
 
 ### Ενεργοποίηση πραγματικής σύνδεσης Google / Facebook
 
-Οι τιμές είναι προς το παρόν placeholders μέσα στο `SOCIALACCOUNT_PROVIDERS` (στο
-`core/settings.py`). Για να δουλέψουν πραγματικά:
+Τα OAuth secrets φορτώνονται από το **`.env`** (όχι hardcoded στο `settings.py`):
 
-1. Πάρε Client ID/Secret από [Google Cloud Console](https://console.cloud.google.com) και
-   [Facebook Developers](https://developers.facebook.com) (δωρεάν, δες README 11.2 για βήματα).
-2. Άνοιξε το `core/settings.py`, βρες το `SOCIALACCOUNT_PROVIDERS` dict, και αντικατέστησε:
-   - `REPLACE_WITH_GOOGLE_CLIENT_ID` / `REPLACE_WITH_GOOGLE_CLIENT_SECRET`
-   - `REPLACE_WITH_FACEBOOK_APP_ID` / `REPLACE_WITH_FACEBOOK_APP_SECRET`
-3. Επανεκκίνησε τον server. Δεν χρειάζεται καμία άλλη αλλαγή.
+```bash
+cp .env.example .env
+# Συμπλήρωσε:
+# GOOGLE_OAUTH_CLIENT_ID=
+# GOOGLE_OAUTH_CLIENT_SECRET=
+```
+
+Για Google: [Google Cloud Console](https://console.cloud.google.com) → OAuth 2.0 Client ID
+(Authorized redirect URI: `http://127.0.0.1:8000/accounts/google/login/callback/`).
+
+Για Facebook: [Facebook Developers](https://developers.facebook.com) — δες README ενότητα 11.2
+(αν ενεργοποιηθεί provider αργότερα).
+
+Επανεκκίνησε τον server μετά την αλλαγή του `.env`.
 
 ### Πώς φτιάχνεις μια δοκιμαστική παραγγελία μέσα από το shell (για tests)
 
@@ -333,6 +391,8 @@ python manage.py migrate
 python manage.py seed_data
 python manage.py import_club4paws --file "/path/to/OLA TA KEIMENA.docx"
 python manage.py link_photos --base-dir "/path/to/folder/with/DOGS PHOTO/and/CATS PHOTO"
+python manage.py fix_product_names
+python manage.py set_initial_stock
 python manage.py createsuperuser
 ```
 
@@ -466,6 +526,9 @@ CustomUser.objects.filter(email='cart_test@example.com').delete()  # διαγρ�
 > `cart_test@example.com`), μπορεί να δημιουργηθεί κατά λάθος καλάθι στον **πραγματικό**
 > λογαριασμό admin. Έλεγξε με `python manage.py shell -c "from cart.models import Cart;
 > print(list(Cart.objects.all()))"` και διάγραψε ό,τι δεν είναι δικό σου δοκιμαστικό δεδομένο.
+>
+> **Σημείωση stock:** Το default `stock` για νέα variants είναι **20**. Το script καθαρισμού
+> παρακάτω μηδενίζει stock μόνο για δοκιμές — **μην** το τρέξεις σε production DB.
 
 ---
 
@@ -562,6 +625,57 @@ variant.stock = original_stock; variant.save(update_fields=["stock"])
 
 ---
 
+## 5.4 Part 5 — Catalog, Cart API & Wishlist (νέα URLs/JS)
+
+Το Part 5 πρόσθεσε catalog grid, JSON cart endpoints και wishlist toggle — δες [`README.md`](README.md)
+ενότητες 16.6, 12.8 και 18.
+
+### Catalog URLs (browser)
+
+| URL | Περιγραφή |
+|---|---|
+| `/products/all/` | Όλα τα προϊόντα (προαιρετικό `?brand=CLUB4PAWS`) |
+| `/products/dogs/` | Προϊόντα σκύλου |
+| `/products/cats/` | Προϊόντα γάτας |
+| `/products/brands/` | Grid μαρκών → link με φίλτρο brand |
+
+### Cart HTTP API (JSON — χρησιμοποιείται από `static/js/catalog.js`)
+
+| URL | Μέθοδος | Body | Απάντηση |
+|---|---|---|---|
+| `/cart/add/` | POST | `variant_id` (+ CSRF) | `{ ok, total_items, quantities, variant_id, quantity }` |
+| `/cart/update/` | POST | `variant_id`, `quantity` (0 = αφαίρεση) | ίδιο format |
+| `/cart/status/` | GET | — | `{ ok, total_items, quantities }` |
+
+Δέχεται `application/json` ή form POST. Σφάλματα stock: `{ ok: false, error: "..." }` HTTP 400.
+
+### Wishlist API
+
+| URL | Μέθοδος | Auth | Body |
+|---|---|---|---|
+| `/wishlist/toggle/` | POST | Login required | `product_id` |
+
+Απάντηση: `{ ok, wishlisted, product_id }`.
+
+### Δοκιμή cart status από terminal (με cookies/session)
+
+```bash
+python manage.py runserver
+# Σε άλλο terminal — χρειάζεται session cookie από browser ή Django test client
+curl -s http://127.0.0.1:8000/cart/status/
+```
+
+Για πλήρη δοκιμή add/update, άνοιξε `/products/all/` στο browser και πάτα «Αγορά» σε προϊόν.
+
+### Management commands (μετά import)
+
+```bash
+python manage.py fix_product_names      # τόνοι σε ονόματα προϊόντων
+python manage.py set_initial_stock      # stock=20 σε όλα τα variants
+```
+
+---
+
 ## 7. Newsletter app (όχι management command)
 
 Το `newsletter` app δεν έχει management command — η εγγραφή γίνεται από τη φόρμα στο footer
@@ -576,11 +690,14 @@ variant.stock = original_stock; variant.save(update_fields=["stock"])
 
 ### reCAPTCHA v3
 
-Η φόρμα προστατεύεται με Google reCAPTCHA v3. Τα keys μπαίνουν στο `.env` (gitignored):
+Η φόρμα προστατεύεται με Google reCAPTCHA v3. Τα keys μπαίνουν στο `.env` (gitignored).
+Για OAuth και Maps, δες επίσης `.env.example`:
 
 ```bash
 cp .env.example .env
-# Επεξεργασία .env — RECAPTCHA_SITE_KEY και RECAPTCHA_SECRET_KEY
+# RECAPTCHA_SITE_KEY, RECAPTCHA_SECRET_KEY
+# GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET
+# GOOGLE_MAPS_API_KEY
 ```
 
 Έλεγχος ότι φορτώνονται:
@@ -630,7 +747,35 @@ print('Σύνολο:', NewsletterSubscriber.objects.count())
 
 ---
 
-## 8. Βοηθητικά scripts επαλήθευσης (μη-management commands)
+## 8. Wishlist app (όχι management command)
+
+Το `wishlist` app δεν έχει management command — η προσθήκη/αφαίρεση γίνεται από το catalog grid
+(heart icon). Δες [`README.md`](README.md) ενότητα 18.
+
+### URL
+
+| URL | Μέθοδος | Auth | Περιγραφή |
+|---|---|---|---|
+| `/wishlist/toggle/` | POST | Login required | Toggle προϊόν (`product_id`) · JSON |
+
+### Admin
+
+`http://localhost:8000/admin/wishlist/wishlistitem/`
+
+### Έλεγχος από shell
+
+```bash
+python manage.py shell -c "
+from wishlist.models import WishlistItem
+for w in WishlistItem.objects.select_related('user','product')[:10]:
+    print(w.user.email, '->', w.product.name)
+print('Σύνολο:', WishlistItem.objects.count())
+"
+```
+
+---
+
+## 9. Βοηθητικά scripts επαλήθευσης (μη-management commands)
 
 Αυτά δεν είναι μόνιμα αρχεία στο repo, αλλά inline εντολές μέσω `manage.py shell -c "..."`
 που χρησιμοποιήσαμε για επαλήθευση μετά το import. Τις κρατάμε εδώ ως αναφορά, σε περίπτωση
@@ -673,24 +818,30 @@ for c in Product.objects.values_list('category__name', flat=True).distinct():
 
 ---
 
-## 9. Ροή εργασίας από το μηδέν (setup σε νέο μηχάνημα)
+## 10. Ροή εργασίας από το μηδέν (setup σε νέο μηχάνημα)
 
 Αν χρειαστεί να στήσεις το project σε άλλο μηχάνημα (ή μετά από `git clone`):
 
 ```bash
+git clone https://github.com/spatroudakis/kokkoris_eshop.git
 cd kokkoris_eshop
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env          # συμπληρώστε RECAPTCHA keys (και άλλα secrets αργότερα)
+cp .env.example .env          # RECAPTCHA, Google OAuth, Maps keys
 python manage.py migrate
 DJANGO_SUPERUSER_EMAIL=admin@kokkoriseshop.local DJANGO_SUPERUSER_PASSWORD=admin12345 \
   python manage.py createsuperuser --noinput
 python manage.py seed_data
 python manage.py import_club4paws --file "/path/to/OLA TA KEIMENA.docx"
 python manage.py link_photos --base-dir "/path/to/folder/with/DOGS PHOTO/and/CATS PHOTO"
-python manage.py import_company_logos    # brand logos για homepage carousel (αν υπάρχει φάκελος LOGOS)
+python manage.py import_company_logos    # brand logos (αν υπάρχει φάκελος LOGOS)
+python manage.py fix_product_names     # διόρθωση τόνων (προαιρετικό μετά import)
+python manage.py set_initial_stock     # stock=20 σε όλα τα variants
 python manage.py runserver
 ```
 
+> **Δεν** έρχονται από Git: `db.sqlite3`, `media/`, `.env` — πρέπει να τρέξεις imports και
+> να αντιγράψεις/δημιουργήσεις `.env` τοπικά.
+>
 > Σημείωση: `createsuperuser` ζητάει πλέον **email** αντί για username (δες ενότητα 1).

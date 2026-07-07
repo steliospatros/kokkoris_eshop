@@ -52,9 +52,10 @@ Custom E-Commerce πλατφόρμα για είδη κατοικίδιων (τ�
 | **Part 2** | Authentication (Custom User, django-allauth) + Orders model | ✅ Ολοκληρωμένο (βλ. ενότητα 11) |
 | **Part 3** | Core Engine (καλάθι, δυναμική τιμή, real-time stock) | ✅ Ολοκληρωμένο (βλ. ενότητα 12) |
 | **Part 4** | Checkout & Payments (Orders, Stripe) | ✅ Ολοκληρωμένο (βλ. ενότητα 15) — πραγματική σύνδεση Stripe μένει για αργότερα |
-| **Part 5** | UI/UX (Tailwind CSS, Django templates) | 🔄 Σε εξέλιξη — homepage mockup (nav, hero, about, brand carousel, footer, animals strip) · βλ. ενότητα 16 |
+| **Part 5** | UI/UX (Tailwind CSS, Django templates) | 🔄 Σε εξέλιξη — homepage mockup + catalog grid (βλ. ενότητα 16) · pagination/filters catalog pending |
 | **Part 6** | QA & Deployment (PostgreSQL, Render/DigitalOcean) | ⏳ Δεν έχει ξεκινήσει |
 | *(επιπλέον)* | Newsletter mailing list (`newsletter` app) | ✅ Ολοκληρωμένο (βλ. ενότητα 17) |
+| *(επιπλέον)* | Wishlist / αγαπημένα (`wishlist` app) | ✅ Ολοκληρωμένο (βλ. ενότητα 18) |
 
 ---
 
@@ -71,9 +72,13 @@ kokkoris_eshop/
 ├── products/                      # Django "app" — ό,τι αφορά προϊόντα/κατάλογο
 │   ├── models.py                  # Τα 5 database models (βλ. ενότητα 4)
 │   ├── admin.py                   # Ρυθμίσεις Django Admin (list_display, filters, κλπ.)
-│   ├── views.py                   # Προσωρινή αρχική σελίδα (home)
+│   ├── catalog.py                 # Helpers για catalog cards (τίτλος, stock display, default variant)
+│   ├── context_processors.py      # is_homepage για placement πεταλουδών στο nav
+│   ├── views.py                   # home, catalog pages, search JSON
+│   ├── urls.py                    # /products/all/, dogs, cats, brands, search
 │   ├── migrations/                # Ιστορικό αλλαγών στη δομή της βάσης
-│   └── management/commands/       # seed_data, import_club4paws, link_photos, import_company_logos
+│   └── management/commands/       # seed_data, import_club4paws, link_photos, import_company_logos,
+│                                  # fix_product_names, set_initial_stock
 ├── accounts/                      # Django "app" — Custom User + προφίλ πελάτη (Part 2)
 │   ├── models.py                  # CustomUser (email login) + CustomUserManager
 │   ├── forms.py                   # ProfileForm (επεξεργασία στοιχείων παράδοσης)
@@ -88,9 +93,16 @@ kokkoris_eshop/
 ├── cart/                          # Django "app" — Καλάθι αγορών (Part 3, βλ. ενότητα 12)
 │   ├── models.py                  # Cart (OneToOne με user) + CartItem — μόνιμη αποθήκευση
 │   ├── cart.py                    # DBCart / SessionCart / get_cart() — η "καρδιά" της λογικής
+│   ├── views.py                   # Cart HTTP API (add / update / status)
+│   ├── urls.py                    # /cart/add/, /cart/update/, /cart/status/
+│   ├── context_processors.py      # cart_total_items → badge στο nav
 │   ├── signals.py                 # Merge guest καλαθιού → user καλάθι κατά το login
 │   ├── admin.py                   # CartAdmin (με inline CartItems)
 │   └── apps.py                    # Καταχωρεί το signals.py στο ready()
+├── wishlist/                      # Django "app" — αγαπημένα προϊόντα ανά χρήστη
+│   ├── models.py                  # WishlistItem (user + product, unique)
+│   ├── views.py                   # POST /wishlist/toggle/ (JSON)
+│   └── urls.py
 ├── checkout/                      # Django "app" — Checkout flow (Part 4, βλ. ενότητα 15)
 │   ├── delivery.py                # is_within_athens_urban_area() + calculate_courier_fee()
 │   ├── forms.py                   # CheckoutAddressForm, PaymentMethodForm
@@ -107,17 +119,22 @@ kokkoris_eshop/
 │   ├── page.html                  # Standard inner page — extends base, κενό hero/pre_footer
 │   ├── home.html                  # Αρχική σελίδα (hero + about + animals — χωρίς product grid)
 │   ├── accounts/profile.html      # Σελίδα προφίλ χρήστη
-│   ├── checkout/                  # address.html (Google Maps), delivery.html, payment.html,
-│   │                              # confirmation.html (Part 4, βλ. ενότητα 15)
+│   ├── checkout/                  # address, delivery, payment, confirmation (Part 4)
+│   ├── products/                  # catalog.html, brands.html, partials (card, filters, toolbar)
 │   ├── partials/
-│   │   ├── nav.html               # Teal nav bar (#42746C), logo, butterflies, search, filters, cart
+│   │   ├── nav.html               # Teal nav, logo, butterflies, search, filters, cart badge
 │   │   ├── hero.html              # Full-bleed hero collage (PDF page 1)
 │   │   ├── hero-about.html        # "about us" κείμενο + brand carousel
 │   │   ├── hero-brands.html       # Scrolling brand carousel (logos + pill buttons)
 │   │   ├── hero-animals.html      # 4-pet photo strip πριν το footer
-│   │   └── footer.html            # Logo, legal links, newsletter signup form
+│   │   ├── footer.html            # Logo, legal links, newsletter signup form
+│   │   └── cookie-consent.html
 │   └── allauth/layouts/base.html  # Allauth → project base (ίδιο header/footer)
-├── static/images/                 # Mockup assets (hero, butterflies, cart icon, animals strip)
+├── static/
+│   ├── css/kokkoris-backgrounds.css
+│   ├── js/catalog.js              # Αγορά, stepper +/−, wishlist toggle στο catalog grid
+│   ├── js/newsletter-recaptcha.js
+│   └── images/                    # Mockup assets (hero, butterflies, cart icon, animals strip)
 ├── media/                         # Uploaded εικόνες (προϊόντα, company logos, κλπ.)
 ├── docs/                          # Screenshots / snapshots τεκμηρίωσης
 ├── backups/                       # Αντίγραφα ασφαλείας βάσης/δεδομένων πριν από ρίσκες αλλαγές
@@ -297,12 +314,10 @@ management command `seed_data` (δες [`SCRIPTS.md`](SCRIPTS.md) για οδη�
 | **Products (CLUB4PAWS)** | **62** (59 μονά προϊόντα + 3 bundles) |
 | **Product Variants (SKUs)** | **97** |
 
-> ⚠️ **Σημαντικό για το πεδίο `stock` (διαθεσιμότητα):** Το πρωτότυπο αρχείο `OLA TA KEIMENA.docx`
-> δεν περιείχε πραγματικούς αριθμούς αποθέματος — μόνο ονόματα, βάρη, τιμές και SKU. Γι' αυτό,
-> **όλα** τα variants εισήχθησαν με `stock = 0` σαν προσωρινή τιμή (placeholder), ώστε να
-> ξεχωρίζει ξεκάθαρα ότι δεν είναι πραγματικό απόθεμα. Πρέπει να μας δώσεις τους πραγματικούς
-> αριθμούς αποθέματος (είτε μέσω αρχείου, είτε χειροκίνητα μέσα από το Admin) πριν πάμε σε
-> production. Αυτό είναι πολύ πιθανό να είναι το «στοιχείο που λείπει» που παρατήρησες.
+> ⚠️ **Σημαντικό για το πεδίο `stock`:** Το πρωτότυπο αρχείο `OLA TA KEIMENA.docx` δεν περιείχε
+> πραγματικούς αριθμούς αποθέματος. Αρχικά εισήχθησαν με `stock = 0`· τώρα το **default για νέα
+> variants είναι `20`** και υπάρχει η εντολή `set_initial_stock` για μαζική ενημέρωση. Για
+> production θα χρειαστούν οι πραγματικοί αριθμοί ανά SKU (Admin ή import αρχείου).
 
 ---
 
@@ -497,13 +512,22 @@ admin login → δημιουργία/διαγραφή δοκιμαστικής �
   στην παράδοση.
 - **Out of Stock** — μη διαθέσιμο.
 
-**Σημαντικό:** αυτό το πεδίο ρυθμίζεται **χειροκίνητα** από το Admin (είναι πλέον
-`list_editable`, ίδια λογική με το `stock` — βλέπεις/αλλάζεις όλα τα προϊόντα σε μια λίστα,
-σαν Excel) και **δεν** υπολογίζεται αυτόματα από το πλήθος του `stock`. Ο λόγος: κάποια
-προϊόντα είναι εξ ορισμού πάντα "μετά από παραγγελία" (π.χ. σπάνια ζητούμενα μεγέθη), ανεξάρτητα
-από το τι δείχνει το `stock` τη δεδομένη στιγμή. Μια πιο λεπτομερής, αυτόματη λογική (π.χ.
-"Available / Λίγα τεμάχια / Out of Stock" υπολογισμένο από το ίδιο το `stock`) συζητήθηκε αλλά
-αποφασίστηκε να **μην** χτιστεί ακόμα — δεν χρειάζεται στην τρέχουσα φάση.
+**Σημαντικό:** το πεδίο `availability` ρυθμίζεται **χειροκίνητα** από το Admin (`list_editable`,
+ίδια λογική με το `stock`). Κάποια προϊόντα είναι εξ ορισμού «Κατόπιν παραγγελίας» ανεξάρτητα
+από το `stock`.
+
+**Catalog UI (Part 5 — υλοποιημένο):** Στο grid καταλόγου (`products/catalog.py::get_stock_display()`)
+εμφανίζονται αυτόματα ετικέτες και κουμπιά ανά κατάσταση:
+
+| Κατάσταση | Ετικέτα | Κουμπί |
+|---|---|---|
+| `availability = on_order` | «Κατόπιν παραγγελίας» (μπλε) | «Κατόπιν παραγγελίας» — απεριόριστη ποσότητα |
+| `availability = out_of_stock` ή `stock = 0` | «Έλλειψη» (κόκκινο) | «Αγορά» disabled (γκρι) |
+| `stock` 1–10 | «Περιορισμένη διαθεσιμότητα» (πορτοκαλί) | Stepper +/−, max = stock |
+| `stock > 10` | «Άμεσα διαθέσιμο» (πράσινο) | Stepper +/−, max = stock |
+
+Το default `stock` για **νέα** variants είναι **20** (migration `0004_productvariant_stock_default_20`).
+Μαζική ενημέρωση: `python manage.py set_initial_stock` (βλ. [`SCRIPTS.md`](SCRIPTS.md)).
 
 ---
 
@@ -604,30 +628,42 @@ session key κατά το login (`cycle_key()`, προστασία από sessio
 Το `cart/admin.py` καταχωρεί το `Cart` (με inline `CartItem`) — αφορά μόνο συνδεδεμένους
 χρήστες, καθώς τα guest καλάθια δεν υπάρχουν καν στη βάση.
 
+### 12.8 Cart HTTP API (Part 5 — catalog UI)
+
+Για το product grid χωρίς full page reload, το `cart` app εκθέτει JSON endpoints
+(`cart/views.py`, `cart/urls.py`):
+
+| URL | Μέθοδος | Τι κάνει |
+|---|---|---|
+| `/cart/add/` | POST | Προσθήκη 1 τεμαχίου variant (`variant_id`) |
+| `/cart/update/` | POST | Ορισμός ακριβούς ποσότητας (`variant_id`, `quantity`; 0 = αφαίρεση) |
+| `/cart/status/` | GET | Σύνολο τεμαχίων + ποσότητες ανά variant (sync stepper στο grid) |
+
+- Δέχεται `application/json` ή form POST (με CSRF token).
+- Επιστρέφει `{ ok, total_items, quantities, ... }` ή `{ ok: false, error }`.
+- Το nav badge (`#nav-cart-badge`) ενημερώνεται μέσω `cart/context_processors.py` (server-side)
+  και `static/js/catalog.js` (client-side μετά από κάθε add/update).
+- Το εικονίδιο καλαθιού στο nav οδηγεί στο `/checkout/delivery/` (Part 4).
+
 ---
 
 ## 13. Επόμενα Βήματα
 
-- Να μας δώσεις πραγματικούς αριθμούς αποθέματος (stock) — προς το παρόν είναι όλα στο 0
-  (βλ. προειδοποίηση στην ενότητα 8).
+- **Stock production:** Πραγματικοί αριθμοί ανά SKU (Admin ή import) — προς το παρόν default **20**
+  (`set_initial_stock`). Βλ. ενότητα 8 και 11.8.
 - Import των υπόλοιπων brands (`OWNAT`, `PROFINE`, `EVERCLEAN`, `Core`) με την ίδια λογική
   parsing όπως το CLUB4PAWS (το `link_photos` επαναχρησιμοποιείται αυτούσιο).
-- **Part 5 — υπόλοιπη αρχική σελίδα:** brand detail pages (κουμπιά carousel → πραγματικές
-  σελίδες μάρκας), product catalog grid, υπόλοιπα sections από το PDF mockup.
+- **Part 5 — υπόλοιπο UI:** brand detail pages (slug URL), φίλτρα sidebar (placeholders),
+  pagination catalog (αφαιρέθηκε προσωρινά — rebuild όταν ζητηθεί), compiled Tailwind.
+- **Wishlist — μελλοντικά:** σελίδα «Αγαπημένα» (προς το παρόν μόνο toggle στο grid).
 - **Newsletter — μελλοντικά:** πραγματική αποστολή bulk emails (SMTP/SendGrid/Mailchimp),
   unsubscribe link (GDPR).
 - Αν χρειαστεί αργότερα πραγματικό συσχετισμό bundle → μεμονωμένων γεύσεων για αυτόματο
   stock management, θα φτιάξουμε το πιο σύνθετο `ProductBundle` model (βλ. ενότητα 9).
-- Δημιουργία πραγματικών Google/Facebook OAuth credentials (βλ. ενότητα 11.2).
-- Views/URLs για προσθήκη στο καλάθι από το UI (π.χ. "Add to Cart" κουμπί) — μαζί με το Part 5
-  UI, χρησιμοποιώντας το ήδη έτοιμο `get_cart(request)`.
-- **Πραγματική σύνδεση Stripe** για πληρωμή με κάρτα (βλ. ενότητα 15.7) — προς το παρόν η
-  παραγγελία με κάρτα καταχωρείται ως `pending` και το `paid` μπαίνει χειροκίνητα από το admin.
-- **Πραγματική τιμολόγηση courier** (ACS/ELTA Courier/Γενική Ταχυδρομική) μέσα στο
-  `checkout/delivery.py::calculate_courier_fee()` (βλ. ενότητα 15.4) — προς το παρόν επιστρέφει
-  πάντα 0.
-- Σελίδα ιστορικού παραγγελιών του πελάτη (`/orders/` λίστα) — προς το παρόν μόνο η σελίδα
-  επιβεβαίωσης μετά το checkout δείχνει μια παραγγελία.
+- Δημιουργία πραγματικών Google/Facebook OAuth credentials στο `.env` (βλ. ενότητα 11.2).
+- **Πραγματική σύνδεση Stripe** για πληρωμή με κάρτα (βλ. ενότητα 15.7).
+- **Πραγματική τιμολόγηση courier** στο `checkout/delivery.py::calculate_courier_fee()` (βλ. 15.4).
+- Σελίδα ιστορικού παραγγελιών του πελάτη (`/orders/` λίστα).
 - Μετάβαση σε compiled Tailwind pipeline (αντί για CDN) όταν σταθεροποιηθεί το design.
 
 ---
@@ -906,14 +942,14 @@ requests μέσω `requests`, όχι Django test `Client`, ώστε να δοκ�
 
 **Πεταλούδες:** στην **αρχική** — γωνιακή (1) + swallowtail (2) στο `top-[68px]`. Το `hero-section.png` έχει ομαλή γραμμή σύνδεσης με το nav (seam filter από πρωτότυπο PDF). Στις **εσωτερικές σελίδες** η swallowtail στο `lg:top-[43px]`.
 
-**Catalog placeholders (λευκό Part 2):**
+**Catalog URLs (Part 2 — λειτουργικό grid):**
 
 | URL | Κουμπί nav |
 |---|---|
 | `/products/dogs/` | Σκύλος |
 | `/products/cats/` | Γάτα |
-| `/products/all/` | Όλα τα προϊόντα |
-| `/products/brands/` | Brands |
+| `/products/all/` | Όλα τα προϊόντα (προαιρετικό `?brand=CODE`) |
+| `/products/brands/` | Brands → grid logos → φίλτρο ανά μάρκα |
 
 ### 16.1 Navigation (`templates/partials/nav.html`) — ✅
 
@@ -922,7 +958,7 @@ requests μέσω `requests`, όχι Django test `Client`, ώστε να δοκ�
 - 2 decorative butterflies: (1) γωνία πάνω-αριστερά παντού· (2) swallowtail — αρχική `top-[68px]`, εσωτερικές `lg:top-[43px]`.
 - Smart search bar (placeholder «Αναζήτηση…»).
 - 4 filter links: Σκύλος, Γάτα, Όλα τα προϊόντα, Brands — ίσο spacing (`justify-between`).
-- Person icon (λογαριασμός) + cart icon (`static/images/cart-icon-white.png`).
+- Person icon (λογαριασμός) + cart icon (`static/images/cart-icon-white.png`) με badge `#nav-cart-badge`.
 - `shrink-0` σε search και icon cluster ώστε να μην εξαφανίζεται το cart σε laptop widths.
 
 ### 16.2 Hero (`templates/partials/hero.html`) — ✅
@@ -952,21 +988,29 @@ requests μέσω `requests`, όχι Django test `Client`, ώστε να δοκ�
 - Logo, info links, newsletter signup (reCAPTCHA v3), social icons.
 - Επικοινωνία αριστερά: τηλέφωνο **697 792 7008**, email link **prolamprou@gmail.com**.
 
-### 16.6 Product catalog (`/products/all/`, `/products/dogs/`, `/products/cats/`) — ✅
+### 16.6 Product catalog — ✅
 
-- **Grid 3 στήλες** (`templates/products/catalog.html` + `partials/product_card.html`).
-- **Τίτλος κάρτας:** υπολογισμένος `{brand} {όνομα} {βάρος}{μονάδα}` από `products/catalog.py` (default variant = μεγαλύτερο βάρος).
-- **Cart API:** `POST /cart/add/`, `POST /cart/update/`, `GET /cart/status/` — badge στο nav.
-- **Wishlist:** `wishlist` app, `POST /wishlist/toggle/` (απαιτεί login).
-- **JS:** `static/js/catalog.js` — αγορά → stepper +/−, auto-sync καλαθιού.
-- **Brands:** `/products/brands/` → λίστα logos, link σε `/products/all/?brand=CODE`.
-- **Management command:** `python manage.py fix_product_names` — διόρθωση ελληνικών τόνων στα ονόματα.
+Layout petcity-style: **αριστερά** sidebar φίλτρων (placeholders), **κέντρο** grid 3 στηλών
+(~920px), **δεξιά** κενός χώρος για μελλοντικό banner.
+
+**Αρχεία:** `templates/products/catalog.html`, `partials/product_card.html`,
+`catalog_filters.html`, `catalog_toolbar.html`, `products/catalog.py`, `static/js/catalog.js`.
+- **Τίτλος κάρτας:** `{brand} {όνομα} {βάρος}{μονάδα}` — default variant = μεγαλύτερο βάρος.
+- **Τιμή:** `unit_price` / `unit_label` (π.χ. €/kg) από το model.
+- **Stock UI:** ετικέτες και κουμπιά ανά `get_stock_display()` (βλ. ενότητα 11.8).
+- **Cart API:** `POST /cart/add/`, `POST /cart/update/`, `GET /cart/status/` — stepper χωρίς reload.
+- **Wishlist:** heart icon → `POST /wishlist/toggle/` (απαιτεί login).
+- **Brands:** `/products/brands/` → `/products/all/?brand=CLUB4PAWS` κλπ.
+- **Commands:** `fix_product_names`, `set_initial_stock` — δες [`SCRIPTS.md`](SCRIPTS.md).
 
 ### 16.7 Ακόμα pending στο Part 5
 
-- Brand detail pages (ξεχωριτό slug URL ανά brand — προς το παρόν φίλτρο με `?brand=`).
+- Sidebar φίλτρα (κατηγορία, τιμή, brand tabs) — UI μόνο, όχι wired backend.
+- Pagination (16/24/32/Όλα) — αφαιρέθηκε· rebuild όταν ζητηθεί καθαρά.
+- Brand detail pages (ξεχωριστό slug URL ανά brand).
 - Compiled Tailwind αντί CDN.
 - Carnis logo (δεν υπάρχει ακόμα στο φάκελο LOGOS).
+- Σελίδα λίστας wishlist.
 
 ### 16.8 Νέα URLs / αρχεία homepage
 
@@ -974,8 +1018,10 @@ requests μέσω `requests`, όχι Django test `Client`, ώστε να δοκ�
 |---|---|
 | `/` (`products/views.home`) | Homepage — περνάει `companies` (με logo) στο template |
 | `templates/home.html` | Συναρμολόγηση hero + about + animals |
-| `templates/page.html` | Skeleton εσωτερικών σελίδων (μόνο Part 2 αλλάζει) |
 | `templates/base.html` | Shell 3 μερών · blocks: `hero`, `content`, `pre_footer`, `main_class` |
+| `templates/page.html` | Skeleton εσωτερικών σελίδων (μόνο Part 2 αλλάζει) |
+| `templates/products/catalog.html` | Catalog grid (σκύλος/γάτα/όλα/brands) |
+| `static/js/catalog.js` | Cart stepper, wishlist toggle, nav badge sync |
 | `static/css/kokkoris-backgrounds.css` | Gradients που δεν γίνονται εύκολα με Tailwind utilities |
 
 ---
@@ -1021,11 +1067,14 @@ requests μέσω `requests`, όχι Django test `Client`, ώστε να δοκ�
 checkbox). Το μήνυμα *«This form is protected by reCAPTCHA…»* εμφανίζεται **μόνο** όταν τα
 keys είναι ρυθμισμένα.
 
-**Ρύθμιση keys** (στο `.env`, gitignored — δες `.env.example`):
+**Ρύθμιση keys** (στο `.env`, gitignored — δες `.env.example` και ενότητα 19.2):
 
 ```bash
 RECAPTCHA_SITE_KEY=...
 RECAPTCHA_SECRET_KEY=...
+GOOGLE_OAUTH_CLIENT_ID=...
+GOOGLE_OAUTH_CLIENT_SECRET=...
+GOOGLE_MAPS_API_KEY=...
 ```
 
 Τα keys φορτώνονται αυτόματα μέσω `python-dotenv` στο `core/settings.py`. Για νέο μηχάνημα:
@@ -1056,3 +1105,61 @@ Footer form → reCAPTCHA v3 token → POST /newsletter/subscribe/ → validatio
 | URL | Μέθοδος | Τι κάνει |
 |---|---|---|
 | `/newsletter/subscribe/` | POST | Αποθηκεύει email από footer · redirect στο `next` ή homepage |
+
+---
+
+## 18. Wishlist — Αγαπημένα (`wishlist` app)
+
+Ο συνδεδεμένος χρήστης μπορεί να προσθέτει/αφαιρεί προϊόντα από wishlist μέσα από το catalog grid
+(heart icon στην κάρτα). Δεν υπάρχει ακόμα ξεχωριστή σελίδα «Αγαπημένα».
+
+### 18.1 Model `WishlistItem`
+
+| Πεδίο | Τι κάνει |
+|---|---|
+| `user` | FK στον `CustomUser` |
+| `product` | FK στο `Product` |
+| `created_at` | Ημερομηνία προσθήκης |
+
+`UniqueConstraint(user, product)` — ένα προϊόν μία φορά ανά χρήστη.
+
+### 18.2 API
+
+| URL | Μέθοδος | Auth | Τι κάνει |
+|---|---|---|---|
+| `/wishlist/toggle/` | POST | Login required | Toggle προϊόν (`product_id`) · JSON `{ ok, wishlisted, product_id }` |
+
+**Αρχεία:** `wishlist/models.py`, `wishlist/views.py`, `wishlist/urls.py`, `static/js/catalog.js`.
+
+### 18.3 Admin
+
+`/admin/wishlist/wishlistitem/` — προβολή/διαγραφή εγγραφών.
+
+---
+
+## 19. Git & Secrets
+
+### 19.1 Remote repository
+
+Το project είναι version-controlled με Git. Remote (ιδιοκτησία στο δικό σου GitHub account):
+
+```text
+https://github.com/spatroudakis/kokkoris_eshop.git
+```
+
+Μετά από `git clone`, ακολούθησε τη ροή setup στο [`SCRIPTS.md`](SCRIPTS.md) ενότητα **10**
+(`migrate`, `seed_data`, imports, `set_initial_stock`, `.env`).
+
+> **Δεν** commit-άρονται: `db.sqlite3`, `media/`, `venv/`, `.env` — μόνο `.env.example` ως πρότυπο.
+
+### 19.2 Μεταβλητές περιβάλλοντος (`.env`)
+
+Αντιγράψτε `.env.example` → `.env` και συμπληρώστε:
+
+| Μεταβλητή | Χρήση |
+|---|---|
+| `GOOGLE_OAUTH_CLIENT_ID` / `SECRET` | Σύνδεση Google (django-allauth) |
+| `GOOGLE_MAPS_API_KEY` | Χάρτης checkout (βήμα διεύθυνσης) |
+| `RECAPTCHA_SITE_KEY` / `SECRET` | Newsletter footer (reCAPTCHA v3) |
+
+Φορτώνονται αυτόματα από `python-dotenv` στο `core/settings.py`.
