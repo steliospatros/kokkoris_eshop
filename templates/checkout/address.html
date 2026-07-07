@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}Checkout - Διεύθυνση Παράδοσης{% endblock %}
+
+{% block content %}
+    <h1 class="text-2xl font-bold text-slate-800 mb-1">Βήμα 1: Διεύθυνση Παράδοσης</h1>
+    <p class="text-slate-500 mb-6">
+        Πληκτρολόγησε τη διεύθυνσή σου και επιβεβαίωσε την ακριβή τοποθεσία στον χάρτη
+        (μπορείς να σύρεις την κουκίδα για μεγαλύτερη ακρίβεια, π.χ. στην είσοδο της πολυκατοικίας).
+    </p>
+
+    <form method="post" class="bg-white rounded-lg shadow p-6 max-w-lg space-y-4" id="address-form">
+        {% csrf_token %}
+        {% for field in form %}
+            {% if field.name != "latitude" and field.name != "longitude" %}
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1" for="{{ field.id_for_label }}">
+                        {{ field.label }}
+                    </label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ field.errors|striptags }}</p>
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% endfor %}
+        {{ form.latitude }}
+        {{ form.longitude }}
+
+        <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Τοποθεσία στον χάρτη</label>
+            <div id="map" class="w-full h-64 rounded border border-slate-300"></div>
+            <p id="map-hint" class="text-xs text-slate-500 mt-1">
+                Πληκτρολόγησε πάνω τη διεύθυνσή σου για να τοποθετηθεί αυτόματα η κουκίδα, ή σύρε τη
+                χειροκίνητα.
+            </p>
+        </div>
+
+        <button type="submit" class="bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700">
+            Συνέχεια
+        </button>
+    </form>
+
+    <script>
+        // Populated server-side from CustomUser, if the customer already has
+        // saved coordinates from a previous order - otherwise falls back to
+        // a default center on Athens.
+        const initialLat = parseFloat("{{ form.latitude.value|default:'' }}") || 37.9838;
+        const initialLng = parseFloat("{{ form.longitude.value|default:'' }}") || 23.7275;
+
+        function updateHiddenCoords(lat, lng) {
+            document.getElementById("{{ form.latitude.id_for_label }}").value = lat;
+            document.getElementById("{{ form.longitude.id_for_label }}").value = lng;
+        }
+
+        function initCheckoutMap() {
+            const center = { lat: initialLat, lng: initialLng };
+            const map = new google.maps.Map(document.getElementById("map"), {
+                center,
+                zoom: 15,
+            });
+            const marker = new google.maps.Marker({
+                position: center,
+                map,
+                draggable: true,
+            });
+
+            // Dragging the pin manually always wins - re-syncs the hidden
+            // lat/lng fields every time the marker settles in a new spot.
+            marker.addListener("dragend", () => {
+                const position = marker.getPosition();
+                updateHiddenCoords(position.lat(), position.lng());
+            });
+
+            const addressInput = document.getElementById("{{ form.address.id_for_label }}");
+            const autocomplete = new google.maps.places.Autocomplete(addressInput, {
+                componentRestrictions: { country: "gr" },
+                fields: ["formatted_address", "geometry"],
+            });
+            autocomplete.bindTo("bounds", map);
+
+            autocomplete.addListener("place_changed", () => {
+                const place = autocomplete.getPlace();
+                if (!place.geometry || !place.geometry.location) {
+                    return;
+                }
+                map.setCenter(place.geometry.location);
+                map.setZoom(17);
+                marker.setPosition(place.geometry.location);
+                updateHiddenCoords(place.geometry.location.lat(), place.geometry.location.lng());
+            });
+        }
+    </script>
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places&callback=initCheckoutMap"
+        async
+        defer
+    ></script>
+{% endblock %}

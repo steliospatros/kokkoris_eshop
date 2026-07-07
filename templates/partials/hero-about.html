@@ -1,0 +1,37 @@
+{% load i18n static %}
+{# Part 2 — white "about us" body (PDF page 1, between the teal hero   #}
+{# collage and the 4-pet photo strip). Copy is taken verbatim from       #}
+{# SEL_1/ΓΡΑΜΜΑΤΟΣΕΙΡΑ.docx; typography matches the mockup spec there   #}
+{# (Geologica Thin, 30 pt body / 45 pt leading). The brand carousel     #}
+{# between the intro and closing paragraphs is a deliberate empty shell #}
+{# for now — logos/buttons will be wired in once the client supplies    #}
+{# the final brand assets.                                              #}
+<section class="w-full bg-white">
+    <div class="max-w-[1920px] mx-auto px-6 lg:px-[150px] pt-6 lg:pt-10 pb-10 lg:pb-16 text-center font-geologica font-thin text-slate-900">
+
+        <h2 class="lowercase text-[clamp(22px,2.5vw,36px)] leading-none tracking-[0.08em] mb-8 lg:mb-14">
+            about us
+        </h2>
+
+        <div class="mx-auto max-w-[1350px] space-y-6 lg:space-y-8 text-[clamp(16px,1.95vw,30px)] leading-[1.5] tracking-[0.04em]">
+            <p>
+                Είμαστε εξειδικευμένοι προμηθευτές ξηρών τροφών για σκύλους και γάτες στην Ελλάδα!
+            </p>
+            <p>
+                Εδώ διαθέτουμε μια ιδιαίτερη συλλογή από κορυφαίες μάρκες ξηρών τροφών για σκύλους και γάτες. Αντιπροσωπεύουμε επίσημα στην ελληνική αγορά τα brands:
+            </p>
+        </div>
+
+        {# Brand carousel — populated from Company.logo (see hero-brands.html). #}
+        {% include "partials/hero-brands.html" %}
+
+        <div class="mx-auto max-w-[1350px] space-y-6 lg:space-y-8 text-[clamp(16px,1.95vw,30px)] leading-[1.5] tracking-[0.04em]">
+            <p>
+                Επιπλέον, προσφέρουμε το αξιόπιστο και οικονομικό brand Gaherdog - Gahercat για όσους αναζητούν μία πολύ οικονομική λύση στη διατροφή του σκύλου και της γάτας τους. Άλλωστε, στην Kokkoris Pet Food, δεν εστιάζουμε απλώς στην ποιότητα, αλλά και στην ποικιλία και την προσιτή τιμή.
+            </p>
+            <p>
+                Με χρόνια εμπειρίας στον χώρο της λιανικής, χονδρικής και εισαγωγών, διασφαλίζουμε την επιλογή των καλύτερων προϊόντων για τους τετράποδους φίλους σας. Επισκεφθείτε τώρα το e-shop μας για να βρείτε τις ιδανικές ξηρές τροφές για τον σκύλο και τη γάτα σας!
+            </p>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+{% load i18n static %}
+<html lang="el">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Kokkoris Eshop{% endblock %}</title>
+    {# Tailwind via CDN: zero build-step for now. Will be replaced by a proper #}
+    {# compiled Tailwind pipeline once the real UI/UX design work starts (Part 5). #}
+    <script src="https://cdn.tailwindcss.com"></script>
+    {# Brand fonts sampled from the mockup: Poppins Light/ExtraBold for the #}
+    {# "KOKKORIS / PET FOOD" logotype, Inter for all other running text. #}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geologica:wght@100&family=Inter:wght@400;500;600;700&family=Poppins:wght@300;500;700;800&display=swap" rel="stylesheet">
+    <script>
+        // "Stage Zero" design tokens: exact colors pixel-sampled from the
+        // site mockup (see static/css/kokkoris-backgrounds.css for how each
+        // value was derived), so every template can reference them by name
+        // (e.g. bg-kokkoris-teal-dark) instead of re-guessing a shade of
+        // teal each time a new "Part" of the site is built.
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'kokkoris-teal-dark': '#42746C',
+                        'kokkoris-teal-mid': '#4AA190',
+                        'kokkoris-teal-light': '#6BAFA1',
+                        'kokkoris-brand-cell': '#EAF5F3',
+                        // Logo palette, sampled directly from the paw-print icon.
+                        'kokkoris-blue': '#024BAD',
+                        'kokkoris-dot-teal': '#53B8AF',
+                        'kokkoris-dot-orange': '#ED7C59',
+                        'kokkoris-dot-pink': '#FE5959',
+                    },
+                    fontFamily: {
+                        geologica: ['Geologica', 'sans-serif'],
+                        poppins: ['Poppins', 'sans-serif'],
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                },
+            },
+        };
+    </script>
+    {# Precise background gradients (e.g. the hero's radial gradient) that #}
+    {# are impractical to express as plain Tailwind utility classes. #}
+    <link rel="stylesheet" href="{% static 'css/kokkoris-backgrounds.css' %}">
+</head>
+<body class="bg-slate-50 min-h-screen">
+    {# ── Part 1: Header (nav) — ίδιο σε κάθε σελίδα, μην αλλάζει ── #}
+    {% include "partials/nav.html" %}
+
+    {# ── Part 2: Main panel — μόνο αυτό αλλάζει ανά σελίδα ──           #}
+    {# Homepage χρησιμοποιεί {% block hero %} + κενό main.               #}
+    {# Όλες οι άλλες σελίδες: {% extends "page.html" %} ή base + content. #}
+    {% block hero %}{% endblock %}
+    <main class="{% block main_class %}max-w-5xl mx-auto px-4 py-8{% endblock %}">
+        {% block content %}{% endblock %}
+    </main>
+    {% block pre_footer %}{% endblock %}
+
+    {# ── Part 3: Footer — ίδιο σε κάθε σελίδα, μην αλλάζει ── #}
+    {% include "partials/footer.html" %}
+    {% include "partials/cookie-consent.html" %}
+    <script src="{% static 'js/cookie-consent.js' %}"></script>
+    {% block extra_body %}{% endblock %}
+</body>
+</html>

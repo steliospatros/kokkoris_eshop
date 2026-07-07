@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}Checkout - Τρόπος Πληρωμής{% endblock %}
+
+{% block content %}
+    <h1 class="text-2xl font-bold text-slate-800 mb-1">Βήμα 3: Τρόπος Πληρωμής</h1>
+    <p class="text-slate-500 mb-6">Έλεγξε την παραγγελία σου και επίλεξε πώς θα πληρώσεις.</p>
+
+    <div class="bg-white rounded-lg shadow p-6 max-w-lg mb-6">
+        <h2 class="text-sm font-semibold text-slate-700 mb-3">Παραγγελία</h2>
+        <ul class="divide-y divide-slate-100 mb-4">
+            {% for item in cart.items %}
+                <li class="py-2 flex items-center justify-between text-sm">
+                    <span class="text-slate-600">{{ item.quantity }}x {{ item.product_variant }}</span>
+                    <span class="text-slate-800 font-medium">{{ item.subtotal }}€</span>
+                </li>
+            {% endfor %}
+        </ul>
+        <div class="text-sm space-y-1 border-t border-slate-200 pt-3">
+            <div class="flex justify-between text-slate-600">
+                <span>Κόστος προϊόντων</span>
+                <span>{{ cart_total }}€</span>
+            </div>
+            <div class="flex justify-between text-slate-600">
+                <span>Μεταφορικά</span>
+                <span>{% if courier_fee %}{{ courier_fee }}€{% else %}Δωρεάν{% endif %}</span>
+            </div>
+            <div class="flex justify-between text-base font-bold text-slate-800 pt-1">
+                <span>Σύνολο</span>
+                <span>{{ total_cost }}€</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6 max-w-lg mb-6 text-sm text-slate-600">
+        <h2 class="text-sm font-semibold text-slate-700 mb-2">Παράδοση σε</h2>
+        <p>{{ checkout_data.address }}, {{ checkout_data.city }} {{ checkout_data.postal_code }}</p>
+        <p>Τηλέφωνο: {{ checkout_data.phone_number }}</p>
+    </div>
+
+    <form method="post" class="bg-white rounded-lg shadow p-6 max-w-lg space-y-4">
+        {% csrf_token %}
+        <div class="space-y-3">
+            {% for radio in form.payment_method %}
+                <label class="flex items-center gap-3 border border-slate-300 rounded px-4 py-3 cursor-pointer hover:border-emerald-500">
+                    {{ radio.tag }}
+                    <span class="text-sm text-slate-700">{{ radio.choice_label }}</span>
+                </label>
+            {% endfor %}
+        </div>
+        {% if form.payment_method.errors %}
+            <p class="text-red-500 text-xs">{{ form.payment_method.errors|striptags }}</p>
+        {% endif %}
+        <p class="text-xs text-slate-400">
+            Η πληρωμή με κάρτα δεν χρεώνεται ακόμα εδώ - η παραγγελία καταχωρείται και το
+            προσωπικό επιβεβαιώνει την πληρωμή χειροκίνητα.
+        </p>
+        <button type="submit" class="bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700">
+            Ολοκλήρωση Παραγγελίας
+        </button>
+    </form>
+{% endblock %}

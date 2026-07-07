@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}Η παραγγελία σου{% endblock %}
+
+{% block content %}
+    <h1 class="text-2xl font-bold text-slate-800 mb-1">Η παραγγελία σου καταχωρήθηκε!</h1>
+    <p class="text-slate-500 mb-6">Αριθμός παραγγελίας: #{{ order.id }}</p>
+
+    <div class="bg-white rounded-lg shadow p-6 max-w-lg mb-6 text-sm space-y-2">
+        <div class="flex justify-between">
+            <span class="text-slate-600">Κατάσταση</span>
+            <span class="font-medium text-slate-800">{{ order.get_status_display }}</span>
+        </div>
+        <div class="flex justify-between">
+            <span class="text-slate-600">Τρόπος πληρωμής</span>
+            <span class="font-medium text-slate-800">{{ order.get_payment_method_display }}</span>
+        </div>
+        <div class="flex justify-between">
+            <span class="text-slate-600">Τρόπος παράδοσης</span>
+            <span class="font-medium text-slate-800">{{ order.get_delivery_method_display }}</span>
+        </div>
+        <div class="flex justify-between border-t border-slate-200 pt-2 text-base font-bold text-slate-800">
+            <span>Σύνολο</span>
+            <span>{{ order.total_cost }}€</span>
+        </div>
+    </div>
+
+    {% if order.can_be_cancelled_by_customer %}
+        <form method="post" action="{% url 'orders:cancel_order' order.id %}"
+              onsubmit="return confirm('Είσαι σίγουρος/η ότι θέλεις να ακυρώσεις την παραγγελία;');">
+            {% csrf_token %}
+            <button type="submit" class="text-red-600 border border-red-300 px-4 py-2 rounded hover:bg-red-50">
+                Ακύρωση Παραγγελίας
+            </button>
+        </form>
+    {% endif %}
+{% endblock %}

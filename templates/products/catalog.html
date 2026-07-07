@@ -1,0 +1,49 @@
+{% extends "page.html" %}
+{% load i18n static %}
+
+{% block title %}{{ page_title }} — Kokkoris Eshop{% endblock %}
+
+{% block main_class %}w-full max-w-none bg-slate-50 min-h-[60vh]{% endblock %}
+
+{% block content %}
+<section class="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10">
+    <header class="mb-5 lg:mb-6">
+        <h1 class="font-poppins font-light text-2xl lg:text-[2rem] text-kokkoris-teal-dark tracking-wide uppercase">
+            {{ page_title }}
+        </h1>
+    </header>
+
+    <div class="flex flex-col lg:flex-row lg:items-start gap-6 lg:gap-8 xl:gap-10">
+        {# Left — filter sidebar #}
+        {% include "products/partials/catalog_filters.html" %}
+
+        {# Center — products column (compact grid, room on both sides) #}
+        <div class="flex-1 min-w-0 flex justify-center lg:justify-start">
+            <div class="w-full max-w-[920px]">
+                {% include "products/partials/catalog_toolbar.html" %}
+
+                {% if product_cards %}
+                    <div id="catalog-grid"
+                         class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4"
+                         data-user-authenticated="{{ user_is_authenticated|yesno:'true,false' }}">
+                        {% for card in product_cards %}
+                            {% include "products/partials/product_card.html" with card=card %}
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-slate-500 font-inter py-16 text-center bg-white rounded-xl border border-slate-200">
+                        {% trans "Δεν βρέθηκαν προϊόντα." %}
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+
+        {# Right — reserved space for promos / extra filters (petcity-style breathing room) #}
+        <div class="hidden xl:block shrink-0 w-[160px]" aria-hidden="true"></div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_body %}
+<script src="{% static 'js/catalog.js' %}"></script>
+{% endblock %}

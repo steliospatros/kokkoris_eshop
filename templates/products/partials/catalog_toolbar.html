@@ -1,0 +1,40 @@
+{% load i18n %}
+{# Top tags + sort bar (petcity-style). Tags are placeholders until wired. #}
+<div class="catalog-toolbar space-y-4 mb-6 lg:mb-8">
+    {% if catalog_tabs %}
+        <nav class="flex flex-wrap gap-2" aria-label="{% trans 'Υποκατηγορίες' %}">
+            {% for tab in catalog_tabs %}
+                <span class="inline-flex items-center px-4 py-2 rounded-full border text-sm font-inter whitespace-nowrap
+                             {% if tab.active %}
+                                 border-kokkoris-teal-dark bg-kokkoris-teal-dark text-white
+                             {% else %}
+                                 border-slate-200 bg-white text-slate-600
+                             {% endif %}">
+                    {{ tab.label }}
+                </span>
+            {% endfor %}
+        </nav>
+    {% endif %}
+
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2 border-t border-slate-100">
+        <p class="text-sm text-slate-500 font-inter">
+            {% blocktrans count counter=product_count %}
+                Βρέθηκε {{ counter }} προϊόν
+            {% plural %}
+                Βρέθηκαν {{ counter }} προϊόντα
+            {% endblocktrans %}
+        </p>
+        <div class="flex items-center gap-3">
+            <label for="catalog-sort" class="text-sm text-slate-500 font-inter shrink-0">
+                {% trans "Ταξινόμηση" %}:
+            </label>
+            <select id="catalog-sort"
+                    disabled
+                    class="text-sm font-inter border border-slate-200 rounded-lg px-3 py-1.5 bg-slate-50 text-slate-400 cursor-not-allowed">
+                <option>{% trans "Προεπιλογή" %}</option>
+                <option>{% trans "Τιμή αύξουσα" %}</option>
+                <option>{% trans "Τιμή φθίνουσα" %}</option>
+            </select>
+        </div>
+    </div>
+</div>

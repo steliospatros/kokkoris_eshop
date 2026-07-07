@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}Checkout - Τρόπος Παράδοσης{% endblock %}
+
+{% block content %}
+    <h1 class="text-2xl font-bold text-slate-800 mb-1">Βήμα 2: Τρόπος Παράδοσης</h1>
+    {% if within_urban_area %}
+        <p class="text-slate-500 mb-6">Επίλεξε πώς θέλεις να παραλάβεις την παραγγελία σου.</p>
+    {% else %}
+        <p class="text-slate-500 mb-6">
+            Η διεύθυνσή σου είναι εκτός της περιοχής δωρεάν παράδοσης από υπάλληλο του
+            καταστήματος, οπότε η παραγγελία θα σταλεί υποχρεωτικά με courier.
+        </p>
+    {% endif %}
+
+    <form method="post" class="bg-white rounded-lg shadow p-6 max-w-lg space-y-4">
+        {% csrf_token %}
+        <div class="space-y-3">
+            {% for option in options %}
+                <label class="flex items-center justify-between border border-slate-300 rounded px-4 py-3 cursor-pointer hover:border-emerald-500">
+                    <span class="flex items-center gap-3">
+                        <input
+                            type="radio"
+                            name="delivery_method"
+                            value="{{ option.value }}"
+                            data-total="{{ option.total }}"
+                            class="delivery-option"
+                            {% if forloop.first %}checked{% endif %}
+                            required
+                        >
+                        <span class="text-sm text-slate-700">{{ option.label }}</span>
+                    </span>
+                    <span class="text-sm font-medium text-slate-600">
+                        {% if option.fee %}+{{ option.fee }}€{% else %}Δωρεάν{% endif %}
+                    </span>
+                </label>
+            {% endfor %}
+        </div>
+
+        <div class="flex items-center justify-between border-t border-slate-200 pt-4">
+            <span class="text-sm font-medium text-slate-700">Σύνολο</span>
+            <span id="delivery-total" class="text-lg font-bold text-slate-800">{{ cart_total }}€</span>
+        </div>
+
+        <button type="submit" class="bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700">
+            Συνέχεια
+        </button>
+    </form>
+
+    <script>
+        // Every option's final total is already computed server-side (see
+        // checkout.delivery.calculate_courier_fee), so switching the radio
+        // just needs to swap the displayed number - no AJAX round-trip.
+        document.querySelectorAll(".delivery-option").forEach((input) => {
+            input.addEventListener("change", () => {
+                document.getElementById("delivery-total").textContent = input.dataset.total + "€";
+            });
+            if (input.checked) {
+                document.getElementById("delivery-total").textContent = input.dataset.total + "€";
+            }
+        });
+    </script>
+{% endblock %}

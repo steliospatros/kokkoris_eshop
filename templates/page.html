@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{# Standard inner page: Part 1 (nav) + Part 2 (content) + Part 3 (footer).  #}
+{# Homepage is the exception — it uses {% block hero %} instead (home.html). #}
+{# Usage:                                                                    #}
+{#   {% extends "page.html" %}                                               #}
+{#   {% block title %}Τίτλος σελίδας{% endblock %}                           #}
+{#   {% block content %}…{% endblock %}                                        #}
+
+{% block hero %}{% endblock %}
+{% block pre_footer %}{% endblock %}
+{% block main_class %}w-full max-w-none bg-white min-h-[60vh]{% endblock %}

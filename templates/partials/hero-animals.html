@@ -1,0 +1,12 @@
+{% load static %}
+{# Closing visual of "part 2" (see partials/hero.html): dog + butterfly,   #}
+{# poodle with glasses, greyhound with a chick on its head, and a cat —   #}
+{# cropped pixel-exact from the PDF (same 1920px reference width as the   #}
+{# hero image). Rendered flush against the black footer (part 3), so it   #}
+{# lives in base.html's pre_footer block rather than inside the hero      #}
+{# block, which renders before {% block content %}.                       #}
+<div class="w-full bg-white">
+    <img src="{% static 'images/hero-animals-strip.png' %}"
+         alt=""
+         class="w-full h-auto block">
+</div>

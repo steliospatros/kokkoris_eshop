@@ -1,0 +1,34 @@
+{% extends "page.html" %}
+{% load i18n static %}
+
+{% block title %}{{ page_title }} — Kokkoris Eshop{% endblock %}
+
+{% block content %}
+<section class="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-10 py-8 lg:py-12">
+    <header class="mb-8 lg:mb-10">
+        <h1 class="font-poppins font-light text-3xl lg:text-4xl text-kokkoris-teal-dark tracking-wide uppercase">
+            {{ page_title }}
+        </h1>
+    </header>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 lg:gap-8">
+        {% for company in companies %}
+            <a href="{% url 'products:all' %}?brand={{ company.code }}"
+               class="group flex flex-col items-center gap-4 p-6 rounded-2xl border border-slate-200 bg-white hover:border-kokkoris-teal-mid hover:shadow-md transition-all">
+                {% if company.logo %}
+                    <img src="{{ company.logo.url }}"
+                         alt="{{ company.name }}"
+                         class="h-16 w-auto object-contain group-hover:scale-105 transition-transform">
+                {% else %}
+                    <span class="h-16 flex items-center text-kokkoris-teal-dark font-poppins font-semibold uppercase tracking-wide">
+                        {{ company.name }}
+                    </span>
+                {% endif %}
+                <span class="text-sm text-slate-600 font-inter text-center">{{ company.name }}</span>
+            </a>
+        {% empty %}
+            <p class="col-span-full text-slate-500 text-center py-12">{% trans "Δεν βρέθηκαν brands." %}</p>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,79 @@
+{% load i18n %}
+{# Cookie banner + settings modal — preferences stored in localStorage.   #}
+<div id="cookie-banner"
+     class="hidden fixed bottom-0 inset-x-0 z-50 bg-black/95 text-white border-t border-[#2e2e2e] px-6 py-5 lg:px-[150px]">
+    <div class="max-w-[1920px] mx-auto flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <p class="font-inter text-sm lg:text-base text-gray-300 max-w-3xl leading-relaxed">
+            {% trans "Χρησιμοποιούμε cookies για τη λειτουργία του site και, με τη συγκατάθεσή σας, για στατιστικά και marketing." %}
+        </p>
+        <div class="flex flex-wrap gap-3 shrink-0">
+            <button type="button"
+                    id="cookie-reject-optional"
+                    class="font-inter px-4 py-2 text-sm border border-[#5b5b5b] rounded hover:border-white transition-colors">
+                {% trans "Απόρριψη προαιρετικών" %}
+            </button>
+            <button type="button"
+                    id="cookie-open-settings"
+                    class="font-inter px-4 py-2 text-sm border border-[#5b5b5b] rounded hover:border-white transition-colors">
+                {% trans "Ρυθμίσεις cookies" %}
+            </button>
+            <button type="button"
+                    id="cookie-accept-all"
+                    class="font-inter px-4 py-2 text-sm bg-white text-black font-semibold rounded hover:bg-gray-200 transition-colors">
+                {% trans "Αποδοχή όλων" %}
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="cookie-settings-modal"
+     class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/60 px-4"
+     aria-hidden="true"
+     role="dialog"
+     aria-labelledby="cookie-settings-title">
+    <div class="w-full max-w-lg bg-white text-slate-900 rounded-lg shadow-xl p-6 lg:p-8 font-inter">
+        <div class="flex items-start justify-between gap-4 mb-6">
+            <h2 id="cookie-settings-title" class="text-xl font-semibold">
+                {% trans "Ρυθμίσεις cookies" %}
+            </h2>
+            <button type="button"
+                    id="cookie-close-modal"
+                    class="text-slate-400 hover:text-slate-700 text-2xl leading-none"
+                    aria-label="{% trans 'Κλείσιμο' %}">
+                &times;
+            </button>
+        </div>
+
+        <div class="space-y-5 text-sm lg:text-base">
+            <div class="flex items-start justify-between gap-4 pb-4 border-b border-slate-200">
+                <div>
+                    <p class="font-medium">{% trans "Απαραίτητα" %}</p>
+                    <p class="text-slate-500 mt-1">{% trans "Απαιτούνται για login, καλάθι και βασική λειτουργία του site." %}</p>
+                </div>
+                <span class="text-xs uppercase tracking-wide text-slate-400 shrink-0">{% trans "Πάντα ενεργά" %}</span>
+            </div>
+
+            <label class="flex items-start justify-between gap-4 pb-4 border-b border-slate-200 cursor-pointer">
+                <span>
+                    <span class="font-medium block">{% trans "Στατιστικά (Analytics)" %}</span>
+                    <span class="text-slate-500 mt-1 block">{% trans "Βοηθούν να κατανοήσουμε πώς χρησιμοποιείται το site." %}</span>
+                </span>
+                <input type="checkbox" id="cookie-analytics" class="mt-1 w-5 h-5 shrink-0">
+            </label>
+
+            <label class="flex items-start justify-between gap-4 cursor-pointer">
+                <span>
+                    <span class="font-medium block">{% trans "Marketing" %}</span>
+                    <span class="text-slate-500 mt-1 block">{% trans "Για εξατομικευμένες προσφορές και διαφημίσεις." %}</span>
+                </span>
+                <input type="checkbox" id="cookie-marketing" class="mt-1 w-5 h-5 shrink-0">
+            </label>
+        </div>
+
+        <button type="button"
+                id="cookie-save-preferences"
+                class="mt-8 w-full bg-kokkoris-teal-dark text-white font-semibold py-3 rounded hover:opacity-90 transition-opacity">
+            {% trans "Αποθήκευση προτιμήσεων" %}
+        </button>
+    </div>
+</div>

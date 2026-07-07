@@ -1,0 +1,66 @@
+{% load i18n static %}
+{# Brand carousel — one column per Company that has a logo: image on top,  #}
+{# pill button with the company name below (PDF layout). Links are stubs    #}
+{# for now; dedicated brand pages come in a later pass.                   #}
+<div class="relative mx-auto mt-8 lg:mt-10 mb-10 lg:mb-14 max-w-[1680px]" id="hero-brands">
+    <div class="flex items-stretch shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-kokkoris-brand-cell">
+        <button type="button"
+                id="hero-brands-prev"
+                aria-label="{% trans 'Προηγούμενες μάρκες' %}"
+                class="hidden lg:flex w-10 shrink-0 items-center justify-center text-slate-300 hover:text-slate-500 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5">
+                <path d="M15 6l-6 6 6 6"/>
+            </svg>
+        </button>
+
+        <div id="hero-brands-track"
+             class="flex flex-1 overflow-x-auto scroll-smooth snap-x snap-mandatory divide-x divide-slate-300 [&::-webkit-scrollbar]:hidden"
+             style="scrollbar-width: none;">
+            {% for company in companies %}
+                <div class="flex flex-col items-center justify-between flex-none w-[min(280px,40vw)] lg:w-[20%] min-h-[180px] lg:min-h-[237px] px-3 py-6 lg:py-8 snap-start bg-kokkoris-brand-cell">
+                    <div class="flex flex-1 items-center justify-center w-full px-2">
+                        <img src="{{ company.logo.url }}"
+                             alt="{{ company.name }}"
+                             class="max-h-[80px] lg:max-h-[120px] w-auto max-w-full object-contain">
+                    </div>
+                    <a href="#"
+                       aria-label="{{ company.name }}"
+                       class="mt-4 lg:mt-6 inline-block rounded-full bg-kokkoris-teal-dark px-5 lg:px-8 py-1.5 lg:py-2 text-white text-sm lg:text-base font-inter font-medium whitespace-nowrap hover:opacity-90 transition-opacity">
+                        {{ company.name }}
+                    </a>
+                </div>
+            {% empty %}
+                <div class="flex-1 py-12 text-center text-slate-400 text-sm">
+                    {% trans "Δεν υπάρχουν logos μαρκών ακόμα." %}
+                </div>
+            {% endfor %}
+        </div>
+
+        <button type="button"
+                id="hero-brands-next"
+                aria-label="{% trans 'Επόμενες μάρκες' %}"
+                class="hidden lg:flex w-10 shrink-0 items-center justify-center text-slate-300 hover:text-slate-500 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5">
+                <path d="M9 6l6 6-6 6"/>
+            </svg>
+        </button>
+    </div>
+</div>
+
+<script>
+(function () {
+    var track = document.getElementById("hero-brands-track");
+    var prev = document.getElementById("hero-brands-prev");
+    var next = document.getElementById("hero-brands-next");
+    if (!track || !prev || !next) {
+        return;
+    }
+
+    function scrollByPage(direction) {
+        track.scrollBy({ left: direction * track.clientWidth * 0.8, behavior: "smooth" });
+    }
+
+    prev.addEventListener("click", function () { scrollByPage(-1); });
+    next.addEventListener("click", function () { scrollByPage(1); });
+})();
+</script>

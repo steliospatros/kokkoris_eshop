@@ -1,0 +1,147 @@
+{% load i18n static %}
+{# Footer — Part 1: pixel-accurate replication of the mockup's footer section. #}
+{# All spacing/font sizes below were measured directly off the PDF mockup    #}
+{# (page 1) at native resolution and converted from PDF points to CSS px    #}
+{# 1:1 (the mockup was authored at a 1920px design width).                  #}
+<footer class="bg-black text-white">
+    <div class="max-w-[1920px] mx-auto px-6 sm:px-10 lg:px-[150px] pt-14 lg:pt-20 pb-14 lg:pb-16">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-14">
+            {# LEFT column: logo + info links #}
+            <div>
+                <div class="flex items-center gap-6 lg:gap-8">
+                    <img src="{% static 'images/kokkoris-logo-icon.png' %}"
+                         alt="Kokkoris Pet Food"
+                         class="w-24 lg:w-[132px] h-auto shrink-0">
+                    <div class="text-center">
+                        <h2 class="font-poppins font-light text-3xl lg:text-[42px] tracking-[0.12em] leading-none">
+                            KOKKORIS
+                        </h2>
+                        <p class="font-poppins font-extrabold text-lg lg:text-xl tracking-[0.2em] leading-none mt-2 lg:mt-3">
+                            PET FOOD
+                        </p>
+                    </div>
+                </div>
+
+                <div class="font-inter text-base lg:text-lg mt-8 lg:mt-12 flex flex-col gap-3">
+                    <a href="#" class="hover:text-kokkoris-dot-teal transition-colors">
+                        {% trans "Πληροφορίες για το κατάστημα μας" %}
+                    </a>
+                    <a href="#" class="hover:text-kokkoris-dot-teal transition-colors">
+                        {% trans "Επικοινωνία" %}
+                    </a>
+                    <a href="#" class="hover:text-kokkoris-dot-teal transition-colors">
+                        {% trans "Τρόποι αποστολής και χρόνος παραλαβής" %}
+                    </a>
+                    <a href="#" class="hover:text-kokkoris-dot-teal transition-colors">
+                        {% trans "Κόστος αποστολής" %}
+                    </a>
+                    <a href="#" class="hover:text-kokkoris-dot-teal transition-colors">
+                        {% trans "Πολιτική επιστροφών" %}
+                    </a>
+                    <a href="#" class="hover:text-kokkoris-dot-teal transition-colors">
+                        {% trans "Τρόποι πληρωμής" %}
+                    </a>
+                    <a href="#" class="hover:text-kokkoris-dot-teal transition-colors pt-1">
+                        {% trans "Πολιτική Απορρήτου" %}
+                    </a>
+
+                    {# Επικοινωνία — ίδια στήλη/στοίχιση με τα links παραπάνω #}
+                    <div class="font-inter pt-4 lg:pt-5">
+                        <p class="text-base lg:text-lg mb-2">
+                            {% trans "Επικοινωνία" %}
+                        </p>
+                        <a href="tel:+306977927008"
+                           class="inline-flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+                            <img src="{% static 'images/phone-icon.png' %}"
+                                 alt=""
+                                 aria-hidden="true"
+                                 class="w-9 h-9 lg:w-10 lg:h-10 shrink-0">
+                            <span class="text-base lg:text-lg whitespace-nowrap">697 792 7008</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            {# RIGHT column: newsletter signup #}
+            <div class="lg:pt-1">
+                <h3 class="font-inter text-xl lg:text-2xl">
+                    {% trans "Εγγραφείτε στο newsletter μας:" %}
+                </h3>
+
+                <form id="newsletter-form"
+                      class="mt-7 lg:mt-9 flex w-full max-w-[560px]"
+                      action="{% url 'newsletter:subscribe' %}"
+                      method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.path }}">
+                    {% if RECAPTCHA_ENABLED %}
+                        <input type="hidden" name="g_recaptcha_response" id="g-recaptcha-response" value="">
+                    {% endif %}
+                    <input type="email"
+                           name="email"
+                           required
+                           placeholder="{% trans 'Email' %}"
+                           class="font-inter flex-1 min-w-0 bg-transparent border border-[#5b5b5b] rounded-l-lg px-5 lg:px-6 py-6 lg:py-[30px] text-sm lg:text-base placeholder-gray-500 focus:outline-none focus:border-white">
+                    <button type="submit"
+                            class="font-inter shrink-0 bg-white text-black font-bold rounded-r-lg px-6 lg:px-10 text-sm lg:text-base hover:bg-gray-200 transition-colors">
+                        {% trans "Εγγραφή" %}
+                    </button>
+                </form>
+
+                {% if RECAPTCHA_ENABLED %}
+                    <p class="font-inter text-sm lg:text-base text-gray-400 mt-4 lg:mt-5 max-w-[560px] leading-relaxed">
+                        {% blocktrans %}This form is protected by reCAPTCHA and the Google{% endblocktrans %}
+                        <a href="https://policies.google.com/privacy"
+                           class="underline hover:text-gray-300"
+                           target="_blank"
+                           rel="noopener noreferrer">{% trans "Privacy Policy" %}</a>
+                        {% trans "and" %}
+                        <a href="https://policies.google.com/terms"
+                           class="underline hover:text-gray-300"
+                           target="_blank"
+                           rel="noopener noreferrer">{% trans "Terms of Service" %}</a>
+                        {% trans "apply." %}
+                    </p>
+                    <script src="https://www.google.com/recaptcha/api.js?render={{ RECAPTCHA_SITE_KEY }}"></script>
+                    <script>window.RECAPTCHA_SITE_KEY = "{{ RECAPTCHA_SITE_KEY }}";</script>
+                    <script src="{% static 'js/newsletter-recaptcha.js' %}"></script>
+                {% endif %}
+            </div>
+        </div>
+
+        <hr class="border-t border-[#2e2e2e] mt-14 lg:mt-20">
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 mt-16 lg:mt-20">
+            <div></div>
+            <div class="flex flex-wrap items-center gap-5 lg:gap-6 lg:justify-end">
+                <a href="mailto:prolamprou@gmail.com" aria-label="Email" class="hover:opacity-70 transition-opacity">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                        <path d="M1.5 6.75A2.25 2.25 0 0 1 3.75 4.5h16.5a2.25 2.25 0 0 1 2.25 2.25v10.5A2.25 2.25 0 0 1 20.25 19.5H3.75A2.25 2.25 0 0 1 1.5 17.25V6.75Zm2.4-.75 8.1 6.15L20.1 6h-16.2ZM21 8.03l-8.55 6.49a.75.75 0 0 1-.9 0L3 8.03v9.22c0 .414.336.75.75.75h16.5a.75.75 0 0 0 .75-.75V8.03Z"/>
+                    </svg>
+                </a>
+                <a href="#" aria-label="Facebook" class="hover:opacity-70 transition-opacity">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" fill="currentColor" class="w-4 h-6">
+                        <path d="M279.14 288l14.22-92.66h-88.91v-60.13c0-25.35 12.42-50.06 52.24-50.06h40.42V6.26S260.43 0 225.36 0c-73.22 0-121.08 44.38-121.08 124.72v70.62H22.89V288h81.39v224h100.17V288z"/>
+                    </svg>
+                </a>
+                <a href="#" aria-label="Instagram" class="hover:opacity-70 transition-opacity">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" class="w-6 h-6">
+                        <rect x="3" y="3" width="18" height="18" rx="5"/>
+                        <circle cx="12" cy="12" r="4.2"/>
+                        <circle cx="17.3" cy="6.7" r="0.65" fill="currentColor" stroke="none"/>
+                    </svg>
+                </a>
+                <a href="#" aria-label="Website" class="hover:opacity-70 transition-opacity">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757M10.81 15.31a4.5 4.5 0 0 1-1.242-7.244l4.5-4.5a4.5 4.5 0 0 1 6.364 6.364l-1.757 1.757"/>
+                    </svg>
+                </a>
+                <button type="button"
+                        id="cookie-settings-trigger"
+                        class="font-inter text-kokkoris-blue text-sm lg:text-base ml-1 hover:underline">
+                    {% trans "Cookie Settings" %}
+                </button>
+            </div>
+        </div>
+    </div>
+</footer>

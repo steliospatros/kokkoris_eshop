@@ -1,0 +1,84 @@
+{% load i18n static %}
+{# Compact petcity-style card — small centered product image. #}
+<article class="product-card flex flex-col rounded-xl border border-slate-200 bg-white overflow-hidden hover:shadow-md transition-shadow"
+         data-product-id="{{ card.product_id }}"
+         data-variant-id="{{ card.variant_id }}"
+         data-can-add="{{ card.can_add|yesno:'true,false' }}"
+         data-on-order="{{ card.is_on_order|yesno:'true,false' }}"
+         data-button-label="{{ card.button_label }}"
+         {% if card.max_quantity != None %}data-max-stock="{{ card.max_quantity }}"{% endif %}>
+    <div class="relative flex items-center justify-center h-[88px] sm:h-[96px] px-3 pt-3 pb-1 bg-white">
+        {% if card.image_url %}
+            <img src="{{ card.image_url }}"
+                 alt=""
+                 class="max-h-[72px] sm:max-h-[80px] max-w-[85%] object-contain object-center">
+        {% else %}
+            <span class="text-slate-300 text-xs">{% trans "Χωρίς εικόνα" %}</span>
+        {% endif %}
+
+        <button type="button"
+                class="wishlist-toggle absolute top-2 right-2 w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:border-kokkoris-teal-dark transition-colors shadow-sm"
+                data-product-id="{{ card.product_id }}"
+                aria-label="{% trans 'Αγαπημένα' %}"
+                aria-pressed="{{ card.is_wishlisted|yesno:'true,false' }}">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                 class="w-4 h-4 {% if card.is_wishlisted %}fill-kokkoris-dot-pink stroke-kokkoris-dot-pink{% else %}fill-none stroke-kokkoris-teal-dark{% endif %}"
+                 stroke-width="2">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+        </button>
+    </div>
+
+    <div class="px-3 pb-2 flex flex-col flex-1 text-center sm:text-left">
+        {% if card.sku %}
+            <p class="text-[10px] text-slate-400 tracking-wide truncate">{{ card.sku }}</p>
+        {% endif %}
+
+        <h2 class="font-inter font-medium text-slate-800 text-xs sm:text-[13px] leading-snug mt-0.5 line-clamp-3 min-h-[2.75rem]">
+            {{ card.title }}
+        </h2>
+
+        <div class="mt-1.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-0.5 text-[10px] uppercase tracking-wide">
+            <span class="text-kokkoris-teal-dark font-medium">{{ card.sizes_label }}</span>
+            <span class="{{ card.availability_color_class }} text-[10px] normal-case font-medium">
+                {{ card.availability_label }}
+            </span>
+        </div>
+
+        <div class="mt-2 sm:text-right">
+            <p class="font-inter font-bold text-base text-slate-900">{{ card.price_display }} €</p>
+            {% if card.unit_price_display %}
+                <p class="text-[10px] text-slate-500">{{ card.unit_price_display }} € / {{ card.unit_label }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="product-card-footer mt-auto text-white {% if card.is_on_order %}bg-kokkoris-blue{% elif card.can_add %}bg-kokkoris-teal-dark{% else %}bg-slate-400{% endif %}">
+        {% if card.cart_qty > 0 %}
+            <div class="cart-stepper flex items-center justify-between px-3 py-2"
+                 data-variant-id="{{ card.variant_id }}">
+                <button type="button"
+                        class="qty-minus w-7 h-7 rounded-full border border-white/40 hover:bg-white/10 text-lg leading-none"
+                        aria-label="{% trans 'Μείωση ποσότητας' %}">−</button>
+                <span class="qty-value font-semibold text-base min-w-[1.5rem] text-center">{{ card.cart_qty }}</span>
+                <button type="button"
+                        class="qty-plus w-7 h-7 rounded-full border border-white/40 hover:bg-white/10 text-lg leading-none disabled:opacity-40 disabled:cursor-not-allowed"
+                        aria-label="{% trans 'Αύξηση ποσότητας' %}"
+                        {% if card.max_quantity != None and card.cart_qty >= card.max_quantity %}disabled{% endif %}>+</button>
+            </div>
+        {% elif card.can_add %}
+            <button type="button"
+                    class="cart-add w-full py-2 text-sm font-poppins font-medium uppercase tracking-wider transition-colors {% if card.is_on_order %}hover:bg-blue-900{% else %}hover:bg-kokkoris-teal-mid{% endif %}"
+                    data-variant-id="{{ card.variant_id }}">
+                {{ card.button_label }}
+            </button>
+        {% else %}
+            <button type="button"
+                    disabled
+                    class="cart-add w-full py-2 text-sm font-poppins font-medium uppercase tracking-wider cursor-not-allowed opacity-80"
+                    data-variant-id="{{ card.variant_id }}">
+                {% trans "Αγορά" %}
+            </button>
+        {% endif %}
+    </div>
+</article>

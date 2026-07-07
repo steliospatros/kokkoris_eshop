@@ -1,0 +1,19 @@
+{% load static %}
+{# Part 2 — hero section: the exact background photo/graphic from the      #}
+{# mockup (page 1, right below the top nav strip) — the radial teal        #}
+{# gradient behind the dog/cats/puppy collage plus the KOKKORIS Pet Food   #}
+{# lockup, all baked into one image since it's a single piece of finished  #}
+{# artwork (not something to be redrawn with CSS/SVG), cropped pixel-exact #}
+{# from the PDF (starts right where the nav strip ends, stops right before #}
+{# the "about us" heading, which belongs to the next content section).     #}
+<div class="w-full bg-white leading-[0]">
+    <img src="{% static 'images/hero-section.png' %}"
+         alt=""
+         class="w-full h-auto block">
+</div>
+{# The rest of the white "part 2" body (the "about us" heading + copy and #}
+{# the brand carousel) is deliberately NOT part of this pass — it's built #}
+{# in a later step. Its closing visual, the 4-pet photo strip that sits   #}
+{# flush against the footer, lives in partials/hero-animals.html since it #}
+{# has to render after {% block content %}, not here (see base.html's    #}
+{# pre_footer block).                                                     #}

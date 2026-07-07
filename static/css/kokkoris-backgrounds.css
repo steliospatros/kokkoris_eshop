@@ -1,0 +1,51 @@
+/*
+ * "Stage Zero" design tokens — precise background colors/gradients
+ * pixel-sampled directly from the site mockup (Test 1 Site kokkoris.pdf,
+ * page 1) at 100 DPI, so every future template ("Part") reuses the exact
+ * same values instead of re-guessing an approximate teal each time.
+ *
+ * How each value was obtained (see chat history for the full sampling
+ * session): the rendered mockup page was sampled at multiple pixel
+ * coordinates per section with ImageMagick to confirm whether a section is
+ * a flat fill or a gradient, and to map out gradient stops/position.
+ *
+ * - Header/nav bar: solid fill, sampled uniformly across the whole bar
+ *   width -> single flat color, no gradient.
+ * - Hero section: radial gradient. Left/right edges and the top strip (and
+ *   by symmetry the corners) all sample to the same darker teal as the
+ *   header bar; the lightest point sampled (top-center, just above the
+ *   photo) is noticeably lighter. Modeled as a 3-stop radial ellipse
+ *   centered slightly above the vertical middle.
+ * - "About us" section: pure white.
+ * - Footer: pure black.
+ */
+
+:root {
+  --kokkoris-teal-dark: #42746c;   /* header bar + hero gradient outer/edge/corner stop */
+  --kokkoris-teal-mid: #4aa190;    /* hero gradient middle stop (sampled at hero's left/right edges) */
+  --kokkoris-teal-light: #6bafa1;  /* hero gradient inner/lightest stop (sampled top-center of hero) */
+}
+
+/* Part: header / nav bar. Flat fill, confirmed via multi-point sampling
+   across the full bar width (no gradient). */
+.bg-kokkoris-header {
+  background-color: var(--kokkoris-teal-dark);
+}
+
+/* Part: hero section (directly below the header, behind the dog/cats
+   photo). Radial gradient - lighter core near top-center fading out to the
+   same dark teal as the header at the edges/corners. */
+.bg-kokkoris-hero {
+  background-color: var(--kokkoris-teal-dark); /* fallback for browsers without gradient support */
+  background-image: radial-gradient(
+    ellipse 75% 65% at 50% 20%,
+    var(--kokkoris-teal-light) 0%,
+    var(--kokkoris-teal-mid) 50%,
+    var(--kokkoris-teal-dark) 100%
+  );
+}
+
+/* Part: footer. Flat pure black fill. */
+.bg-kokkoris-footer {
+  background-color: #000000;
+}
