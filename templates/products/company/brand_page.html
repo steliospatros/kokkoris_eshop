@@ -1,0 +1,60 @@
+{% extends "page.html" %}
+{% load i18n static %}
+
+{% block title %}{{ page_title }} — Kokkoris Eshop{% endblock %}
+
+{% block main_class %}w-full max-w-none bg-white p-0 m-0{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/company-brand-page.css' %}">
+
+<article class="brand-page">
+    {% include "products/company/partials/benefits_hero.html" %}
+    {% if page_sections %}
+        {% for section in page_sections %}
+            {% if section.type == "story" %}
+                {% include "products/company/partials/story_band.html" with story_band_static=section.static section_class=section.section_class %}
+            {% elif section.type == "products" %}
+                {% include "products/company/partials/company_products_row.html" with product_cards=section.product_cards products_row_class=section.products_row_class %}
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        {% if story_bands %}
+            {% for band in story_bands %}
+                {% include "products/company/partials/story_band.html" with story_band_static=band.static section_class=band.section_class %}
+            {% endfor %}
+        {% elif story_band_static %}
+            {% include "products/company/partials/story_band.html" %}
+        {% endif %}
+        {% if show_products_row %}
+            {% include "products/company/partials/company_products_row.html" %}
+        {% endif %}
+    {% endif %}
+    {% if show_product_detail and product_detail_static %}
+        {% include "products/company/partials/product_detail_band.html" %}
+    {% endif %}
+</article>
+{% endblock %}
+
+{% block extra_body %}
+{% if page_sections or show_products_row %}
+<script src="{% static 'js/catalog.js' %}"></script>
+<script>
+(function () {
+    document.querySelectorAll(".brand-products__row").forEach(function (row) {
+        var track = row.querySelector(".brand-products__track");
+        var prev = row.querySelector(".brand-products__nav--prev");
+        var next = row.querySelector(".brand-products__nav--next");
+        if (!track || !prev || !next) {
+            return;
+        }
+        function scrollByPage(direction) {
+            track.scrollBy({ left: direction * track.clientWidth * 0.8, behavior: "smooth" });
+        }
+        prev.addEventListener("click", function () { scrollByPage(-1); });
+        next.addEventListener("click", function () { scrollByPage(1); });
+    });
+})();
+</script>
+{% endif %}
+{% endblock %}

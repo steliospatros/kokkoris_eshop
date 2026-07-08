@@ -1,3 +1,7 @@
+from pathlib import Path
+
+from django.conf import settings
+from django.core.files import File
 from django.core.management.base import BaseCommand
 
 from products.models import AnimalType, Category, Company
@@ -36,7 +40,14 @@ class Command(BaseCommand):
         "PROFINE": "PRF",
         "EVERCLEAN": "EVC",
         "Wild Side": "WLD",
+        "Carnis": "CAR",
         "Puro Instinto": "PUR",
+    }
+
+    # Temporary placeholders until the client supplies real brand logos.
+    # Paths are relative to static/ (see STATICFILES_DIRS).
+    PLACEHOLDER_LOGOS = {
+        "Carnis": "images/companies/car_placeholder.png",
     }
 
     def handle(self, *args, **options):
@@ -62,6 +73,26 @@ class Command(BaseCommand):
                 defaults={"code": code},
             )
             self._report(obj, created, "Company")
+            placeholder = self.PLACEHOLDER_LOGOS.get(name)
+            if placeholder and not obj.logo:
+                self._attach_placeholder_logo(obj, placeholder)
+
+    def _attach_placeholder_logo(self, company, static_rel_path):
+        source = Path(settings.BASE_DIR) / "static" / static_rel_path
+        if not source.is_file():
+            self.stdout.write(
+                self.style.WARNING(
+                    f"  ! Placeholder logo missing for {company.name}: {source}"
+                )
+            )
+            return
+
+        dest_name = f"{company.code.lower()}_placeholder.png"
+        with source.open("rb") as fh:
+            company.logo.save(dest_name, File(fh), save=True)
+        self.stdout.write(
+            self.style.SUCCESS(f"  + Attached placeholder logo for {company.name}")
+        )
 
     def _report(self, obj, created, label):
         # Print a clear line for every record, distinguishing new vs. existing.

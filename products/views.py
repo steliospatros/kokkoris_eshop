@@ -1,6 +1,6 @@
 from django.db.models import Q
 from django.http import JsonResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.csrf import ensure_csrf_cookie
 
@@ -15,8 +15,8 @@ from products.catalog import (
     build_catalog_pagination_context,
     build_catalog_sort_context,
     get_browse_page_title,
-    get_catalog_queryset,
     get_catalog_price_bounds,
+    get_catalog_queryset,
     paginate_catalog_queryset,
     parse_filter_values,
     parse_page_number,
@@ -29,6 +29,7 @@ from products.catalog import (
     DEFAULT_PER_PAGE,
     SORT_DEFAULT,
 )
+from products.company_pages import build_company_page_context, has_brand_page
 from products.models import Company, Product
 from wishlist.models import WishlistItem
 
@@ -242,12 +243,54 @@ def catalog_all(request):
     )
 
 
-def catalog_brands(request):
-    companies = (
-        Company.objects.filter(products__is_active=True)
-        .distinct()
-        .order_by("name")
+def _build_brand_page_product_cards(request, queryset):
+    return build_catalog_cards(
+        queryset,
+        cart_quantities=_cart_quantities(request),
+        wishlisted_ids=_wishlisted_ids(request),
     )
+
+
+@ensure_csrf_cookie
+def company_page(request, company_code):
+    company = get_object_or_404(Company, code__iexact=company_code)
+    context = build_company_page_context(company)
+    if context is None:
+        return redirect(reverse("products:all"))
+
+    page_sections = context.get("page_sections")
+    if page_sections:
+        base_products = get_catalog_queryset().filter(company=company)
+        sections = []
+        for section in page_sections:
+            section = dict(section)
+            if section.get("type") == "products":
+                products = base_products
+                if section.get("animal_type"):
+                    products = products.filter(animal_type__name=section["animal_type"])
+                if section.get("category"):
+                    products = products.filter(category__name=section["category"])
+                section["product_cards"] = _build_brand_page_product_cards(
+                    request,
+                    products.order_by("name"),
+                )
+            sections.append(section)
+        context["page_sections"] = sections
+        context["user_is_authenticated"] = request.user.is_authenticated
+    elif context.get("show_products_row"):
+        products = get_catalog_queryset().filter(company=company).order_by("name")
+        context["product_cards"] = _build_brand_page_product_cards(request, products)
+        context["user_is_authenticated"] = request.user.is_authenticated
+
+    return render(
+        request,
+        "products/company/brand_page.html",
+        context,
+    )
+
+
+def catalog_brands(request):
+    companies = Company.objects.order_by("name")
     return render(
         request,
         "products/brands.html",

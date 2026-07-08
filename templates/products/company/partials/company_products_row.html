@@ -1,0 +1,39 @@
+{% load i18n static %}
+<section class="brand-products{% if products_row_class %} {{ products_row_class }}{% endif %}"
+         aria-labelledby="brand-products-heading">
+    <h2 id="brand-products-heading" class="sr-only">
+        {% blocktrans with brand=company.name %}Προϊόντα {{ brand }}{% endblocktrans %}
+    </h2>
+
+    {% if product_cards %}
+        <div class="brand-products__row"
+             id="catalog-browse"
+             data-user-authenticated="{{ user_is_authenticated|yesno:'true,false' }}">
+            <button type="button"
+                    class="brand-products__nav brand-products__nav--prev hidden lg:flex"
+                    aria-label="{% trans 'Προηγούμενα προϊόντα' %}">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5" aria-hidden="true">
+                    <path d="M15 6l-6 6 6 6"/>
+                </svg>
+            </button>
+
+            <div class="brand-products__track">
+                {% for card in product_cards %}
+                    {% include "products/partials/product_browse_cell.html" with card=card %}
+                {% endfor %}
+            </div>
+
+            <button type="button"
+                    class="brand-products__nav brand-products__nav--next hidden lg:flex"
+                    aria-label="{% trans 'Επόμενα προϊόντα' %}">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5" aria-hidden="true">
+                    <path d="M9 6l6 6-6 6"/>
+                </svg>
+            </button>
+        </div>
+    {% else %}
+        <p class="brand-products__empty">
+            {% trans "Δεν υπάρχουν ακόμα διαθέσιμα προϊόντα για αυτή την εταιρεία." %}
+        </p>
+    {% endif %}
+</section>

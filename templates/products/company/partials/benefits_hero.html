@@ -1,0 +1,6 @@
+{% load i18n static %}
+<section class="{% if hero_section_class %}{{ hero_section_class }}{% else %}brand-hero-white{% endif %}" aria-label="{{ page_title }}">
+    <img src="{% static hero_band_static %}"
+         alt=""
+         class="brand-hero-white__band">
+</section>

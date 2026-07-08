@@ -1,0 +1,185 @@
+/* Puro Instinto brand page — PDF page 2, built step by step. */
+
+.brand-page {
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+.brand-hero-white {
+  width: 100%;
+  margin: 0;
+  padding: clamp(40px, 5.5vw, 88px) 0 0;
+  background: #fff;
+}
+
+.brand-hero-orange {
+  width: 100%;
+  margin: 0;
+  padding: clamp(40px, 5.5vw, 88px) 0 0;
+  background: #ff931e;
+}
+
+.brand-hero-white__band {
+  display: block;
+  width: 100%;
+  max-width: 1920px;
+  margin: 0 auto;
+  height: auto;
+  vertical-align: top;
+}
+
+@media (max-width: 768px) {
+  .brand-hero-white {
+    padding-top: clamp(28px, 4vw, 56px);
+  }
+
+  .brand-hero-orange {
+    padding-top: clamp(28px, 4vw, 56px);
+  }
+}
+
+.brand-story-band {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: #f58220;
+  line-height: 0;
+}
+
+.brand-story-band--teal {
+  background: #28c4b0;
+}
+
+.brand-story-band--white {
+  background: #fff;
+}
+
+.brand-story-band__slice {
+  display: block;
+  width: 100%;
+  max-width: 1920px;
+  margin: 0 auto;
+  height: auto;
+  vertical-align: top;
+}
+
+/* Product row — continues the orange band, no outer white panel. */
+.brand-products {
+  width: 100%;
+  margin: 0;
+  padding: clamp(1rem, 2.5vw, 2rem) 0 clamp(1.5rem, 3vw, 2.5rem);
+  background: #f58220;
+}
+
+.brand-products--orange {
+  background: #ff931e;
+}
+
+/* Wild Side — breathing room between product row and cat intro (PDF mock carousel removed). */
+.brand-products--wild-gap-before-cat {
+  padding-bottom: clamp(2.5rem, 5vw, 4.5rem);
+}
+
+.brand-story-band--wild-cat-intro {
+  padding-top: clamp(1.5rem, 3.5vw, 3rem);
+}
+
+.brand-products--teal {
+  background: #28c4b0;
+}
+
+.brand-products__row {
+  display: flex;
+  align-items: stretch;
+  max-width: 1920px;
+  margin: 0 auto;
+  background: transparent;
+  box-shadow: none;
+}
+
+.brand-products__track {
+  display: flex;
+  flex: 1;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+.brand-products__track::-webkit-scrollbar {
+  display: none;
+}
+
+.brand-products__track > .product-browse-cell {
+  scroll-snap-align: start;
+  background: rgba(255, 255, 255, 0.94);
+  border-right: 1px solid rgba(255, 255, 255, 0.45);
+}
+
+.brand-products__track > .product-browse-cell:last-child {
+  border-right: none;
+}
+
+.brand-products__nav {
+  flex: none;
+  width: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.75);
+  transition: color 0.15s ease;
+}
+
+.brand-products__nav:hover {
+  color: #fff;
+}
+
+.brand-products__empty {
+  max-width: 1920px;
+  margin: 0 auto;
+  padding: 0 clamp(1rem, 3vw, 2rem) clamp(1rem, 2.5vw, 1.75rem);
+  text-align: center;
+  font-family: "Inter", sans-serif;
+  font-size: clamp(0.875rem, 1vw, 1rem);
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.brand-detail-white {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: #fff;
+}
+
+.brand-detail-white__frame {
+  position: relative;
+  width: 100%;
+  max-width: 1920px;
+  margin: 0 auto;
+}
+
+.brand-detail-white__slice {
+  display: block;
+  width: 100%;
+  height: auto;
+  vertical-align: top;
+}
+
+/* Reserved area for a real featured product (PDF bag sketch removed). */
+.brand-product-slot {
+  position: absolute;
+  right: clamp(1rem, 4vw, 3rem);
+  bottom: clamp(0.75rem, 2.5vw, 2rem);
+  width: min(280px, 26vw);
+  min-height: min(360px, 34vw);
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .brand-product-slot {
+    right: clamp(0.75rem, 3vw, 1.5rem);
+    width: min(220px, 42vw);
+    min-height: min(280px, 52vw);
+  }
+}
