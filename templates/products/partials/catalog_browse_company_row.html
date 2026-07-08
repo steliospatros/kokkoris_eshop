@@ -1,0 +1,39 @@
+{% load i18n static %}
+{# One company block: title + horizontal product row (same layout as hero-brands). #}
+<section class="browse-company-section mb-10 lg:mb-14">
+    <header class="mb-4 lg:mb-6 flex items-center gap-4">
+        {% if section.company.logo_url %}
+            <img src="{{ section.company.logo_url }}"
+                 alt="{{ section.company.name }}"
+                 class="h-10 lg:h-12 w-auto object-contain shrink-0">
+        {% endif %}
+        <h2 class="font-poppins font-light text-xl lg:text-2xl text-kokkoris-teal-dark tracking-wide uppercase">
+            {{ section.company.name }}
+        </h2>
+    </header>
+
+    <div class="relative flex items-stretch shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-kokkoris-brand-cell">
+        <button type="button"
+                class="browse-row-prev hidden lg:flex w-10 shrink-0 items-center justify-center text-slate-300 hover:text-slate-500 transition-colors"
+                aria-label="{% trans 'Προηγούμενα προϊόντα' %}">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5">
+                <path d="M15 6l-6 6 6 6"/>
+            </svg>
+        </button>
+
+        <div class="browse-products-track flex flex-1 overflow-x-auto scroll-smooth snap-x snap-mandatory divide-x divide-slate-300 [&::-webkit-scrollbar]:hidden"
+             style="scrollbar-width: none;">
+            {% for card in section.products %}
+                {% include "products/partials/product_browse_cell.html" with card=card %}
+            {% endfor %}
+        </div>
+
+        <button type="button"
+                class="browse-row-next hidden lg:flex w-10 shrink-0 items-center justify-center text-slate-300 hover:text-slate-500 transition-colors"
+                aria-label="{% trans 'Επόμενα προϊόντα' %}">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5">
+                <path d="M9 6l6 6-6 6"/>
+            </svg>
+        </button>
+    </div>
+</section>

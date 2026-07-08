@@ -1,0 +1,56 @@
+{% extends "page.html" %}
+{% load i18n static %}
+
+{% block title %}{{ page_title }} — Kokkoris Eshop{% endblock %}
+
+{% block main_class %}w-full max-w-none bg-slate-50 min-h-[60vh]{% endblock %}
+
+{% block content %}
+<section class="max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10">
+    <header class="mb-5 lg:mb-8">
+        <a href="{{ back_url }}"
+           class="inline-flex items-center gap-1 text-sm font-inter text-kokkoris-teal-dark hover:underline mb-3">
+            ← {{ back_label }}
+        </a>
+        <h1 class="font-poppins font-light text-2xl lg:text-[2rem] text-kokkoris-teal-dark tracking-wide uppercase">
+            {{ page_title }}
+        </h1>
+    </header>
+
+    {% include "products/partials/catalog_toolbar.html" %}
+
+    {% if company_sections %}
+        <div id="catalog-browse"
+             data-user-authenticated="{{ user_is_authenticated|yesno:'true,false' }}">
+            {% for section in company_sections %}
+                {% include "products/partials/catalog_browse_company_row.html" with section=section %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-slate-500 font-inter py-16 text-center bg-white rounded-xl border border-slate-200">
+            {% trans "Δεν βρέθηκαν προϊόντα." %}
+        </p>
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block extra_body %}
+<script src="{% static 'js/catalog.js' %}"></script>
+<script>
+(function () {
+    document.querySelectorAll(".browse-company-section").forEach(function (section) {
+        var track = section.querySelector(".browse-products-track");
+        var prev = section.querySelector(".browse-row-prev");
+        var next = section.querySelector(".browse-row-next");
+        if (!track || !prev || !next) {
+            return;
+        }
+        function scrollByPage(direction) {
+            track.scrollBy({ left: direction * track.clientWidth * 0.8, behavior: "smooth" });
+        }
+        prev.addEventListener("click", function () { scrollByPage(-1); });
+        next.addEventListener("click", function () { scrollByPage(1); });
+    });
+})();
+</script>
+{% endblock %}

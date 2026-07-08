@@ -49,3 +49,35 @@
 .bg-kokkoris-footer {
   background-color: #000000;
 }
+
+/* Product card images — fixed 120px area, centered, fills slot above text. */
+.product-image-slot {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 120px;
+  flex-shrink: 0;
+  padding: 0.5rem 0.75rem;
+  overflow: hidden;
+}
+
+.product-image-slot img {
+  display: block;
+  max-height: 100%;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  margin: 0 auto;
+  object-fit: contain;
+  object-position: center;
+  transform: scale(var(--img-display-scale, 1));
+  transform-origin: center center;
+}
+
+.product-image-slot--browse {
+  flex: 0 0 120px;
+  min-height: 120px;
+  height: 120px;
+}

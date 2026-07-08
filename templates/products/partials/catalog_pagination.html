@@ -1,0 +1,64 @@
+{% load i18n %}
+{# Per-page size + page numbers — top and bottom via placement=top|bottom #}
+<div class="catalog-pagination
+            {% if placement == 'top' %}
+                mb-6 pb-4 border-b border-slate-200
+            {% else %}
+                mt-8 pt-6 border-t border-slate-200
+            {% endif %}">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="text-sm text-slate-500 font-inter shrink-0">{% trans "Προβολή" %}:</span>
+            {% for choice in per_page_choices %}
+                <a href="{{ choice.url }}"
+                   class="inline-flex items-center justify-center min-w-[2.75rem] px-3 py-1.5 rounded-lg border text-sm font-inter transition-colors
+                          {% if choice.active %}
+                              border-kokkoris-teal-dark bg-kokkoris-teal-dark text-white
+                          {% else %}
+                              border-slate-200 bg-white text-slate-600 hover:border-kokkoris-teal-dark hover:text-kokkoris-teal-dark
+                          {% endif %}">
+                    {{ choice.label }}
+                </a>
+            {% endfor %}
+        </div>
+
+        {% if is_paginated %}
+            <nav class="flex flex-wrap items-center justify-center sm:justify-end gap-1"
+                 aria-label="{% trans 'Σελίδες καταλόγου' %}">
+                {% if prev_url %}
+                    <a href="{{ prev_url }}"
+                       class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-kokkoris-teal-dark hover:text-kokkoris-teal-dark"
+                       aria-label="{% trans 'Προηγούμενη σελίδα' %}">
+                        ‹
+                    </a>
+                {% else %}
+                    <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed"
+                          aria-hidden="true">‹</span>
+                {% endif %}
+
+                {% for link in page_links %}
+                    {% if link.active %}
+                        <span class="inline-flex items-center justify-center min-w-[2.25rem] h-9 px-2 rounded-lg border border-kokkoris-teal-dark bg-kokkoris-teal-dark text-white text-sm font-inter"
+                              aria-current="page">{{ link.num }}</span>
+                    {% else %}
+                        <a href="{{ link.url }}"
+                           class="inline-flex items-center justify-center min-w-[2.25rem] h-9 px-2 rounded-lg border border-slate-200 bg-white text-slate-600 text-sm font-inter hover:border-kokkoris-teal-dark hover:text-kokkoris-teal-dark">
+                            {{ link.num }}
+                        </a>
+                    {% endif %}
+                {% endfor %}
+
+                {% if next_url %}
+                    <a href="{{ next_url }}"
+                       class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-kokkoris-teal-dark hover:text-kokkoris-teal-dark"
+                       aria-label="{% trans 'Επόμενη σελίδα' %}">
+                        ›
+                    </a>
+                {% else %}
+                    <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed"
+                          aria-hidden="true">›</span>
+                {% endif %}
+            </nav>
+        {% endif %}
+    </div>
+</div>

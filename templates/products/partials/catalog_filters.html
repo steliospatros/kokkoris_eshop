@@ -1,30 +1,118 @@
 {% load i18n %}
-{# Placeholder sidebar — real filter logic will wire in later. #}
+<style>
+    .catalog-price-range {
+        height: 1.5rem;
+        margin: 0;
+    }
+    .catalog-price-range::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        pointer-events: auto;
+        width: 1rem;
+        height: 1rem;
+        border-radius: 9999px;
+        background: #42746C;
+        border: 2px solid #fff;
+        box-shadow: 0 1px 3px rgb(0 0 0 / 0.2);
+        cursor: pointer;
+    }
+    .catalog-price-range::-moz-range-thumb {
+        pointer-events: auto;
+        width: 1rem;
+        height: 1rem;
+        border-radius: 9999px;
+        background: #42746C;
+        border: 2px solid #fff;
+        box-shadow: 0 1px 3px rgb(0 0 0 / 0.2);
+        cursor: pointer;
+    }
+    #price-range-max {
+        z-index: 30;
+    }
+    #price-range-min {
+        z-index: 20;
+    }
+</style>
 <aside class="catalog-filters shrink-0 w-full lg:w-[220px] xl:w-[240px]">
-    <div class="sticky top-4 space-y-6">
-        <div>
-            <h2 class="font-poppins font-semibold text-sm uppercase tracking-wide text-slate-800 border-b border-slate-200 pb-2">
+    <div class="sticky top-4">
+        <div class="flex items-center justify-between gap-2 border-b border-slate-200 pb-3 mb-5">
+            <h2 class="font-poppins font-semibold text-sm uppercase tracking-wide text-slate-800">
                 {% trans "Φίλτρα" %}
             </h2>
-            <p class="mt-2 text-xs text-slate-400 font-inter">
-                {% trans "Σύντομα διαθέσιμα" %}
-            </p>
+            {% if has_active_filters %}
+                <a href="{% url 'products:all' %}"
+                   class="text-xs font-inter text-kokkoris-teal-dark hover:underline shrink-0">
+                    {% trans "Καθαρισμός" %}
+                </a>
+            {% endif %}
         </div>
 
-        {% for section in filter_sections %}
-            <div>
-                <h3 class="font-inter font-semibold text-sm text-slate-700 mb-2">{{ section.title }}</h3>
-                <ul class="space-y-2">
-                    {% for item in section.items %}
-                        <li>
-                            <label class="flex items-center gap-2 text-sm text-slate-500 font-inter cursor-not-allowed opacity-60">
-                                <input type="checkbox" disabled class="rounded border-slate-300">
-                                <span>{{ item }}</span>
-                            </label>
-                        </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        {% endfor %}
+        <form method="get"
+              id="catalog-filters-form"
+              action="{% url 'products:all' %}"
+              class="space-y-7">
+            {% for field in filter_hidden_fields %}
+                <input type="hidden" name="{{ field.name }}" value="{{ field.value }}">
+            {% endfor %}
+
+            {% for section in filter_sections %}
+                {% if section.options %}
+                    <div class="pb-7 border-b border-slate-100">
+                        <h3 class="font-inter font-semibold text-sm text-slate-700 mb-3">{{ section.title }}</h3>
+                        <ul class="space-y-2.5">
+                            {% for option in section.options %}
+                                <li>
+                                    <label class="flex items-start gap-2.5 text-sm text-slate-600 font-inter cursor-pointer hover:text-kokkoris-teal-dark">
+                                        <input type="checkbox"
+                                               name="{{ section.param }}"
+                                               value="{{ option.value }}"
+                                               {% if option.checked %}checked{% endif %}
+                                               class="mt-0.5 rounded border-slate-300 text-kokkoris-teal-dark focus:ring-kokkoris-teal-dark/30">
+                                        <span>{{ option.label }}</span>
+                                    </label>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+            {% endfor %}
+
+            {% if price_filter.has_range %}
+                <div class="pt-1" id="catalog-price-filter">
+                    <h3 class="font-inter font-semibold text-sm text-slate-700 mb-3">{% trans "Τιμή" %} (€)</h3>
+                    <div class="flex items-center justify-between text-xs text-slate-500 font-inter mb-3">
+                        <span id="price-min-label">{{ price_filter.min_display }}</span>
+                        <span aria-hidden="true">—</span>
+                        <span id="price-max-label">{{ price_filter.max_display }}</span>
+                    </div>
+                    <div class="catalog-price-sliders relative h-8 flex items-center">
+                        <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 rounded-full bg-slate-200"></div>
+                        <div id="price-range-track"
+                             class="absolute top-1/2 -translate-y-1/2 h-1.5 rounded-full bg-kokkoris-teal-dark"></div>
+                        <input type="range"
+                               id="price-range-min"
+                               min="{{ price_filter.bound_min_num }}"
+                               max="{{ price_filter.bound_max_num }}"
+                               step="0.5"
+                               value="{{ price_filter.selected_min_num }}"
+                               class="catalog-price-range absolute inset-x-0 w-full appearance-none bg-transparent">
+                        <input type="range"
+                               id="price-range-max"
+                               min="{{ price_filter.bound_min_num }}"
+                               max="{{ price_filter.bound_max_num }}"
+                               step="0.5"
+                               value="{{ price_filter.selected_max_num }}"
+                               class="catalog-price-range absolute inset-x-0 w-full appearance-none bg-transparent">
+                    </div>
+                    <input type="hidden"
+                           name="price_min"
+                           id="price-min-hidden"
+                           value="{% if price_filter.active %}{{ price_filter.selected_min }}{% endif %}">
+                    <input type="hidden"
+                           name="price_max"
+                           id="price-max-hidden"
+                           value="{% if price_filter.active %}{{ price_filter.selected_max }}{% endif %}">
+                </div>
+            {% endif %}
+        </form>
     </div>
 </aside>

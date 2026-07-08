@@ -23,6 +23,8 @@
                 {% include "products/partials/catalog_toolbar.html" %}
 
                 {% if product_cards %}
+                    {% include "products/partials/catalog_pagination.html" with placement="top" %}
+
                     <div id="catalog-grid"
                          class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4"
                          data-user-authenticated="{{ user_is_authenticated|yesno:'true,false' }}">
@@ -30,6 +32,8 @@
                             {% include "products/partials/product_card.html" with card=card %}
                         {% endfor %}
                     </div>
+
+                    {% include "products/partials/catalog_pagination.html" with placement="bottom" %}
                 {% else %}
                     <p class="text-slate-500 font-inter py-16 text-center bg-white rounded-xl border border-slate-200">
                         {% trans "Δεν βρέθηκαν προϊόντα." %}
@@ -46,4 +50,5 @@
 
 {% block extra_body %}
 <script src="{% static 'js/catalog.js' %}"></script>
+<script src="{% static 'js/catalog-filters.js' %}"></script>
 {% endblock %}

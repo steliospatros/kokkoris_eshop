@@ -1,0 +1,55 @@
+{% load i18n static %}
+{# Hero-brands-style product cell for browse pages (company rows). #}
+<article class="product-card product-browse-cell flex flex-col items-center flex-none w-[min(280px,40vw)] lg:w-[20%] min-h-[280px] lg:min-h-[320px] px-3 py-5 lg:py-6 snap-start bg-kokkoris-brand-cell"
+         data-product-id="{{ card.product_id }}"
+         data-variant-id="{{ card.variant_id }}"
+         data-can-add="{{ card.can_add|yesno:'true,false' }}"
+         data-on-order="{{ card.is_on_order|yesno:'true,false' }}"
+         data-button-label="{{ card.button_label }}"
+         {% if card.max_quantity != None %}data-max-stock="{{ card.max_quantity }}"{% endif %}>
+    {% include "products/partials/product_image_slot_browse.html" with card=card %}
+
+    <div class="product-card-body flex flex-col flex-1 justify-end w-full min-h-0">
+        <div class="mt-2 w-full text-center px-1">
+            <p class="font-inter font-medium text-sm lg:text-base text-slate-800 leading-snug line-clamp-3">
+                {{ card.title }}
+            </p>
+            <p class="mt-1 font-inter font-bold text-base lg:text-lg text-slate-900">{{ card.price_display }} €</p>
+            {% if card.unit_price_display %}
+                <p class="text-[11px] text-slate-500">{{ card.unit_price_display }} € / {{ card.unit_label }}</p>
+            {% endif %}
+            <p class="mt-1 text-[10px] uppercase tracking-wide {{ card.availability_color_class }} font-medium">
+                {{ card.availability_label }}
+            </p>
+        </div>
+
+        <div class="product-card-footer w-full mt-3 lg:mt-4 rounded-full overflow-hidden text-white {% if card.is_on_order %}bg-kokkoris-blue{% elif card.can_add %}bg-kokkoris-teal-dark{% else %}bg-slate-400{% endif %}">
+        {% if card.cart_qty > 0 %}
+            <div class="cart-stepper flex items-center justify-between px-4 py-2"
+                 data-variant-id="{{ card.variant_id }}">
+                <button type="button"
+                        class="qty-minus w-7 h-7 rounded-full border border-white/40 hover:bg-white/10 text-lg leading-none"
+                        aria-label="{% trans 'Μείωση ποσότητας' %}">−</button>
+                <span class="qty-value font-semibold text-base min-w-[1.5rem] text-center">{{ card.cart_qty }}</span>
+                <button type="button"
+                        class="qty-plus w-7 h-7 rounded-full border border-white/40 hover:bg-white/10 text-lg leading-none disabled:opacity-40 disabled:cursor-not-allowed"
+                        aria-label="{% trans 'Αύξηση ποσότητας' %}"
+                        {% if card.max_quantity != None and card.cart_qty >= card.max_quantity %}disabled{% endif %}>+</button>
+            </div>
+        {% elif card.can_add %}
+            <button type="button"
+                    class="cart-add w-full py-2 text-sm font-inter font-medium transition-colors {% if card.is_on_order %}hover:bg-blue-900{% else %}hover:bg-kokkoris-teal-mid{% endif %}"
+                    data-variant-id="{{ card.variant_id }}">
+                {{ card.button_label }}
+            </button>
+        {% else %}
+            <button type="button"
+                    disabled
+                    class="cart-add w-full py-2 text-sm font-inter font-medium cursor-not-allowed opacity-80"
+                    data-variant-id="{{ card.variant_id }}">
+                {% trans "Αγορά" %}
+            </button>
+        {% endif %}
+    </div>
+    </div>
+</article>

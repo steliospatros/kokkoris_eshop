@@ -1,12 +1,12 @@
 (function () {
     "use strict";
 
-    var grid = document.getElementById("catalog-grid");
-    if (!grid) {
+    var root = document.getElementById("catalog-grid") || document.getElementById("catalog-browse");
+    if (!root) {
         return;
     }
 
-    var userAuthenticated = grid.dataset.userAuthenticated === "true";
+    var userAuthenticated = root.dataset.userAuthenticated === "true";
     var loginUrl = "/accounts/login/";
 
     function getCookie(name) {
@@ -197,7 +197,7 @@
             .catch(handleCartError);
     }
 
-    grid.addEventListener("click", function (event) {
+    root.addEventListener("click", function (event) {
         var target = event.target;
 
         var addBtn = target.closest(".cart-add");

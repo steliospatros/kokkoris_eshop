@@ -2,10 +2,109 @@
 Catalog presentation helpers — card data for the product grid UI.
 """
 from decimal import Decimal
+from functools import lru_cache
+from urllib.parse import urlencode
 
-from django.db.models import Count, Prefetch
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db.models import Count, DecimalField, ExpressionWrapper, F, Max, Min, OuterRef, Prefetch, Q, Subquery
 
-from .models import Product, ProductVariant
+from .models import Category, Company, Product, ProductVariant
+
+PER_PAGE_OPTIONS = (24, 36, 48)
+DEFAULT_PER_PAGE = 24
+PER_PAGE_ALL = "all"
+
+SORT_DEFAULT = "default"
+SORT_PRICE_ASC = "price_asc"
+SORT_PRICE_DESC = "price_desc"
+SORT_STOCK_DESC = "stock_desc"
+SORT_UNIT_PRICE_ASC = "unit_price_asc"
+SORT_UNIT_PRICE_DESC = "unit_price_desc"
+
+SORT_OPTIONS = (
+    (SORT_DEFAULT, "Προεπιλογή"),
+    (SORT_PRICE_ASC, "Τιμή αύξουσα"),
+    (SORT_PRICE_DESC, "Τιμή φθίνουσα"),
+    (SORT_STOCK_DESC, "Ποσότητα"),
+    (SORT_UNIT_PRICE_ASC, "Τιμή/κιλό αύξουσα"),
+    (SORT_UNIT_PRICE_DESC, "Τιμή/κιλό φθίνουσα"),
+)
+
+CATEGORY_LABELS = {
+    "Dry Food": "Ξηρά τροφή",
+    "Canned Food": "Κονσέρβες",
+    "Sachets": "Φακελάκια",
+    "Litter": "Άμμος",
+    "Bundle": "Πακέτα",
+}
+
+AVAILABILITY_FILTER_IN_STORE = "in_store"
+AVAILABILITY_FILTER_ON_ORDER = "on_order"
+
+AVAILABILITY_FILTER_OPTIONS = (
+    (AVAILABILITY_FILTER_IN_STORE, "Διαθέσιμο στο κατάστημα"),
+    (AVAILABILITY_FILTER_ON_ORDER, "Κατόπιν παραγγελίας"),
+)
+
+AVAILABILITY_FILTER_KEYS = {key for key, _ in AVAILABILITY_FILTER_OPTIONS}
+
+ANIMAL_FILTER_OPTIONS = (
+    ("dog", "Σκύλος"),
+    ("cat", "Γάτα"),
+)
+
+ANIMAL_FILTER_KEYS = {key for key, _ in ANIMAL_FILTER_OPTIONS}
+
+ANIMAL_SLUG_LABELS = {
+    "dog": "Σκύλος",
+    "cat": "Γάτα",
+}
+
+# Category tiles shown on /products/dogs/ and /products/cats/ landing pages.
+ANIMAL_CATEGORY_SLUGS = {
+    "dog": ["dry-food", "canned-food", "sachets"],
+    "cat": ["dry-food", "canned-food", "sachets", "litter"],
+}
+
+CATEGORY_SLUG_LABELS = {
+    "dry-food": "Ξηρά τροφή",
+    "canned-food": "Κονσέρβες",
+    "sachets": "Φακελάκια",
+    "litter": "Άμμος",
+}
+
+# Reference sachet photo: CLUB4PAWS Adult - Rabbit in Jelly 0,08 kg (830×1083).
+SACHET_REFERENCE_IMAGE_SIZE = (830, 1083)
+SACHET_IMAGE_SCALE_MIN = 0.85
+SACHET_IMAGE_SCALE_MAX = 1.55
+
+
+@lru_cache(maxsize=512)
+def _cached_image_pixel_size(image_name):
+    from PIL import Image
+    from django.core.files.storage import default_storage
+
+    with default_storage.open(image_name, "rb") as handle:
+        return Image.open(handle).size
+
+
+def get_product_image_display_scale(product):
+    """
+    Sachets with smaller source photos are scaled up to match the reference
+    Rabbit in Jelly pouch appearance inside the 120px image slot.
+    """
+    if not product.category_id or product.category.slug != "sachets":
+        return 1.0
+    if not product.image:
+        return 1.0
+    try:
+        _width, height = _cached_image_pixel_size(product.image.name)
+    except Exception:
+        return 1.0
+
+    _ref_w, ref_h = SACHET_REFERENCE_IMAGE_SIZE
+    scale = ref_h / height
+    return round(max(SACHET_IMAGE_SCALE_MIN, min(scale, SACHET_IMAGE_SCALE_MAX)), 3)
 
 
 def format_decimal_greek(value, places=2):
@@ -123,8 +222,275 @@ def get_catalog_queryset():
             Prefetch("variants", queryset=ProductVariant.objects.order_by("weight"))
         )
         .annotate(variant_count=Count("variants"))
-        .order_by("company__name", "name")
     )
+
+
+def parse_sort(raw_value):
+    if not raw_value:
+        return SORT_DEFAULT
+    key = str(raw_value).strip().lower()
+    valid = {choice[0] for choice in SORT_OPTIONS}
+    return key if key in valid else SORT_DEFAULT
+
+
+def _annotate_default_variant_sort_fields(queryset):
+    """Sort keys from the largest package variant (same as catalog cards)."""
+    default_variant = (
+        ProductVariant.objects.filter(product=OuterRef("pk"))
+        .annotate(
+            unit_price_calc=ExpressionWrapper(
+                F("price") / F("weight"),
+                output_field=DecimalField(max_digits=12, decimal_places=4),
+            )
+        )
+        .order_by("-weight")
+    )
+    return queryset.annotate(
+        sort_price=Subquery(default_variant.values("price")[:1]),
+        sort_stock=Subquery(default_variant.values("stock")[:1]),
+        sort_unit_price=Subquery(default_variant.values("unit_price_calc")[:1]),
+    )
+
+
+def apply_catalog_sort(queryset, sort_key):
+    if sort_key == SORT_DEFAULT:
+        return queryset.order_by("company__name", "name")
+
+    queryset = _annotate_default_variant_sort_fields(queryset)
+    tie_breaker = ("company__name", "name")
+
+    sort_map = {
+        SORT_PRICE_ASC: ("sort_price", *tie_breaker),
+        SORT_PRICE_DESC: ("-sort_price", *tie_breaker),
+        SORT_STOCK_DESC: ("-sort_stock", *tie_breaker),
+        SORT_UNIT_PRICE_ASC: ("sort_unit_price", *tie_breaker),
+        SORT_UNIT_PRICE_DESC: ("-sort_unit_price", *tie_breaker),
+    }
+    return queryset.order_by(*sort_map.get(sort_key, tie_breaker))
+
+
+def parse_filter_values(request, param_name):
+    """Read repeated ?brand=X&brand=Y (or legacy single ?brand=) GET values."""
+    values = list(request.GET.getlist(param_name))
+    if not values and param_name == "brand":
+        single = request.GET.get("brand", "").strip()
+        if single:
+            values = [single]
+    result = []
+    for value in values:
+        for part in str(value).split(","):
+            cleaned = part.strip()
+            if cleaned:
+                result.append(cleaned)
+    return result
+
+
+def _default_variant_subquery():
+    return ProductVariant.objects.filter(product=OuterRef("pk")).order_by("-weight")
+
+
+def _annotate_default_variant_fields(queryset):
+    default_variant = _default_variant_subquery()
+    return queryset.annotate(
+        default_availability=Subquery(default_variant.values("availability")[:1]),
+        default_stock=Subquery(default_variant.values("stock")[:1]),
+    )
+
+
+def apply_catalog_filters(
+    queryset,
+    *,
+    animal_slugs=None,
+    brand_codes=None,
+    category_slugs=None,
+    availability_keys=None,
+    price_min=None,
+    price_max=None,
+    price_active=False,
+):
+    """AND across groups, OR within the same group (any checked box)."""
+    animal_slugs = animal_slugs or []
+    brand_codes = brand_codes or []
+    category_slugs = category_slugs or []
+    availability_keys = availability_keys or []
+
+    valid_animals = [slug for slug in animal_slugs if slug in ANIMAL_FILTER_KEYS]
+    if valid_animals:
+        queryset = queryset.filter(animal_type__slug__in=valid_animals)
+
+    if brand_codes:
+        valid_codes = list(
+            Company.objects.filter(code__in=brand_codes).values_list("code", flat=True)
+        )
+        if valid_codes:
+            queryset = queryset.filter(company__code__in=valid_codes)
+
+    if category_slugs:
+        valid_slugs = list(
+            Category.objects.filter(slug__in=category_slugs).values_list("slug", flat=True)
+        )
+        if valid_slugs:
+            queryset = queryset.filter(category__slug__in=valid_slugs)
+
+    valid_availability = [key for key in availability_keys if key in AVAILABILITY_FILTER_KEYS]
+    if valid_availability:
+        queryset = _annotate_default_variant_fields(queryset)
+        availability_q = Q()
+        if AVAILABILITY_FILTER_IN_STORE in valid_availability:
+            availability_q |= Q(
+                default_availability=ProductVariant.AVAILABILITY_AVAILABLE_NOW,
+                default_stock__gt=0,
+            )
+        if AVAILABILITY_FILTER_ON_ORDER in valid_availability:
+            availability_q |= Q(default_availability=ProductVariant.AVAILABILITY_ON_ORDER)
+        queryset = queryset.filter(availability_q)
+
+    if price_active and price_min is not None and price_max is not None:
+        queryset = _annotate_default_variant_sort_fields(queryset)
+        queryset = queryset.filter(
+            sort_price__gte=price_min,
+            sort_price__lte=price_max,
+        )
+
+    return queryset
+
+
+def parse_price_param(raw):
+    if raw is None or str(raw).strip() == "":
+        return None
+    try:
+        text = str(raw).strip().replace(",", ".")
+        return Decimal(text).quantize(Decimal("0.01"))
+    except (TypeError, ValueError, ArithmeticError):
+        return None
+
+
+def get_catalog_price_bounds(queryset):
+    """Min/max default-variant price for the current catalog scope."""
+    annotated = _annotate_default_variant_sort_fields(queryset)
+    agg = annotated.aggregate(min_price=Min("sort_price"), max_price=Max("sort_price"))
+    min_price = agg["min_price"] if agg["min_price"] is not None else Decimal("0")
+    max_price = agg["max_price"] if agg["max_price"] is not None else Decimal("0")
+    if max_price < min_price:
+        min_price, max_price = Decimal("0"), Decimal("0")
+    return {"min": min_price, "max": max_price}
+
+
+def resolve_price_filter(request, bounds):
+    """Selected price range from GET, clamped to catalog bounds."""
+    bound_min = bounds["min"]
+    bound_max = bounds["max"]
+    selected_min = parse_price_param(request.GET.get("price_min"))
+    selected_max = parse_price_param(request.GET.get("price_max"))
+
+    if selected_min is None:
+        selected_min = bound_min
+    if selected_max is None:
+        selected_max = bound_max
+
+    if bound_max >= bound_min:
+        selected_min = max(bound_min, min(selected_min, bound_max))
+        selected_max = max(bound_min, min(selected_max, bound_max))
+    if selected_min > selected_max:
+        selected_min, selected_max = selected_max, selected_min
+
+    active = bool(bound_max > bound_min) and (
+        selected_min > bound_min or selected_max < bound_max
+    )
+
+    return {
+        "bound_min": bound_min,
+        "bound_max": bound_max,
+        "selected_min": selected_min,
+        "selected_max": selected_max,
+        "active": active,
+        "min_display": format_decimal_greek(selected_min),
+        "max_display": format_decimal_greek(selected_max),
+        "bound_min_num": float(bound_min),
+        "bound_max_num": float(bound_max),
+        "selected_min_num": float(selected_min),
+        "selected_max_num": float(selected_max),
+        "has_range": bound_max > bound_min,
+    }
+
+
+def resolve_animal_slugs(request):
+    """Animal filter from ?animal=dog|cat."""
+    slugs = parse_filter_values(request, "animal")
+    return [slug for slug in slugs if slug in ANIMAL_FILTER_KEYS]
+
+
+def _catalog_query_items(
+    request,
+    *,
+    page=None,
+    per_page=...,
+    sort=...,
+    animal_slugs=...,
+    brand_codes=...,
+    category_slugs=...,
+    availability_keys=...,
+    price_min=...,
+    price_max=...,
+    price_active=...,
+):
+    items = []
+
+    if animal_slugs is ...:
+        animal_slugs = parse_filter_values(request, "animal")
+    for slug in animal_slugs:
+        if slug in ANIMAL_FILTER_KEYS:
+            items.append(("animal", slug))
+
+    if brand_codes is ...:
+        brand_codes = parse_filter_values(request, "brand")
+    for code in brand_codes:
+        items.append(("brand", code))
+
+    if category_slugs is ...:
+        category_slugs = parse_filter_values(request, "category")
+    for slug in category_slugs:
+        items.append(("category", slug))
+
+    if availability_keys is ...:
+        availability_keys = parse_filter_values(request, "availability")
+    for key in availability_keys:
+        if key in AVAILABILITY_FILTER_KEYS:
+            items.append(("availability", key))
+
+    if price_active is ...:
+        price_min_raw = request.GET.get("price_min")
+        price_max_raw = request.GET.get("price_max")
+        if price_min_raw:
+            items.append(("price_min", price_min_raw))
+        if price_max_raw:
+            items.append(("price_max", price_max_raw))
+    elif price_active and price_min is not None and price_max is not None:
+        items.append(("price_min", str(price_min)))
+        items.append(("price_max", str(price_max)))
+
+    if per_page is ...:
+        resolved_per_page = parse_per_page(request.GET.get("per_page"))
+    else:
+        resolved_per_page = _resolve_per_page_param(per_page)
+
+    if resolved_per_page is None:
+        items.append(("per_page", PER_PAGE_ALL))
+    elif resolved_per_page != DEFAULT_PER_PAGE:
+        items.append(("per_page", str(resolved_per_page)))
+
+    if sort is ...:
+        resolved_sort = parse_sort(request.GET.get("sort"))
+    else:
+        resolved_sort = parse_sort(sort)
+    if resolved_sort != SORT_DEFAULT:
+        items.append(("sort", resolved_sort))
+
+    effective_page = parse_page_number(page if page is not None else request.GET.get("page", 1))
+    if effective_page > 1:
+        items.append(("page", str(effective_page)))
+
+    return items
 
 
 def build_catalog_card(product, *, cart_qty=0, is_wishlisted=False):
@@ -141,6 +507,7 @@ def build_catalog_card(product, *, cart_qty=0, is_wishlisted=False):
         sizes_label = f"{count} ΜΕΓΕΘΗ"
 
     stock_display = get_stock_display(variant)
+    category_slug = product.category.slug if product.category_id else ""
 
     return {
         "product_id": product.id,
@@ -163,6 +530,8 @@ def build_catalog_card(product, *, cart_qty=0, is_wishlisted=False):
         "is_on_order": stock_display["status"] == STOCK_STATUS_ON_ORDER,
         "button_label": stock_display.get("button_label", "Αγορά"),
         "image_url": product.image.url if product.image else None,
+        "category_slug": category_slug,
+        "image_display_scale": get_product_image_display_scale(product),
         "cart_qty": cart_qty,
         "is_wishlisted": is_wishlisted,
     }
@@ -185,3 +554,343 @@ def build_catalog_cards(products, cart_quantities=None, wishlisted_ids=None):
         if card:
             cards.append(card)
     return cards
+
+
+def parse_per_page(raw_value):
+    """Return an int per-page size, or None for «show all»."""
+    if raw_value is None:
+        return DEFAULT_PER_PAGE
+    text = str(raw_value).strip().lower()
+    if text in ("all", "0"):
+        return None
+    if not text:
+        return DEFAULT_PER_PAGE
+    try:
+        value = int(text)
+    except (TypeError, ValueError):
+        return DEFAULT_PER_PAGE
+    if value in PER_PAGE_OPTIONS:
+        return value
+    return DEFAULT_PER_PAGE
+
+
+def parse_page_number(raw_value):
+    try:
+        return max(1, int(raw_value))
+    except (TypeError, ValueError):
+        return 1
+
+
+def _resolve_per_page_param(per_page):
+    """Normalise explicit per_page argument for URL building."""
+    if per_page == PER_PAGE_ALL:
+        return None
+    if isinstance(per_page, int):
+        return per_page
+    return parse_per_page(per_page)
+
+
+def catalog_query_string(
+    request,
+    *,
+    page=None,
+    per_page=...,
+    sort=...,
+    animal_slugs=...,
+    brand_codes=...,
+    category_slugs=...,
+    availability_keys=...,
+    price_min=...,
+    price_max=...,
+    price_active=...,
+):
+    """Build query string preserving filters, sort, and pagination."""
+    items = _catalog_query_items(
+        request,
+        page=page,
+        per_page=per_page,
+        sort=sort,
+        animal_slugs=animal_slugs,
+        brand_codes=brand_codes,
+        category_slugs=category_slugs,
+        availability_keys=availability_keys,
+        price_min=price_min,
+        price_max=price_max,
+        price_active=price_active,
+    )
+    encoded = urlencode(items)
+    return f"?{encoded}" if encoded else ""
+
+
+def catalog_page_url(
+    request,
+    *,
+    page=None,
+    per_page=...,
+    sort=...,
+    animal_slugs=...,
+    brand_codes=...,
+    category_slugs=...,
+    availability_keys=...,
+    price_min=...,
+    price_max=...,
+    price_active=...,
+):
+    """Absolute path + query string for catalog links."""
+    return request.path + catalog_query_string(
+        request,
+        page=page,
+        per_page=per_page,
+        sort=sort,
+        animal_slugs=animal_slugs,
+        brand_codes=brand_codes,
+        category_slugs=category_slugs,
+        availability_keys=availability_keys,
+        price_min=price_min,
+        price_max=price_max,
+        price_active=price_active,
+    )
+
+
+def build_catalog_filter_context(
+    request,
+    scope_queryset,
+    *,
+    animal_slugs,
+    brand_codes,
+    category_slugs,
+    availability_keys,
+    price_filter,
+):
+    """Sidebar checkbox groups; animal filter always first."""
+    company_qs = (
+        Company.objects.filter(products__in=scope_queryset)
+        .distinct()
+        .order_by("name")
+    )
+    category_qs = (
+        Category.objects.filter(products__in=scope_queryset)
+        .distinct()
+        .order_by("name")
+    )
+
+    selected_animals = set(animal_slugs)
+    selected_brands = set(brand_codes)
+    selected_categories = set(category_slugs)
+    selected_availability = set(availability_keys)
+
+    animal_options = [
+        {
+            "value": slug,
+            "label": label,
+            "checked": slug in selected_animals,
+        }
+        for slug, label in ANIMAL_FILTER_OPTIONS
+    ]
+    brand_options = [
+        {
+            "value": company.code,
+            "label": company.name,
+            "checked": company.code in selected_brands,
+        }
+        for company in company_qs
+    ]
+    category_options = [
+        {
+            "value": category.slug,
+            "label": CATEGORY_LABELS.get(category.name, category.name),
+            "checked": category.slug in selected_categories,
+        }
+        for category in category_qs
+    ]
+    availability_options = [
+        {
+            "value": key,
+            "label": label,
+            "checked": key in selected_availability,
+        }
+        for key, label in AVAILABILITY_FILTER_OPTIONS
+    ]
+
+    has_active_filters = bool(
+        selected_animals
+        or selected_brands
+        or selected_categories
+        or selected_availability
+        or price_filter.get("active")
+    )
+
+    return {
+        "filter_sections": [
+            {"id": "animal", "title": "Σκύλος / Γάτα", "param": "animal", "options": animal_options},
+            {"id": "brand", "title": "Μάρκα / Εταιρεία", "param": "brand", "options": brand_options},
+            {"id": "category", "title": "Κατηγορία", "param": "category", "options": category_options},
+            {
+                "id": "availability",
+                "title": "Διαθεσιμότητα",
+                "param": "availability",
+                "options": availability_options,
+            },
+        ],
+        "price_filter": price_filter,
+        "has_active_filters": has_active_filters,
+        "selected_animal_slugs": animal_slugs,
+        "selected_brand_codes": brand_codes,
+        "selected_category_slugs": category_slugs,
+        "selected_availability_keys": availability_keys,
+    }
+
+
+def build_animal_category_tiles(animal_slug):
+    """Large category squares for dog/cat landing pages."""
+    from django.urls import reverse
+
+    tiles = []
+    for slug in ANIMAL_CATEGORY_SLUGS.get(animal_slug, []):
+        query = urlencode([("animal", animal_slug), ("category", slug)])
+        tiles.append(
+            {
+                "slug": slug,
+                "label": CATEGORY_SLUG_LABELS.get(slug, slug),
+                "url": f"{reverse('products:browse')}?{query}",
+            }
+        )
+    return tiles
+
+
+def get_browse_page_title(animal_slug, category_slug):
+    animal = ANIMAL_SLUG_LABELS.get(animal_slug, animal_slug)
+    category = CATEGORY_SLUG_LABELS.get(category_slug, category_slug)
+    return f"{animal} — {category}"
+
+
+def build_browse_company_sections(products, *, cart_quantities=None, wishlisted_ids=None):
+    """Group browse products by company for hero-brands-style rows."""
+    cart_quantities = cart_quantities or {}
+    wishlisted_ids = wishlisted_ids or set()
+
+    company_order = []
+    sections_by_id = {}
+
+    for product in products:
+        company = product.company
+        if company.id not in sections_by_id:
+            sections_by_id[company.id] = {
+                "company": {
+                    "name": company.name,
+                    "code": company.code,
+                    "logo_url": company.logo.url if company.logo else None,
+                },
+                "products": [],
+            }
+            company_order.append(company.id)
+
+        variant = get_default_variant(product)
+        card = build_catalog_card(
+            product,
+            cart_qty=cart_quantities.get(variant.id, 0) if variant else 0,
+            is_wishlisted=product.id in wishlisted_ids,
+        )
+        if card:
+            sections_by_id[company.id]["products"].append(card)
+
+    return [sections_by_id[company_id] for company_id in company_order if sections_by_id[company_id]["products"]]
+
+
+def build_catalog_sort_context(request, current_sort):
+    """Dropdown options for the toolbar sort control."""
+    return {
+        "sort": current_sort,
+        "sort_choices": [
+            {
+                "value": key,
+                "label": label,
+                "url": catalog_page_url(request, page=1, sort=key),
+                "active": key == current_sort,
+            }
+            for key, label in SORT_OPTIONS
+        ],
+    }
+
+
+def paginate_catalog_queryset(queryset, per_page, page_number):
+    """Slice queryset for the requested page; None per_page returns everything."""
+    if per_page is None:
+        return {
+            "page_products": queryset,
+            "page_obj": None,
+            "is_paginated": False,
+        }
+
+    paginator = Paginator(queryset, per_page)
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages or 1)
+
+    return {
+        "page_products": page_obj.object_list,
+        "page_obj": page_obj,
+        "is_paginated": paginator.num_pages > 1,
+    }
+
+
+def build_catalog_pagination_context(request, page_obj, *, per_page):
+    """Template-ready pagination URLs (no custom templatetags)."""
+    per_page_display = PER_PAGE_ALL if per_page is None else str(per_page)
+    per_page_choices = []
+    for size in PER_PAGE_OPTIONS:
+        per_page_choices.append(
+            {
+                "label": str(size),
+                "url": catalog_page_url(request, page=1, per_page=size),
+                "active": per_page == size,
+            }
+        )
+    per_page_choices.append(
+        {
+            "label": "Όλα",
+            "url": catalog_page_url(request, page=1, per_page=PER_PAGE_ALL),
+            "active": per_page is None,
+        }
+    )
+
+    if page_obj is None:
+        return {
+            "per_page_display": per_page_display,
+            "per_page_choices": per_page_choices,
+            "is_paginated": False,
+            "page_obj": None,
+            "page_links": [],
+            "prev_url": None,
+            "next_url": None,
+        }
+
+    page_links = [
+        {
+            "num": num,
+            "url": catalog_page_url(request, page=num, per_page=per_page),
+            "active": num == page_obj.number,
+        }
+        for num in page_obj.paginator.page_range
+    ]
+
+    return {
+        "per_page_display": per_page_display,
+        "per_page_choices": per_page_choices,
+        "is_paginated": page_obj.paginator.num_pages > 1,
+        "page_obj": page_obj,
+        "page_links": page_links,
+        "prev_url": (
+            catalog_page_url(request, page=page_obj.previous_page_number(), per_page=per_page)
+            if page_obj.has_previous()
+            else None
+        ),
+        "next_url": (
+            catalog_page_url(request, page=page_obj.next_page_number(), per_page=per_page)
+            if page_obj.has_next()
+            else None
+        ),
+    }
