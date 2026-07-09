@@ -46,8 +46,9 @@
     {# are impractical to express as plain Tailwind utility classes. #}
     <link rel="stylesheet" href="{% static 'css/kokkoris-backgrounds.css' %}">
     <link rel="stylesheet" href="{% static 'css/site-scale.css' %}">
+    <link rel="stylesheet" href="{% static 'css/nav-layout.css' %}">
 </head>
-<body class="bg-slate-50">
+<body class="bg-white overflow-x-hidden">
     <div class="site-scale-root min-h-screen flex flex-col">
     {# ── Part 1: Header (nav) — ίδιο σε κάθε σελίδα, μην αλλάζει ── #}
     {% include "partials/nav.html" %}

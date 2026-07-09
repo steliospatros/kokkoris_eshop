@@ -1,22 +1,33 @@
 /*
- * Permanent 90% layout scale — matches the balance seen at browser zoom 90%.
- * Applied on .site-scale-root so header, main, footer and overlays scale together.
+ * Permanent 90% layout scale — header, main, footer, modals all scale together.
+ * CSS zoom scales px, rem, and images uniformly (unlike root font-size alone).
+ * Do not use background-attachment: fixed on html/body — it stays viewport-locked
+ * while browser zoom changes text, which looks like an infinite static backdrop.
  */
+html,
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #ffffff;
+    overflow-x: hidden;
+}
+
 .site-scale-root {
     zoom: 0.9;
     width: 100%;
     min-height: 100vh;
 }
 
+/* Firefox: zoom is unsupported — scale the whole page block instead. */
 @supports not (zoom: 1) {
-    /* Firefox: approximate the same visual scale. */
     .site-scale-root {
+        zoom: unset;
         transform: scale(0.9);
         transform-origin: top center;
-        width: 111.1111%;
-        min-height: 111.1111vh;
+        width: 111.111111%;
         margin-left: auto;
         margin-right: auto;
+        min-height: calc(100vh / 0.9);
     }
 }
 

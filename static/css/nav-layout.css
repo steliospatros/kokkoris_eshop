@@ -1,0 +1,87 @@
+/*
+ * Header toolbar — fixed px gaps via CSS variables so search, filters, and
+ * icons keep spacing when browser zoom or search width changes.
+ */
+:root {
+    --nav-gap-search-filters: 48px;
+    --nav-gap-filters-icons: 56px;
+    --nav-gap-filter-links: 40px;
+    --nav-gap-icons: 20px;
+    --nav-gap-search-icon: 8px;
+    --nav-search-width: 165px;       /* 110px + 50% */
+    --nav-search-width-sm: 195px;    /* 130px + 50% */
+    --nav-search-width-lg: 330px;    /* 220px + 50% */
+    --nav-logo-search-offset: 160px;
+}
+
+.nav-toolbar {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+}
+
+.nav-toolbar__logo {
+    flex-shrink: 0;
+}
+
+.nav-toolbar__search {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    margin-left: 24px;
+    gap: var(--nav-gap-search-icon);
+}
+
+.nav-toolbar__search-input {
+    width: var(--nav-search-width);
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+.nav-toolbar__filters {
+    display: none;
+}
+
+.nav-toolbar__icons {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    margin-left: auto;
+    gap: var(--nav-gap-icons);
+}
+
+@media (min-width: 640px) {
+    .nav-toolbar__search-input {
+        width: var(--nav-search-width-sm);
+    }
+}
+
+@media (min-width: 1024px) {
+    .nav-toolbar__search {
+        margin-left: var(--nav-logo-search-offset);
+    }
+
+    .nav-toolbar__search-input {
+        width: var(--nav-search-width-lg);
+    }
+
+    .nav-toolbar__filters {
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+        flex-wrap: nowrap;
+        margin-left: var(--nav-gap-search-filters);
+        gap: var(--nav-gap-filter-links);
+        white-space: nowrap;
+        font-family: Poppins, sans-serif;
+        font-weight: 400;
+        font-size: 17px;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+        text-shadow: 0 4px 8px rgba(0, 0, 0, 0.35);
+    }
+
+    .nav-toolbar__icons {
+        margin-left: var(--nav-gap-filters-icons);
+    }
+}

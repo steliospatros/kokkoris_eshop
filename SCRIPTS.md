@@ -317,12 +317,16 @@ print('Total with logo:', Company.objects.exclude(logo='').count())
 | URL | Περιγραφή |
 |---|---|
 | `/accounts/signup/` | Εγγραφή νέου πελάτη (email + password) |
-| `/accounts/login/` | Σύνδεση (email + password, ή Google/Facebook — χρειάζονται credentials, δες παρακάτω) |
+| `/accounts/login/` | Σύνδεση (email + password, ή Google από auth modal — δες παρακάτω) |
 | `/accounts/logout/` | Αποσύνδεση |
 | `/accounts/password/reset/` | Ανάκτηση κωδικού μέσω email |
 | `/accounts/profile/` | Στοιχεία παράδοσης πελάτη (τηλέφωνο, πόλη, διεύθυνση, Τ.Κ., οδηγίες) |
 
-### Ενεργοποίηση πραγματικής σύνδεσης Google / Facebook
+**Auth modal (UI):** το person icon στο nav ανοίγει modal (`templates/partials/auth-modal.html`) —
+δεν χρειάζεται να πας στο `/accounts/login/` για καθημερινή χρήση. Οι ίδιες ροές allauth
+παραμένουν διαθέσιμες ως URLs.
+
+### Ενεργοποίηση πραγματικής σύνδεσης Google
 
 Τα OAuth secrets φορτώνονται από το **`.env`** (όχι hardcoded στο `settings.py`):
 
@@ -334,12 +338,25 @@ cp .env.example .env
 ```
 
 Για Google: [Google Cloud Console](https://console.cloud.google.com) → OAuth 2.0 Client ID
-(Authorized redirect URI: `http://127.0.0.1:8000/accounts/google/login/callback/`).
+(Authorized redirect URIs — **και τα δύο**):
+
+- `http://localhost:8000/accounts/google/login/callback/`
+- `http://127.0.0.1:8000/accounts/google/login/callback/`
+
+Μετά:
+
+```bash
+python manage.py setup_oauth    # γράφει/ενημερώνει SocialApp στη βάση από .env
+python manage.py check_oauth    # εμφανίζει redirect URI + διάγνωση credentials
+```
+
+Επανεκκίνησε τον server. Δοκίμασε «Σύνδεση με Google» από το auth modal.
+
+**Σημείωση:** Αν βλέπεις `redirect_uri_mismatch`, σύγκρινε την έξοδο του `check_oauth` με τα
+URIs στο Google Console (ίδιο GCP project, Testing mode + test users αν χρειάζεται).
 
 Για Facebook: [Facebook Developers](https://developers.facebook.com) — δες README ενότητα 11.2
 (αν ενεργοποιηθεί provider αργότερα).
-
-Επανεκκίνησε τον server μετά την αλλαγή του `.env`.
 
 ### Πώς φτιάχνεις μια δοκιμαστική παραγγελία μέσα από το shell (για tests)
 
@@ -649,13 +666,15 @@ variant.stock = original_stock; variant.save(update_fields=["stock"])
 
 Δέχεται `application/json` ή form POST. Σφάλματα stock: `{ ok: false, error: "..." }` HTTP 400.
 
-### Wishlist API
+### Wishlist (σελίδα + API)
 
-| URL | Μέθοδος | Auth | Body |
+| URL | Μέθοδος | Auth | Τι κάνει |
 |---|---|---|---|
-| `/wishlist/toggle/` | POST | Login required | `product_id` |
+| `/wishlist/` | GET | Όλοι | Σελίδα αγαπημένων |
+| `/wishlist/toggle/` | POST | Όλοι | Toggle `product_id` — guest session ή DB |
+| `/wishlist/status/` | GET | Όλοι | `{ ok, product_ids, total_items }` |
 
-Απάντηση: `{ ok, wishlisted, product_id }`.
+Απάντηση toggle: `{ ok, wishlisted, total_items }`. Merge guest → user στο login (`wishlist/signals.py`).
 
 ### Δοκιμή cart status από terminal (με cookies/session)
 
@@ -823,7 +842,8 @@ for c in Product.objects.values_list('category__name', flat=True).distinct():
 Αν χρειαστεί να στήσεις το project σε άλλο μηχάνημα (ή μετά από `git clone`):
 
 ```bash
-git clone https://github.com/spatroudakis/kokkoris_eshop.git
+git clone git@github.com:spatroudakis/kokkoris_eshop.git
+# ή HTTPS αν δεν έχεις SSH: git clone https://github.com/spatroudakis/kokkoris_eshop.git
 cd kokkoris_eshop
 python3 -m venv venv
 source venv/bin/activate
@@ -832,6 +852,7 @@ cp .env.example .env          # RECAPTCHA, Google OAuth, Maps keys
 python manage.py migrate
 DJANGO_SUPERUSER_EMAIL=admin@kokkoriseshop.local DJANGO_SUPERUSER_PASSWORD=admin12345 \
   python manage.py createsuperuser --noinput
+python manage.py setup_oauth   # αν έχεις GOOGLE_OAUTH_* στο .env
 python manage.py seed_data
 python manage.py import_club4paws --file "/path/to/OLA TA KEIMENA.docx"
 python manage.py link_photos --base-dir "/path/to/folder/with/DOGS PHOTO/and/CATS PHOTO"

@@ -33,9 +33,9 @@
          class="hidden lg:block absolute left-[500px] lg:top-[43px] w-[68px] h-auto pointer-events-none select-none z-10">
     {% endif %}
 
-    <div class="max-w-[1920px] mx-auto h-16 lg:h-[116px] pl-6 pr-2 lg:pl-[129px] lg:pr-3 flex items-center font-inter relative">
+    <div class="nav-toolbar max-w-[1920px] mx-auto h-16 lg:h-[116px] pl-6 pr-2 lg:pl-[129px] lg:pr-3 font-inter relative">
         {# Company logo lockup: paw-print icon + "KOKKORIS / PET FOOD" wordmark. #}
-        <a href="{% url 'home' %}" class="flex items-center gap-3 lg:gap-6 shrink-0">
+        <a href="{% url 'home' %}" class="nav-toolbar__logo flex items-center gap-3 lg:gap-6 shrink-0">
             <img src="{% static 'images/kokkoris-logo-icon.png' %}"
                  alt="Kokkoris Pet Food"
                  class="w-10 lg:w-[82px] h-auto shrink-0">
@@ -67,7 +67,7 @@
         {# original size so the filter block below still has room to      #}
         {# breathe. See the script block below for the fetch/debounce      #}
         {# logic.                                                          #}
-        <div class="relative flex items-center gap-2 ml-6 lg:ml-[160px] shrink-0" id="nav-search">
+        <div class="nav-toolbar__search relative" id="nav-search">
             <button type="button"
                     id="nav-search-toggle"
                     aria-label="{% trans 'Αναζήτηση προϊόντων' %}"
@@ -83,14 +83,13 @@
                        id="nav-search-input"
                        autocomplete="off"
                        placeholder="{% trans 'Αναζήτηση…' %}"
-                       class="w-[110px] sm:w-[130px] lg:w-[150px] 2xl:w-[300px] rounded-full border-2 border-white/85 bg-transparent text-white placeholder-white/70 text-sm px-4 py-1.5 lg:py-2 transition-colors focus:outline-none focus:bg-white focus:text-slate-800 focus:placeholder-slate-400 focus:border-white">
+                       class="nav-toolbar__search-input rounded-full border-2 border-white/85 bg-transparent text-white placeholder-white/70 text-sm px-4 py-1.5 lg:py-2 transition-colors focus:outline-none focus:bg-white focus:text-slate-800 focus:placeholder-slate-400 focus:border-white">
                 <ul id="nav-search-results"
                     class="hidden absolute left-0 right-0 top-full mt-2 z-30 max-h-80 overflow-y-auto bg-white text-slate-800 rounded-xl shadow-xl divide-y divide-slate-100"></ul>
             </div>
         </div>
 
-        {# Animal filters — grouped toward the right with even spacing between links. #}
-        <div class="hidden lg:flex flex-1 items-center justify-end min-w-0 gap-8 xl:gap-10 2xl:gap-14 pr-4 lg:pr-8 whitespace-nowrap font-poppins font-normal text-[17px] uppercase tracking-wide [text-shadow:0_4px_8px_rgba(0,0,0,0.35)]">
+        <div class="nav-toolbar__filters">
             <a href="{% url 'products:dogs' %}" class="hover:text-kokkoris-dot-teal transition-colors">
                 {% trans "Σκύλος" %}
             </a>
@@ -105,7 +104,7 @@
             </a>
         </div>
 
-        <div class="flex items-center gap-4 lg:gap-5 shrink-0">
+        <div class="nav-toolbar__icons">
             {# Account icon — opens auth modal when signed out; profile when signed in. #}
             {% if user.is_authenticated %}
             <a href="{% url 'accounts:profile' %}"

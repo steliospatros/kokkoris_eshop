@@ -55,7 +55,8 @@ Custom E-Commerce πλατφόρμα για είδη κατοικίδιων (τ�
 | **Part 5** | UI/UX (Tailwind CSS, Django templates) | 🔄 Σε εξέλιξη — homepage mockup + catalog grid (βλ. ενότητα 16) · pagination/filters catalog pending |
 | **Part 6** | QA & Deployment (PostgreSQL, Render/DigitalOcean) | ⏳ Δεν έχει ξεκινήσει |
 | *(επιπλέον)* | Newsletter mailing list (`newsletter` app) | ✅ Ολοκληρωμένο (βλ. ενότητα 17) |
-| *(επιπλέον)* | Wishlist / αγαπημένα (`wishlist` app) | ✅ Ολοκληρωμένο (βλ. ενότητα 18) |
+| *(επιπλέον)* | Wishlist / αγαπημένα (`wishlist` app) | ✅ Ολοκληρωμένο — guest session + σελίδα λίστας + nav icon (βλ. ενότητα 18) |
+| *(επιπλέον)* | Auth modal + Google OAuth + password rules | ✅ Ολοκληρωμένο (βλ. ενότητα 11.2) |
 
 ---
 
@@ -81,10 +82,18 @@ kokkoris_eshop/
 │                                  # fix_product_names, set_initial_stock
 ├── accounts/                      # Django "app" — Custom User + προφίλ πελάτη (Part 2)
 │   ├── models.py                  # CustomUser (email login) + CustomUserManager
-│   ├── forms.py                   # ProfileForm (επεξεργασία στοιχείων παράδοσης)
-│   ├── views.py                   # profile_view
+│   ├── forms.py                   # ProfileForm, SignupForm (password hints)
+│   ├── adapters.py                # django-allauth account/social adapters
+│   ├── google_oauth.py            # KokkorisGoogleProvider (redirect URI από .env)
+│   ├── password_help.py           # 2 κανόνες κωδικού (μήκος + ψηφίο)
+│   ├── password_validators.py     # DigitValidator για AUTH_PASSWORD_VALIDATORS
+│   ├── context_processors.py      # auth_modal context (αν χρειαστεί)
+│   ├── views.py                   # profile_view + JSON login/signup/password reset API
 │   ├── admin.py                   # CustomUserAdmin
-│   └── urls.py                    # /accounts/profile/
+│   ├── urls.py                    # /accounts/profile/ + auth JSON endpoints
+│   └── management/commands/
+│       ├── setup_oauth.py         # Συγχρονισμός Google SocialApp από .env
+│       └── check_oauth.py         # Διάγνωση redirect URI / credentials
 ├── orders/                        # Django "app" — Παραγγελίες (Part 2, "ζωντάνεψε" στο Part 4)
 │   ├── models.py                  # Order (πλήρες πλέον, βλ. ενότητα 15) + OrderItem
 │   ├── views.py                   # cancel_order_view (ακύρωση παραγγελίας από τον πελάτη)
@@ -99,10 +108,13 @@ kokkoris_eshop/
 │   ├── signals.py                 # Merge guest καλαθιού → user καλάθι κατά το login
 │   ├── admin.py                   # CartAdmin (με inline CartItems)
 │   └── apps.py                    # Καταχωρεί το signals.py στο ready()
-├── wishlist/                      # Django "app" — αγαπημένα προϊόντα ανά χρήστη
+├── wishlist/                      # Django "app" — αγαπημένα (συνδεδεμένοι + guests)
 │   ├── models.py                  # WishlistItem (user + product, unique)
-│   ├── views.py                   # POST /wishlist/toggle/ (JSON)
-│   └── urls.py
+│   ├── wishlist.py                # DBWishlist + SessionWishlist + get_wishlist()
+│   ├── signals.py                 # Merge guest wishlist → user στο login
+│   ├── context_processors.py      # wishlist_total_items → badge στο nav
+│   ├── views.py                   # list page, toggle, status API (JSON)
+│   └── urls.py                    # /wishlist/, /wishlist/toggle/, /wishlist/status/
 ├── checkout/                      # Django "app" — Checkout flow (Part 4, βλ. ενότητα 15)
 │   ├── delivery.py                # is_within_athens_urban_area() + calculate_courier_fee()
 │   ├── forms.py                   # CheckoutAddressForm, PaymentMethodForm
@@ -122,19 +134,28 @@ kokkoris_eshop/
 │   ├── checkout/                  # address, delivery, payment, confirmation (Part 4)
 │   ├── products/                  # catalog.html, brands.html, partials (card, filters, toolbar)
 │   ├── partials/
-│   │   ├── nav.html               # Teal nav, logo, butterflies, search, filters, cart badge
+│   │   ├── nav.html               # Teal nav — search, filters, cart/wishlist/person icons
+│   │   ├── auth-modal.html        # Modal σύνδεσης/εγγραφής + Google OAuth
+│   │   ├── password_requirements.html  # Hints κάτω από πεδίο κωδικού
 │   │   ├── hero.html              # Full-bleed hero collage (PDF page 1)
 │   │   ├── hero-about.html        # "about us" κείμενο + brand carousel
 │   │   ├── hero-brands.html       # Scrolling brand carousel (logos + pill buttons)
 │   │   ├── hero-animals.html      # 4-pet photo strip πριν το footer
-│   │   ├── footer.html            # Logo, legal links, newsletter signup form
+│   │   ├── footer.html            # Logo, legal links, newsletter, phone icon
 │   │   └── cookie-consent.html
+│   ├── wishlist/list.html         # Σελίδα αγαπημένων (guest + logged-in)
+│   ├── socialaccount/
+│   │   └── authentication_error.html  # Σελίδα σφάλματος Google OAuth
 │   └── allauth/layouts/base.html  # Allauth → project base (ίδιο header/footer)
 ├── static/
 │   ├── css/kokkoris-backgrounds.css
+│   ├── css/site-scale.css         # Μόνιμο 90% scale (zoom) ολόκληρου site
+│   ├── css/nav-layout.css         # Σταθερά px gaps στο header (zoom-stable)
 │   ├── js/catalog.js              # Αγορά, stepper +/−, wishlist toggle στο catalog grid
+│   ├── js/auth-modal.js           # Modal login/signup, Google redirect, password live check
+│   ├── js/password-rules.js       # Live validation 2 κανόνων κωδικού
 │   ├── js/newsletter-recaptcha.js
-│   └── images/                    # Mockup assets (hero, butterflies, cart icon, animals strip)
+│   └── images/                    # Hero, butterflies, cart/wishlist/phone icons (λευκά)
 ├── media/                         # Uploaded εικόνες (προϊόντα, company logos, κλπ.)
 ├── docs/                          # Screenshots / snapshots τεκμηρίωσης
 ├── backups/                       # Αντίγραφα ασφαλείας βάσης/δεδομένων πριν από ρίσκες αλλαγές
@@ -412,8 +433,10 @@ matching (ονόματος ή SKU) και 2 μέσω έξυπνης αντιστ
 γιατί οι απαιτήσεις (login με email, όχι username· κοινωνική σύνδεση) δεν καλύπτονταν από το
 default. Βασικά σημεία:
 
-- **Login = email + password** (χωρίς πεδίο `username` καθόλου). Ελάχιστο μήκος κωδικού: **8
-  χαρακτήρες** (`AUTH_PASSWORD_VALIDATORS` στο `core/settings.py`).
+- **Login = email + password** (χωρίς πεδίο `username` καθόλου). Κανόνες κωδικού: **μόνο 2**
+  — ελάχιστο **8 χαρακτήρες** + **τουλάχιστον ένα ψηφίο** (`accounts/password_validators.py`,
+  `static/js/password-rules.js`). Hints κάτω από το πεδίο· live error πάνω μόνο για τον
+  παραβιασμένο κανόνα.
 - **Στοιχεία παράδοσης** (`phone_number`, `city`, `address`, `postal_code`, `delivery_notes`):
   υπάρχουν σαν πεδία στο model αλλά ξεκινούν **κενά** για κάθε νέο χρήστη — δεν ζητούνται στην
   εγγραφή, γεμίζουν αργότερα από τον ίδιο τον πελάτη (σελίδα `/accounts/profile/`), συνήθως γύρω
@@ -423,29 +446,38 @@ default. Βασικά σημεία:
   backup πρώτα (φάκελος `backups/`) και μηδενική απώλεια πραγματικών δεδομένων, αφού απλά
   ξανατρέξαμε τα ήδη έτοιμα `seed_data` / `import_club4paws` / `link_photos`.
 
-### 11.2 Κοινωνική σύνδεση (Google / Facebook) μέσω `django-allauth`
+### 11.2 Auth modal, κοινωνική σύνδεση (Google) & password rules
 
-Χρησιμοποιήσαμε τη βιβλιοθήκη **`django-allauth`** αντί να «χτίσουμε» το OAuth flow με το χέρι —
-η χειροκίνητη υλοποίηση OAuth2 για δύο providers είναι πολύπλοκη και ριψοκίνδυνη από άποψη
-ασφάλειας, ενώ το `allauth` το έχει ήδη λύσει σωστά, δοκιμασμένο σε χιλιάδες production sites.
+**Auth modal** (`templates/partials/auth-modal.html`, `static/js/auth-modal.js`): αντί για ξεχωριστές
+σελίδες login/signup, ο επισκέπτης ανοίγει modal από το person icon στο nav (`data-auth-trigger`).
+Περιλαμβάνει σύνδεση, εγγραφή, «ξέχασα κωδικό», και κουμπί **«Σύνδεση με Google»**. Τα JSON
+endpoints (`accounts/views.py`) επιστρέφουν σφάλματα για AJAX χωρίς full page reload.
 
-Τα κουμπιά "Σύνδεση με Google" / "Σύνδεση με Facebook" στο auth modal χρησιμοποιούν
-το έτοιμο flow του `django-allauth`. Η σύνδεση Google ενεργοποιείται όταν
-συμπληρώσεις τα credentials στο `.env`:
+**Google OAuth** — χρησιμοποιούμε **`django-allauth`** + custom provider (`accounts/google_oauth.py`,
+`KokkorisGoogleProvider`) ώστε το redirect URI να διαβάζεται από `.env` (χρήσιμο όταν δοκιμάζεις
+και `localhost` και `127.0.0.1`):
 
 > **Πώς να ενεργοποιήσεις τη σύνδεση Google (δωρεάν):**
 >
-> 1. Μπες στο [Google Cloud Console](https://console.cloud.google.com) → δημιούργησε
->    project → "APIs & Services" → "Credentials" → "Create OAuth client ID" (τύπος: Web
->    application) → πρόσθεσε redirect URI `http://localhost:8000/accounts/google/login/callback/`
->    (και το πραγματικό domain αργότερα) → αντίγραψε το **Client ID** και το **Client Secret**.
-> 2. Αντίγραψε `.env.example` → `.env` και βάλε τις τιμές στα `GOOGLE_OAUTH_CLIENT_ID`
->    και `GOOGLE_OAUTH_CLIENT_SECRET`.
-> 3. Τρέξε `python manage.py setup_oauth` για συγχρονισμό του SocialApp στη βάση.
-> 4. Επανεκκίνησε τον dev server και δοκίμασε "Σύνδεση με Google" από το auth modal.
+> 1. [Google Cloud Console](https://console.cloud.google.com) → project **«No organization»**
+>    (όχι Maps-only project) → Credentials → OAuth client ID (Web) → πρόσθεσε **και τα δύο**
+>    redirect URIs:
+>    - `http://localhost:8000/accounts/google/login/callback/`
+>    - `http://127.0.0.1:8000/accounts/google/login/callback/`
+> 2. Αντίγραψε `.env.example` → `.env` → `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET`.
+> 3. `python manage.py setup_oauth` — συγχρονίζει το SocialApp στη βάση.
+> 4. `python manage.py check_oauth` — εμφανίζει το redirect URI που στέλνει το site (για έλεγχο
+>    ότι ταιριάζει με το Console).
+> 5. Στο OAuth consent screen: πρόσθεσε test users αν το app είναι σε Testing mode.
+> 6. Hard refresh → δοκίμασε «Σύνδεση με Google» από το auth modal.
 
-**Facebook:** ακόμα placeholder — απαιτεί App ID/Secret στο `SOCIALACCOUNT_PROVIDERS`
-(βλ. [developers.facebook.com](https://developers.facebook.com)).
+**Συχνά σφάλματα OAuth:** `redirect_uri_mismatch` = λάθος URI στο Console ή λάθος GCP project ·
+`access_denied` / test users = email δεν είναι test user · credentials σε λάθος project.
+
+**Facebook:** ακόμα placeholder — χρειάζεται App ID/Secret στο `SOCIALACCOUNT_PROVIDERS`.
+
+**Password reset:** allauth flow (`/accounts/password/reset/`) + custom templates για reset-from-key.
+Σε development τα email τυπώνονται στο console (`EMAIL_BACKEND = console`).
 
 ### 11.3 Ανάκτηση κωδικού μέσω email
 
@@ -658,7 +690,7 @@ session key κατά το login (`cycle_key()`, προστασία από sessio
   parsing όπως το CLUB4PAWS (το `link_photos` επαναχρησιμοποιείται αυτούσιο).
 - **Part 5 — υπόλοιπο UI:** brand detail pages (slug URL), φίλτρα sidebar (placeholders),
   pagination catalog (αφαιρέθηκε προσωρινά — rebuild όταν ζητηθεί), compiled Tailwind.
-- **Wishlist — μελλοντικά:** σελίδα «Αγαπημένα» (προς το παρόν μόνο toggle στο grid).
+- **Wishlist — μελλοντικά:** επιπλέον UX (sort, share) αν ζητηθεί.
 - **Newsletter — μελλοντικά:** πραγματική αποστολή bulk emails (SMTP/SendGrid/Mailchimp),
   unsubscribe link (GDPR).
 - Αν χρειαστεί αργότερα πραγματικό συσχετισμό bundle → μεμονωμένων γεύσεων για αυτόματο
@@ -959,10 +991,19 @@ requests μέσω `requests`, όχι Django test `Client`, ώστε να δοκ�
 - Teal background `#42746C` (`kokkoris-teal-dark`), ύψος 116px στο desktop.
 - Logo lockup (paw icon + Poppins "KOKKORIS / PET FOOD").
 - 2 decorative butterflies: (1) γωνία πάνω-αριστερά παντού· (2) swallowtail — αρχική `top-[68px]`, εσωτερικές `lg:top-[43px]`.
-- Smart search bar (placeholder «Αναζήτηση…»).
-- 4 filter links: Σκύλος, Γάτα, Όλα τα προϊόντα, Brands — ίσο spacing (`justify-between`).
-- Person icon (λογαριασμός) + cart icon (`static/images/cart-icon-white.png`) με badge `#nav-cart-badge`.
-- `shrink-0` σε search και icon cluster ώστε να μην εξαφανίζεται το cart σε laptop widths.
+- **Smart search bar** — πλάτος 330px desktop (+50%), σταθερά gaps μέσω `static/css/nav-layout.css`.
+- 4 filter links: Σκύλος, Γάτα, Όλα τα προϊόντα, Brands — fixed px spacing (σταθερό σε browser zoom).
+- **Person icon** — auth modal (guest) ή `/accounts/profile/` (logged-in).
+- **Cart icon** (`cart-icon-white.png`) + badge `#nav-cart-badge` → `/checkout/delivery/`.
+- **Wishlist icon** (`wishlist-icon-white.png`) + badge `#nav-wishlist-badge` → `/wishlist/`.
+- Layout: `nav-toolbar` flex + CSS variables (`--nav-gap-search-filters`, `--nav-gap-filters-icons`, κλπ.).
+
+### 16.1b Site scale 90% (`static/css/site-scale.css`) — ✅
+
+Ολόκληρο το site (header, main, footer, modals) τυλίγεται στο `.site-scale-root` με **`zoom: 0.9`**
+(ισοδύναμο ~90% browser zoom). Σκοπός: mockup balance χωρίς να αλλάζει ο browser zoom του χρήστη.
+Firefox fallback: `transform: scale(0.9)`. **Όχι** `background-attachment: fixed` στο body — προκαλεί
+«ακίνητο» background ενώ το κείμενο αλλάζει με zoom.
 
 ### 16.2 Hero (`templates/partials/hero.html`) — ✅
 
@@ -1002,7 +1043,7 @@ Layout petcity-style: **αριστερά** sidebar φίλτρων (placeholders)
 - **Τιμή:** `unit_price` / `unit_label` (π.χ. €/kg) από το model.
 - **Stock UI:** ετικέτες και κουμπιά ανά `get_stock_display()` (βλ. ενότητα 11.8).
 - **Cart API:** `POST /cart/add/`, `POST /cart/update/`, `GET /cart/status/` — stepper χωρίς reload.
-- **Wishlist:** heart icon → `POST /wishlist/toggle/` (απαιτεί login).
+- **Wishlist:** heart icon → `POST /wishlist/toggle/` (guests + logged-in) · σελίδα `/wishlist/`.
 - **Brands:** `/products/brands/` → `/products/all/?brand=CLUB4PAWS` κλπ.
 - **Commands:** `fix_product_names`, `set_initial_stock` — δες [`SCRIPTS.md`](SCRIPTS.md).
 
@@ -1013,7 +1054,6 @@ Layout petcity-style: **αριστερά** sidebar φίλτρων (placeholders)
 - Brand detail pages (ξεχωριστό slug URL ανά brand).
 - Compiled Tailwind αντί CDN.
 - Carnis logo (δεν υπάρχει ακόμα στο φάκελο LOGOS).
-- Σελίδα λίστας wishlist.
 
 ### 16.8 Νέα URLs / αρχεία homepage
 
@@ -1113,10 +1153,17 @@ Footer form → reCAPTCHA v3 token → POST /newsletter/subscribe/ → validatio
 
 ## 18. Wishlist — Αγαπημένα (`wishlist` app)
 
-Ο συνδεδεμένος χρήστης μπορεί να προσθέτει/αφαιρεί προϊόντα από wishlist μέσα από το catalog grid
-(heart icon στην κάρτα). Δεν υπάρχει ακόμα ξεχωριστή σελίδα «Αγαπημένα».
+Ο επισκέπτης (guest) **και** ο συνδεδεμένος χρήστης μπορούν να προσθέτουν/αφαιρούν προϊόντα από
+wishlist. Υπάρχει πλήρης σελίδα λίστας και εικονίδιο στο nav με badge.
 
-### 18.1 Model `WishlistItem`
+### 18.1 Αρχιτεκτονική (ίδια λογική με cart)
+
+- **Συνδεδεμένος χρήστης** → `WishlistItem` rows στη βάση (`DBWishlist`).
+- **Guest** → λίστα product IDs στο Django session (`SessionWishlist`, key `wishlist`).
+- **Κοινό interface** μέσω `get_wishlist(request)` στο `wishlist/wishlist.py`.
+- **Merge στο login** (`wishlist/signals.py` + `user_logged_in`): τα guest IDs μεταφέρονται στη βάση.
+
+### 18.2 Model `WishlistItem`
 
 | Πεδίο | Τι κάνει |
 |---|---|
@@ -1126,32 +1173,40 @@ Footer form → reCAPTCHA v3 token → POST /newsletter/subscribe/ → validatio
 
 `UniqueConstraint(user, product)` — ένα προϊόν μία φορά ανά χρήστη.
 
-### 18.2 API
+### 18.3 URLs & API
 
 | URL | Μέθοδος | Auth | Τι κάνει |
 |---|---|---|---|
-| `/wishlist/toggle/` | POST | Login required | Toggle προϊόν (`product_id`) · JSON `{ ok, wishlisted, product_id }` |
+| `/wishlist/` | GET | Όλοι | Σελίδα αγαπημένων (`templates/wishlist/list.html`) |
+| `/wishlist/toggle/` | POST | Όλοι | Toggle προϊόν (`product_id`) · JSON `{ ok, wishlisted, total_items }` |
+| `/wishlist/status/` | GET | Όλοι | IDs + count για sync καρτών catalog |
 
-**Αρχεία:** `wishlist/models.py`, `wishlist/views.py`, `wishlist/urls.py`, `static/js/catalog.js`.
+**Nav badge:** `wishlist/context_processors.py` (server) + `static/js/catalog.js` (client).
 
-### 18.3 Admin
+**Αρχεία:** `wishlist/wishlist.py`, `wishlist/views.py`, `wishlist/signals.py`, `static/js/catalog.js`.
 
-`/admin/wishlist/wishlistitem/` — προβολή/διαγραφή εγγραφών.
+### 18.4 Admin
+
+`/admin/wishlist/wishlistitem/` — προβολή/διαγραφή εγγραφών (μόνο logged-in users στη βάση).
 
 ---
 
-## 19. Git & Secrets
+## 19. Git, GitHub & Secrets
 
 ### 19.1 Remote repository
 
 Το project είναι version-controlled με Git. Remote (ιδιοκτησία στο δικό σου GitHub account):
 
 ```text
-https://github.com/spatroudakis/kokkoris_eshop.git
+git@github.com:spatroudakis/kokkoris_eshop.git
 ```
 
+(SSH — βλ. 19.3. Παλιό HTTPS: `https://github.com/spatroudakis/kokkoris_eshop.git`.)
+
+Κύριο branch ανάπτυξης: **`feature/animal-category-browse`**.
+
 Μετά από `git clone`, ακολούθησε τη ροή setup στο [`SCRIPTS.md`](SCRIPTS.md) ενότητα **10**
-(`migrate`, `seed_data`, imports, `set_initial_stock`, `.env`).
+(`migrate`, `seed_data`, imports, `set_initial_stock`, `.env`, `setup_oauth`).
 
 > **Δεν** commit-άρονται: `db.sqlite3`, `media/`, `venv/`, `.env` — μόνο `.env.example` ως πρότυπο.
 
@@ -1161,8 +1216,23 @@ https://github.com/spatroudakis/kokkoris_eshop.git
 
 | Μεταβλητή | Χρήση |
 |---|---|
-| `GOOGLE_OAUTH_CLIENT_ID` / `SECRET` | Σύνδεση Google (django-allauth) — μετά `python manage.py setup_oauth` |
+| `GOOGLE_OAUTH_CLIENT_ID` / `SECRET` | Σύνδεση Google — μετά `python manage.py setup_oauth` |
 | `GOOGLE_MAPS_API_KEY` | Χάρτης checkout (βήμα διεύθυνσης) |
 | `RECAPTCHA_SITE_KEY` / `SECRET` | Newsletter footer (reCAPTCHA v3) |
 
 Φορτώνονται αυτόματα από `python-dotenv` στο `core/settings.py`.
+
+### 19.3 Μόνιμο GitHub login (SSH) — WSL
+
+Για push/pull χωρίς username/password κάθε φορά:
+
+1. **SSH key** (μία φορά): `ssh-keygen -t ed25519 -C "your@email.com" -f ~/.ssh/id_ed25519`
+2. **GitHub:** Settings → SSH and GPG keys → New SSH key → επικόλλησε το περιεχόμενο του
+   `~/.ssh/id_ed25519.pub`
+3. **Remote:** `git remote set-url origin git@github.com:spatroudakis/kokkoris_eshop.git`
+4. **Έλεγχος:** `ssh -T git@github.com` → `Hi spatroudakis!`
+
+Το `~/.ssh/config` στο WSL μπορεί να ορίζει `Host github.com` + `IdentityFile ~/.ssh/id_ed25519`.
+
+**Τι κερδίζεις:** push/pull/commit history sync χωρίς token κάθε φορά · το repo μένει στο **δικό
+σου** GitHub account (ιδιοκτησία δεδομένων, βλ. ενότητα 0).
