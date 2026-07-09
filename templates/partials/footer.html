@@ -3,7 +3,7 @@
 {# All spacing/font sizes below were measured directly off the PDF mockup    #}
 {# (page 1) at native resolution and converted from PDF points to CSS px    #}
 {# 1:1 (the mockup was authored at a 1920px design width).                  #}
-<footer class="bg-black text-white">
+<footer class="site-chrome site-chrome--footer bg-black text-white">
     <div class="max-w-[1920px] mx-auto px-6 sm:px-10 lg:px-[150px] pt-14 lg:pt-20 pb-14 lg:pb-16">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-14">
             {# LEFT column: logo + info links #}
@@ -52,10 +52,10 @@
                         </p>
                         <a href="tel:+306977927008"
                            class="inline-flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-                            <img src="{% static 'images/phone-icon.png' %}"
+                            <img src="{% static 'images/phone-icon-white.png' %}"
                                  alt=""
                                  aria-hidden="true"
-                                 class="w-9 h-9 lg:w-10 lg:h-10 shrink-0">
+                                 class="w-9 h-9 lg:w-10 lg:h-10 shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]">
                             <span class="text-base lg:text-lg whitespace-nowrap">697 792 7008</span>
                         </a>
                     </div>

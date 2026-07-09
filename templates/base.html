@@ -45,8 +45,10 @@
     {# Precise background gradients (e.g. the hero's radial gradient) that #}
     {# are impractical to express as plain Tailwind utility classes. #}
     <link rel="stylesheet" href="{% static 'css/kokkoris-backgrounds.css' %}">
+    <link rel="stylesheet" href="{% static 'css/site-scale.css' %}">
 </head>
-<body class="bg-slate-50 min-h-screen">
+<body class="bg-slate-50">
+    <div class="site-scale-root min-h-screen flex flex-col">
     {# ── Part 1: Header (nav) — ίδιο σε κάθε σελίδα, μην αλλάζει ── #}
     {% include "partials/nav.html" %}
 
@@ -54,7 +56,7 @@
     {# Homepage χρησιμοποιεί {% block hero %} + κενό main.               #}
     {# Όλες οι άλλες σελίδες: {% extends "page.html" %} ή base + content. #}
     {% block hero %}{% endblock %}
-    <main class="{% block main_class %}max-w-5xl mx-auto px-4 py-8{% endblock %}">
+    <main class="{% block main_class %}max-w-5xl mx-auto px-4 py-8{% endblock %} flex-1 w-full">
         {% block content %}{% endblock %}
     </main>
     {% block pre_footer %}{% endblock %}
@@ -62,7 +64,11 @@
     {# ── Part 3: Footer — ίδιο σε κάθε σελίδα, μην αλλάζει ── #}
     {% include "partials/footer.html" %}
     {% include "partials/cookie-consent.html" %}
+    {% include "partials/auth-modal.html" %}
     <script src="{% static 'js/cookie-consent.js' %}"></script>
+    <script src="{% static 'js/password-rules.js' %}"></script>
+    <script src="{% static 'js/auth-modal.js' %}"></script>
     {% block extra_body %}{% endblock %}
+    </div>
 </body>
 </html>

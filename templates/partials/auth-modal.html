@@ -1,0 +1,241 @@
+{% load i18n %}
+{# Blocking auth overlay — choice → login or signup panel. #}
+{% if not user.is_authenticated %}
+<div id="auth-modal"
+     class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/70 px-4"
+     aria-hidden="true"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="auth-modal-title"
+     data-google-oauth-ready="{% if google_oauth_ready %}true{% else %}false{% endif %}"
+     data-google-login-url="{% if google_oauth_ready %}{{ google_login_url }}{% endif %}">
+    <div class="w-full max-w-md bg-white text-slate-900 rounded-2xl shadow-2xl p-6 lg:p-8 font-inter relative">
+
+        {# ── Step 1: choice ── #}
+        <div id="auth-panel-choice" class="auth-panel">
+            <div class="text-center mb-8">
+                <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-kokkoris-teal-dark/10 text-kokkoris-teal-dark">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-8 w-8" aria-hidden="true">
+                        <circle cx="12" cy="7.4" r="4.1"/>
+                        <path d="M12 13.4c-5.3 0-9.6 3.1-9.6 6.9v.7a1 1 0 0 0 1 1h17.2a1 1 0 0 0 1-1v-.7c0-3.8-4.3-6.9-9.6-6.9z"/>
+                    </svg>
+                </div>
+                <h2 id="auth-modal-title" class="font-poppins font-light text-2xl text-kokkoris-teal-dark tracking-wide">
+                    {% trans "Ο λογαριασμός σου" %}
+                </h2>
+                <p class="mt-2 text-sm text-slate-500">
+                    {% trans "Συνδέσου ή δημιούργησε λογαριασμό για να συνεχίσεις." %}
+                </p>
+            </div>
+
+            <div class="space-y-3">
+                <button type="button"
+                        id="auth-show-login"
+                        class="w-full rounded-full bg-kokkoris-teal-dark py-3.5 text-white font-semibold hover:opacity-90 transition-opacity">
+                    {% trans "Σύνδεση" %}
+                </button>
+                <button type="button"
+                        id="auth-show-signup"
+                        class="w-full rounded-full border-2 border-kokkoris-teal-dark py-3.5 text-kokkoris-teal-dark font-semibold hover:bg-kokkoris-teal-dark/5 transition-colors">
+                    {% trans "Εγγραφή" %}
+                </button>
+            </div>
+
+            <button type="button"
+                    id="auth-modal-close"
+                    class="mt-6 w-full text-sm text-slate-400 hover:text-slate-600 transition-colors">
+                {% trans "Κλείσιμο" %}
+            </button>
+        </div>
+
+        {# ── Step 2a: login ── #}
+        <div id="auth-panel-login" class="auth-panel hidden">
+            <button type="button"
+                    class="auth-back-btn mb-4 flex items-center gap-1 text-sm text-slate-500 hover:text-kokkoris-teal-dark transition-colors"
+                    data-target="choice">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4" aria-hidden="true">
+                    <path d="M15 6l-6 6 6 6"/>
+                </svg>
+                {% trans "Πίσω" %}
+            </button>
+
+            <h2 class="font-poppins font-light text-2xl text-kokkoris-teal-dark tracking-wide mb-6">
+                {% trans "Σύνδεση" %}
+            </h2>
+
+            <form id="auth-login-form" class="space-y-4" novalidate>
+                <div>
+                    <label for="auth-login-email" class="block text-sm font-medium text-slate-700 mb-1">
+                        {% trans "Email" %}
+                    </label>
+                    <input type="email"
+                           id="auth-login-email"
+                           name="email"
+                           autocomplete="email"
+                           required
+                           class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-kokkoris-teal-dark focus:outline-none focus:ring-1 focus:ring-kokkoris-teal-dark">
+                    <p id="auth-login-email-error" class="auth-field-error hidden mt-1 text-xs text-red-600"></p>
+                </div>
+                <div>
+                    <label for="auth-login-password" class="block text-sm font-medium text-slate-700 mb-1">
+                        {% trans "Κωδικός" %}
+                    </label>
+                    <input type="password"
+                           id="auth-login-password"
+                           name="password"
+                           autocomplete="current-password"
+                           required
+                           class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-kokkoris-teal-dark focus:outline-none focus:ring-1 focus:ring-kokkoris-teal-dark">
+                    <p id="auth-login-password-error" class="auth-field-error hidden mt-1 text-xs text-red-600"></p>
+                    <button type="button"
+                            id="auth-show-reset"
+                            class="mt-2 text-xs text-kokkoris-teal-dark hover:text-kokkoris-teal-mid underline underline-offset-2 transition-colors">
+                        {% trans "Ξέχασες τον κωδικό;" %}
+                    </button>
+                </div>
+                <p id="auth-login-form-error" class="auth-form-error hidden text-sm text-red-600"></p>
+                <button type="submit"
+                        id="auth-login-submit"
+                        class="w-full rounded-full bg-kokkoris-teal-dark py-3 text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-60">
+                    {% trans "Σύνδεση" %}
+                </button>
+            </form>
+
+            <div class="my-5 flex items-center gap-3">
+                <span class="h-px flex-1 bg-slate-200"></span>
+                <span class="text-xs uppercase tracking-wide text-slate-400">{% trans "ή" %}</span>
+                <span class="h-px flex-1 bg-slate-200"></span>
+            </div>
+
+            <a href="{% if google_oauth_ready %}{{ google_login_url }}{% else %}#{% endif %}"
+               id="auth-google-login"
+               class="flex w-full items-center justify-center gap-3 rounded-full border border-slate-300 py-3 text-sm font-medium text-slate-700 transition-colors{% if google_oauth_ready %} hover:bg-slate-50{% else %} opacity-50 cursor-not-allowed{% endif %}"
+               data-google-oauth-ready="{% if google_oauth_ready %}true{% else %}false{% endif %}"
+               {% if not google_oauth_ready %}aria-disabled="true"{% endif %}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-5 w-5" aria-hidden="true">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+                {% trans "Σύνδεση με Google" %}
+            </a>
+            {% if not google_oauth_ready %}
+            <p class="auth-google-config-hint mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-900">
+                {% trans "Η σύνδεση με Google δεν είναι ενεργή. Πρόσθεσε GOOGLE_OAUTH_CLIENT_ID και GOOGLE_OAUTH_CLIENT_SECRET στο αρχείο .env και κάνε restart τον server." %}
+            </p>
+            {% endif %}
+        </div>
+
+        {# ── Step 2b: signup ── #}
+        <div id="auth-panel-signup" class="auth-panel hidden">
+            <button type="button"
+                    class="auth-back-btn mb-4 flex items-center gap-1 text-sm text-slate-500 hover:text-kokkoris-teal-dark transition-colors"
+                    data-target="choice">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4" aria-hidden="true">
+                    <path d="M15 6l-6 6 6 6"/>
+                </svg>
+                {% trans "Πίσω" %}
+            </button>
+
+            <h2 class="font-poppins font-light text-2xl text-kokkoris-teal-dark tracking-wide mb-6">
+                {% trans "Εγγραφή" %}
+            </h2>
+
+            <form id="auth-signup-form" class="space-y-4" novalidate>
+                <div>
+                    <label for="auth-signup-email" class="block text-sm font-medium text-slate-700 mb-1">
+                        {% trans "Email" %}
+                    </label>
+                    <input type="email"
+                           id="auth-signup-email"
+                           name="email"
+                           autocomplete="email"
+                           required
+                           class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-kokkoris-teal-dark focus:outline-none focus:ring-1 focus:ring-kokkoris-teal-dark">
+                    <p id="auth-signup-email-error" class="auth-field-error hidden mt-1 text-xs text-red-600"></p>
+                </div>
+                <div>
+                    <label for="auth-signup-password1" class="block text-sm font-medium text-slate-700 mb-1">
+                        {% trans "Κωδικός" %}
+                    </label>
+                    <p id="auth-signup-password1-error"
+                       class="auth-field-error hidden mb-1 text-xs text-red-600"
+                       aria-live="polite"></p>
+                    <input type="password"
+                           id="auth-signup-password1"
+                           name="password1"
+                           autocomplete="new-password"
+                           required
+                           data-password-rules
+                           aria-describedby="auth-signup-password1-error"
+                           class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-kokkoris-teal-dark focus:outline-none focus:ring-1 focus:ring-kokkoris-teal-dark">
+                    {% include "partials/password_requirements.html" %}
+                </div>
+                <div>
+                    <label for="auth-signup-password2" class="block text-sm font-medium text-slate-700 mb-1">
+                        {% trans "Επιβεβαίωση κωδικού" %}
+                    </label>
+                    <input type="password"
+                           id="auth-signup-password2"
+                           name="password2"
+                           autocomplete="new-password"
+                           required
+                           class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-kokkoris-teal-dark focus:outline-none focus:ring-1 focus:ring-kokkoris-teal-dark">
+                    <p id="auth-signup-password2-error" class="auth-field-error hidden mt-1 text-xs text-red-600"></p>
+                </div>
+                <p id="auth-signup-form-error" class="auth-form-error hidden text-sm text-red-600"></p>
+                <button type="submit"
+                        id="auth-signup-submit"
+                        class="w-full rounded-full bg-kokkoris-teal-dark py-3 text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-60">
+                    {% trans "Εγγραφή" %}
+                </button>
+            </form>
+
+            <div class="my-5 flex items-center gap-3">
+                <span class="h-px flex-1 bg-slate-200"></span>
+                <span class="text-xs uppercase tracking-wide text-slate-400">{% trans "ή" %}</span>
+                <span class="h-px flex-1 bg-slate-200"></span>
+            </div>
+
+            <a href="{% if google_oauth_ready %}{{ google_login_url }}{% else %}#{% endif %}"
+               id="auth-google-signup"
+               class="flex w-full items-center justify-center gap-3 rounded-full border border-slate-300 py-3 text-sm font-medium text-slate-700 transition-colors{% if google_oauth_ready %} hover:bg-slate-50{% else %} opacity-50 cursor-not-allowed{% endif %}"
+               data-google-oauth-ready="{% if google_oauth_ready %}true{% else %}false{% endif %}"
+               {% if not google_oauth_ready %}aria-disabled="true"{% endif %}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-5 w-5" aria-hidden="true">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+                {% trans "Εγγραφή με Google" %}
+            </a>
+            {% if not google_oauth_ready %}
+            <p class="auth-google-config-hint mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-900">
+                {% trans "Η σύνδεση με Google δεν είναι ενεργή. Πρόσθεσε GOOGLE_OAUTH_CLIENT_ID και GOOGLE_OAUTH_CLIENT_SECRET στο αρχείο .env και κάνε restart τον server." %}
+            </p>
+            {% endif %}
+        </div>
+
+        {# ── Reset email sent (uses login email, no extra input) ── #}
+        <div id="auth-panel-reset-sent" class="auth-panel hidden text-center">
+            <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-7 h-7" aria-hidden="true">
+                    <path d="M4 4h16v16H4z"/>
+                    <path d="M4 7l8 6 8-6"/>
+                </svg>
+            </div>
+            <h2 class="font-poppins font-light text-2xl text-kokkoris-teal-dark tracking-wide mb-3">
+                {% trans "Έλεγξε το email σου" %}
+            </h2>
+            <p id="auth-reset-sent-message" class="text-sm text-slate-600 leading-relaxed mb-6"></p>
+            <button type="button"
+                    id="auth-reset-back-login"
+                    class="w-full rounded-full bg-kokkoris-teal-dark py-3 text-white font-semibold hover:opacity-90 transition-opacity">
+                {% trans "Επιστροφή στη σύνδεση" %}
+            </button>
+        </div>
+    </div>
+</div>
+{% endif %}

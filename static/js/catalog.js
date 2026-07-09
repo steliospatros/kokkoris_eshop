@@ -6,9 +6,6 @@
         return;
     }
 
-    var userAuthenticated = root.dataset.userAuthenticated === "true";
-    var loginUrl = "/accounts/login/";
-
     function getCookie(name) {
         var match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
         return match ? decodeURIComponent(match[2]) : "";
@@ -39,6 +36,19 @@
 
     function updateNavBadge(total) {
         var badge = document.getElementById("nav-cart-badge");
+        if (!badge) {
+            return;
+        }
+        if (total > 0) {
+            badge.textContent = String(total);
+            badge.classList.remove("hidden");
+        } else {
+            badge.classList.add("hidden");
+        }
+    }
+
+    function updateWishlistBadge(total) {
+        var badge = document.getElementById("nav-wishlist-badge");
         if (!badge) {
             return;
         }
@@ -175,11 +185,6 @@
     }
 
     function toggleWishlist(button) {
-        if (!userAuthenticated) {
-            window.location.href = loginUrl + "?next=" + encodeURIComponent(window.location.pathname);
-            return;
-        }
-
         var productId = parseInt(button.dataset.productId, 10);
         postJson("/wishlist/toggle/", { product_id: productId })
             .then(function (data) {
@@ -192,6 +197,13 @@
                     icon.classList.add("fill-none", "stroke-kokkoris-teal-dark");
                     icon.classList.remove("fill-kokkoris-dot-pink", "stroke-kokkoris-dot-pink");
                     button.setAttribute("aria-pressed", "false");
+                }
+                updateWishlistBadge(data.total_items || 0);
+                if (!data.wishlisted && window.location.pathname.indexOf("/wishlist") === 0) {
+                    var card = button.closest(".product-card");
+                    if (card) {
+                        card.remove();
+                    }
                 }
             })
             .catch(handleCartError);
@@ -245,6 +257,15 @@
         })
         .then(function (data) {
             updateNavBadge(data.total_items || 0);
+        })
+        .catch(function () {});
+
+    fetch("/wishlist/status/", { credentials: "same-origin" })
+        .then(function (response) {
+            return response.json();
+        })
+        .then(function (data) {
+            updateWishlistBadge(data.total_items || 0);
         })
         .catch(function () {});
 })();

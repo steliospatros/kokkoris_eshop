@@ -98,6 +98,8 @@ TEMPLATES = [
                 'newsletter.context_processors.recaptcha',
                 'products.context_processors.nav_state',
                 'cart.context_processors.cart_state',
+                'accounts.context_processors.auth_helpers',
+                'wishlist.context_processors.wishlist_state',
             ],
         },
     },
@@ -122,17 +124,11 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-        'OPTIONS': {'min_length': 8},  # Explicit: passwords must be at least 8 characters.
+        'OPTIONS': {'min_length': 8},
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        'NAME': 'accounts.password_validators.PasswordHasDigitValidator',
     },
 ]
 
@@ -196,20 +192,27 @@ ACCOUNT_UNIQUE_EMAIL = True
 # (Part 6 deployment) is configured, if email verification is desired.
 ACCOUNT_EMAIL_VERIFICATION = 'optional'
 
-# Social login providers (Google / Facebook). Real Client ID/Secret values
-# are added here once the user creates apps in the Google Cloud Console and
-# the Facebook Developer portal - see README.md for instructions. Until
-# then, these placeholders let the project run locally; the "Login with
-# Google/Facebook" buttons simply won't complete a real login yet.
+# Custom forms (Greek validation messages on password reset page).
+ACCOUNT_FORMS = {
+    'reset_password_from_key': 'accounts.forms.ResetPasswordKeyForm',
+}
+
+# Social login providers (Google / Facebook). Google credentials are read
+# from .env (GOOGLE_OAUTH_*). Run `python manage.py setup_oauth` after
+# filling .env to sync the SocialApp record for production/admin use.
+SOCIALACCOUNT_ADAPTER = "accounts.adapters.KokkorisSocialAccountAdapter"
+SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_LOGIN_ON_GET = True
+SOCIALACCOUNT_QUERY_EMAIL = True
+
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
-        'APPS': [
-            {
-                'client_id': os.environ.get('GOOGLE_OAUTH_CLIENT_ID', ''),
-                'secret': os.environ.get('GOOGLE_OAUTH_CLIENT_SECRET', ''),
-                'key': '',
-            }
-        ],
+        # Credentials live in the DB SocialApp (sync via `python manage.py setup_oauth`
+        # after filling GOOGLE_OAUTH_* in .env). Do not duplicate APPS here — allauth
+        # merges DB + settings and raises MultipleObjectsReturned when both exist.
+        'provider_class': 'accounts.google_oauth.KokkorisGoogleProvider',
         'SCOPE': ['profile', 'email'],
     },
     'facebook': {

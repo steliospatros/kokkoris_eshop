@@ -2,17 +2,30 @@ import json
 
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from django.views.decorators.http import require_POST
+from django.shortcuts import render
+from django.views.decorators.http import require_GET, require_POST
 
+from products.catalog import build_catalog_cards, get_catalog_queryset
 from products.models import Product
 
-from .models import WishlistItem
+from cart.cart import get_cart
+from .wishlist import get_wishlist
 
 
-@login_required
+def _cart_quantities(request):
+    cart = get_cart(request)
+    return {item.product_variant.pk: item.quantity for item in cart.items}
+
+
+@require_GET
+def status(request):
+    wishlist = get_wishlist(request)
+    return JsonResponse({"total_items": wishlist.count()})
+
+
 @require_POST
 def toggle(request):
-    """Add or remove a product from the current user's wishlist."""
+    """Add or remove a product from the current visitor's wishlist."""
     try:
         if request.content_type == "application/json":
             payload = json.loads(request.body.decode("utf-8"))
@@ -27,10 +40,40 @@ def toggle(request):
     except Product.DoesNotExist:
         return JsonResponse({"ok": False, "error": "Το προϊόν δεν βρέθηκε."}, status=404)
 
-    item = WishlistItem.objects.filter(user=request.user, product=product).first()
-    if item:
-        item.delete()
-        return JsonResponse({"ok": True, "wishlisted": False, "product_id": product_id})
+    wishlist = get_wishlist(request)
+    wishlisted = wishlist.toggle(product)
+    return JsonResponse(
+        {
+            "ok": True,
+            "wishlisted": wishlisted,
+            "product_id": product_id,
+            "total_items": wishlist.count(),
+        }
+    )
 
-    WishlistItem.objects.create(user=request.user, product=product)
-    return JsonResponse({"ok": True, "wishlisted": True, "product_id": product_id})
+
+def list_view(request):
+    wishlist = get_wishlist(request)
+    ordered_ids = wishlist.ordered_product_ids()
+    products_by_id = {
+        product.pk: product
+        for product in get_catalog_queryset().filter(pk__in=ordered_ids)
+    }
+    products = [products_by_id[product_id] for product_id in ordered_ids if product_id in products_by_id]
+
+    cards = build_catalog_cards(
+        products,
+        cart_quantities=_cart_quantities(request),
+        wishlisted_ids=set(ordered_ids),
+    )
+
+    return render(
+        request,
+        "wishlist/list.html",
+        {
+            "page_title": "Wishlist",
+            "product_cards": cards,
+            "product_count": len(cards),
+            "user_is_authenticated": request.user.is_authenticated,
+        },
+    )

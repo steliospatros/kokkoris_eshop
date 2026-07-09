@@ -31,7 +31,6 @@ from products.catalog import (
 )
 from products.company_pages import build_company_page_context, has_brand_page
 from products.models import Company, Product
-from wishlist.models import WishlistItem
 
 # How many matches the search dropdown shows at once - kept small since this
 # is a live-as-you-type suggestion list, not a full search results page.
@@ -75,11 +74,9 @@ def _cart_quantities(request):
 
 
 def _wishlisted_ids(request):
-    if not request.user.is_authenticated:
-        return set()
-    return set(
-        WishlistItem.objects.filter(user=request.user).values_list("product_id", flat=True)
-    )
+    from wishlist.wishlist import get_wishlist
+
+    return get_wishlist(request).product_ids
 
 
 def _catalog_page(request, page_title):

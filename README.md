@@ -429,20 +429,23 @@ default. Βασικά σημεία:
 η χειροκίνητη υλοποίηση OAuth2 για δύο providers είναι πολύπλοκη και ριψοκίνδυνη από άποψη
 ασφάλειας, ενώ το `allauth` το έχει ήδη λύσει σωστά, δοκιμασμένο σε χιλιάδες production sites.
 
-Τα κουμπιά "Σύνδεση με Google" / "Σύνδεση με Facebook" εμφανίζονται ήδη στη σελίδα login, αλλά
-**δεν θα ολοκληρώνουν πραγματική σύνδεση ακόμα**, γιατί χρειάζονται πραγματικά credentials:
+Τα κουμπιά "Σύνδεση με Google" / "Σύνδεση με Facebook" στο auth modal χρησιμοποιούν
+το έτοιμο flow του `django-allauth`. Η σύνδεση Google ενεργοποιείται όταν
+συμπληρώσεις τα credentials στο `.env`:
 
-> **Πώς θα ενεργοποιηθούν πραγματικά (θα το κάνεις εσύ, δωρεάν, όποτε είσαι έτοιμος):**
+> **Πώς να ενεργοποιήσεις τη σύνδεση Google (δωρεάν):**
 >
-> 1. **Google**: μπες στο [Google Cloud Console](https://console.cloud.google.com) → δημιούργησε
+> 1. Μπες στο [Google Cloud Console](https://console.cloud.google.com) → δημιούργησε
 >    project → "APIs & Services" → "Credentials" → "Create OAuth client ID" (τύπος: Web
 >    application) → πρόσθεσε redirect URI `http://localhost:8000/accounts/google/login/callback/`
 >    (και το πραγματικό domain αργότερα) → αντίγραψε το **Client ID** και το **Client Secret**.
-> 2. **Facebook**: μπες στο [developers.facebook.com](https://developers.facebook.com) →
->    δημιούργησε app → πρόσθεσε προϊόν "Facebook Login" → όρισε το ίδιο redirect URI pattern →
->    αντίγραψε το **App ID** και το **App Secret**.
-> 3. Αντικατέστησε τα placeholder strings (`REPLACE_WITH_GOOGLE_CLIENT_ID` κλπ.) στο
->    `SOCIALACCOUNT_PROVIDERS` μέσα στο `core/settings.py` με τις πραγματικές τιμές.
+> 2. Αντίγραψε `.env.example` → `.env` και βάλε τις τιμές στα `GOOGLE_OAUTH_CLIENT_ID`
+>    και `GOOGLE_OAUTH_CLIENT_SECRET`.
+> 3. Τρέξε `python manage.py setup_oauth` για συγχρονισμό του SocialApp στη βάση.
+> 4. Επανεκκίνησε τον dev server και δοκίμασε "Σύνδεση με Google" από το auth modal.
+
+**Facebook:** ακόμα placeholder — απαιτεί App ID/Secret στο `SOCIALACCOUNT_PROVIDERS`
+(βλ. [developers.facebook.com](https://developers.facebook.com)).
 
 ### 11.3 Ανάκτηση κωδικού μέσω email
 
@@ -1158,7 +1161,7 @@ https://github.com/spatroudakis/kokkoris_eshop.git
 
 | Μεταβλητή | Χρήση |
 |---|---|
-| `GOOGLE_OAUTH_CLIENT_ID` / `SECRET` | Σύνδεση Google (django-allauth) |
+| `GOOGLE_OAUTH_CLIENT_ID` / `SECRET` | Σύνδεση Google (django-allauth) — μετά `python manage.py setup_oauth` |
 | `GOOGLE_MAPS_API_KEY` | Χάρτης checkout (βήμα διεύθυνσης) |
 | `RECAPTCHA_SITE_KEY` / `SECRET` | Newsletter footer (reCAPTCHA v3) |
 

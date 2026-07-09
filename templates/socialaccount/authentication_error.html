@@ -1,0 +1,26 @@
+{% extends "allauth/layouts/base.html" %}
+{% load i18n %}
+
+{% block head_title %}{% trans "Αποτυχία σύνδεσης" %}{% endblock %}
+
+{% block content %}
+<div class="text-center mb-6">
+    <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-red-600">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-7 h-7" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 8v4M12 16h.01"/>
+        </svg>
+    </div>
+    <h1 class="font-poppins font-light text-2xl text-kokkoris-teal-dark tracking-wide mb-3">
+        {% trans "Αποτυχία σύνδεσης με Google" %}
+    </h1>
+    <p class="text-sm text-slate-600 leading-relaxed">
+        {% trans "Δεν ήταν δυνατή η σύνδεση μέσω Google. Δοκίμασε ξανά ή χρησιμοποίησε email και κωδικό." %}
+    </p>
+</div>
+
+<a href="{% url 'home' %}"
+   class="inline-block w-full rounded-full bg-kokkoris-teal-dark py-3 text-center text-white font-semibold hover:opacity-90 transition-opacity">
+    {% trans "Επιστροφή στην αρχική" %}
+</a>
+{% endblock %}

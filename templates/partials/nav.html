@@ -16,7 +16,7 @@
 {# shadow measured from the mockup), a single account icon replacing the   #}
 {# old Σύνδεση/Εγγραφή text links, and a redesigned solid-fill cart icon   #}
 {# (the mockup's cart is a flat silhouette, not a thin outline).           #}
-<nav class="relative bg-kokkoris-teal-dark text-white overflow-visible z-30 shadow-[0_2px_0_0_rgba(0,0,0,0.15)]">
+<nav class="site-chrome site-chrome--header relative bg-kokkoris-teal-dark text-white overflow-visible z-30 shadow-[0_2px_0_0_rgba(0,0,0,0.15)]">
     {# Butterfly 1: peeks in from the very top-left corner, clipped by the  #}
     {# page edge in the original artwork — so it's pinned flush to x:0.     #}
     <img src="{% static 'images/butterfly-corner.png' %}"
@@ -33,7 +33,7 @@
          class="hidden lg:block absolute left-[500px] lg:top-[43px] w-[68px] h-auto pointer-events-none select-none z-10">
     {% endif %}
 
-    <div class="max-w-[1920px] mx-auto h-16 lg:h-[116px] pl-6 pr-6 lg:pl-[129px] lg:pr-[60px] flex items-center font-inter relative">
+    <div class="max-w-[1920px] mx-auto h-16 lg:h-[116px] pl-6 pr-2 lg:pl-[129px] lg:pr-3 flex items-center font-inter relative">
         {# Company logo lockup: paw-print icon + "KOKKORIS / PET FOOD" wordmark. #}
         <a href="{% url 'home' %}" class="flex items-center gap-3 lg:gap-6 shrink-0">
             <img src="{% static 'images/kokkoris-logo-icon.png' %}"
@@ -89,10 +89,8 @@
             </div>
         </div>
 
-        {# Animal filters — the 4 links are spread evenly across whatever #}
-        {# room is left between the search bar and the account icon       #}
-        {# (justify-between = equal gaps between each neighbour).         #}
-        <div class="hidden lg:flex flex-1 items-center justify-between min-w-0 px-3 2xl:px-8 whitespace-nowrap font-poppins font-normal text-[15px] uppercase tracking-wide [text-shadow:0_4px_8px_rgba(0,0,0,0.35)]">
+        {# Animal filters — grouped toward the right with even spacing between links. #}
+        <div class="hidden lg:flex flex-1 items-center justify-end min-w-0 gap-8 xl:gap-10 2xl:gap-14 pr-4 lg:pr-8 whitespace-nowrap font-poppins font-normal text-[17px] uppercase tracking-wide [text-shadow:0_4px_8px_rgba(0,0,0,0.35)]">
             <a href="{% url 'products:dogs' %}" class="hover:text-kokkoris-dot-teal transition-colors">
                 {% trans "Σκύλος" %}
             </a>
@@ -107,28 +105,52 @@
             </a>
         </div>
 
-        <div class="flex items-center gap-3 lg:gap-4 shrink-0">
-            {# Account icon — replaces the old Σύνδεση/Εγγραφή text links   #}
-            {# with a single glyph: goes straight to login when signed out, #}
-            {# straight to the profile page when signed in. Signup is still #}
-            {# one click away from the login page itself. A richer account  #}
-            {# menu (dropdown, avatar, quick links…) is a later pass.       #}
-            {% if user.is_authenticated %}{% url 'accounts:profile' as account_url %}{% else %}{% url 'account_login' as account_url %}{% endif %}
-            <a href="{{ account_url }}" aria-label="{% trans 'Ο λογαριασμός μου' %}" class="hover:opacity-70 transition-opacity">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-7 h-7 lg:w-9 lg:h-9 drop-shadow-[0_3px_5px_rgba(0,0,0,0.35)]">
+        <div class="flex items-center gap-4 lg:gap-5 shrink-0">
+            {# Account icon — opens auth modal when signed out; profile when signed in. #}
+            {% if user.is_authenticated %}
+            <a href="{% url 'accounts:profile' %}"
+               aria-label="{% trans 'Ο λογαριασμός μου' %}"
+               class="flex items-center justify-center h-9 lg:h-[46px] hover:opacity-70 transition-opacity">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-full w-auto max-h-9 lg:max-h-[46px] aspect-square drop-shadow-[0_3px_5px_rgba(0,0,0,0.35)]">
                     <circle cx="12" cy="7.4" r="4.1"/>
                     <path d="M12 13.4c-5.3 0-9.6 3.1-9.6 6.9v.7a1 1 0 0 0 1 1h17.2a1 1 0 0 0 1-1v-.7c0-3.8-4.3-6.9-9.6-6.9z"/>
                 </svg>
             </a>
+            {% else %}
+            <button type="button"
+                    data-auth-trigger
+                    aria-label="{% trans 'Ο λογαριασμός μου' %}"
+                    class="flex items-center justify-center h-9 lg:h-[46px] hover:opacity-70 transition-opacity">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-full w-auto max-h-9 lg:max-h-[46px] aspect-square drop-shadow-[0_3px_5px_rgba(0,0,0,0.35)]">
+                    <circle cx="12" cy="7.4" r="4.1"/>
+                    <path d="M12 13.4c-5.3 0-9.6 3.1-9.6 6.9v.7a1 1 0 0 0 1 1h17.2a1 1 0 0 0 1-1v-.7c0-3.8-4.3-6.9-9.6-6.9z"/>
+                </svg>
+            </button>
+            {% endif %}
 
             {# Cart icon — links to checkout when items exist; badge shows live count. #}
-            <a href="{% url 'checkout:delivery' %}" aria-label="{% trans 'Καλάθι' %}" class="relative hover:opacity-70 transition-opacity">
+            <a href="{% url 'checkout:delivery' %}"
+               aria-label="{% trans 'Καλάθι' %}"
+               class="relative flex items-center justify-center h-9 lg:h-[46px] hover:opacity-70 transition-opacity">
                 <img src="{% static 'images/cart-icon-white.png' %}"
                      alt=""
-                     class="w-9 h-9 lg:w-[46px] lg:h-auto drop-shadow-[0_3px_5px_rgba(0,0,0,0.35)]">
+                     class="h-full w-auto max-h-9 lg:max-h-[46px] object-contain drop-shadow-[0_3px_5px_rgba(0,0,0,0.35)]">
                 <span id="nav-cart-badge"
                       class="{% if not cart_total_items %}hidden{% endif %} absolute -top-1 -right-1 min-w-[1.25rem] h-5 px-1 rounded-full bg-kokkoris-dot-orange text-white text-[11px] font-semibold flex items-center justify-center leading-none">
                     {{ cart_total_items|default:0 }}
+                </span>
+            </a>
+
+            {# Wishlist — session list for guests; persistent for logged-in users. #}
+            <a href="{% url 'wishlist:list' %}"
+               aria-label="{% trans 'Wishlist' %}"
+               class="relative flex items-center justify-center h-9 lg:h-[46px] hover:opacity-70 transition-opacity">
+                <img src="{% static 'images/wishlist-icon-white.png' %}"
+                     alt=""
+                     class="h-full w-auto max-h-9 lg:max-h-[46px] object-contain drop-shadow-[0_3px_5px_rgba(0,0,0,0.35)]">
+                <span id="nav-wishlist-badge"
+                      class="{% if not wishlist_total_items %}hidden{% endif %} absolute -top-1 -right-1 min-w-[1.25rem] h-5 px-1 rounded-full bg-kokkoris-dot-pink text-white text-[11px] font-semibold flex items-center justify-center leading-none">
+                    {{ wishlist_total_items|default:0 }}
                 </span>
             </a>
         </div>

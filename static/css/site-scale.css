@@ -1,0 +1,27 @@
+/*
+ * Permanent 90% layout scale — matches the balance seen at browser zoom 90%.
+ * Applied on .site-scale-root so header, main, footer and overlays scale together.
+ */
+.site-scale-root {
+    zoom: 0.9;
+    width: 100%;
+    min-height: 100vh;
+}
+
+@supports not (zoom: 1) {
+    /* Firefox: approximate the same visual scale. */
+    .site-scale-root {
+        transform: scale(0.9);
+        transform-origin: top center;
+        width: 111.1111%;
+        min-height: 111.1111vh;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+.site-chrome--header,
+.site-chrome--footer {
+    width: 100%;
+    flex-shrink: 0;
+}

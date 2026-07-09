@@ -1,6 +1,18 @@
 from django import forms
 
+from allauth.account.forms import ResetPasswordKeyForm as AllauthResetPasswordKeyForm
+
 from .models import CustomUser
+from .password_help import translate_form_error
+
+
+class ResetPasswordKeyForm(AllauthResetPasswordKeyForm):
+    def add_error(self, field, error):
+        if getattr(error, "error_list", None):
+            for item in error.error_list:
+                super().add_error(field, translate_form_error(item))
+            return
+        super().add_error(field, translate_form_error(error))
 
 
 class ProfileForm(forms.ModelForm):
