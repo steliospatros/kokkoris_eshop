@@ -1,0 +1,32 @@
+{% load i18n static %}
+<section class="brand-story" aria-labelledby="brand-story-heading">
+    <svg class="brand-story__wave" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
+        <path fill="currentColor" d="M0,80 L0,34 C220,64 380,8 560,30 C740,52 920,16 1120,36 C1280,52 1360,44 1440,28 L1440,80 Z"/>
+    </svg>
+
+    <div class="brand-story__inner">
+        {% for block in story_blocks %}
+            <article class="brand-story__block {% if block.full_width %}brand-story__block--full{% elif block.image_side == 'left' %}brand-story__block--image-left{% else %}brand-story__block--image-right{% endif %}">
+                <div class="brand-story__copy">
+                    <h3 id="{% if forloop.first %}brand-story-heading{% endif %}">
+                        {{ block.title }}
+                        {% if block.title_suffix %}
+                            <span class="brand-story__paw" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" class="w-4 h-4 inline-block"><path fill="currentColor" d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-5 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-5-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-4 4c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm8 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                            </span>
+                            {{ block.title_suffix }}
+                        {% endif %}
+                    </h3>
+                    <p>{{ block.body }}</p>
+                </div>
+                {% if block.image_static %}
+                    <div class="brand-story__media">
+                        <img src="{% static block.image_static %}"
+                             alt=""
+                             class="brand-story__blob">
+                    </div>
+                {% endif %}
+            </article>
+        {% endfor %}
+    </div>
+</section>
