@@ -842,8 +842,8 @@ for c in Product.objects.values_list('category__name', flat=True).distinct():
 Αν χρειαστεί να στήσεις το project σε άλλο μηχάνημα (ή μετά από `git clone`):
 
 ```bash
-git clone git@github.com:spatroudakis/kokkoris_eshop.git
-# ή HTTPS αν δεν έχεις SSH: git clone https://github.com/spatroudakis/kokkoris_eshop.git
+git clone git@github.com:steliospatros/kokkoris_eshop.git
+# ή HTTPS: git clone https://github.com/steliospatros/kokkoris_eshop.git
 cd kokkoris_eshop
 python3 -m venv venv
 source venv/bin/activate

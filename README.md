@@ -1198,10 +1198,11 @@ wishlist. Υπάρχει πλήρης σελίδα λίστας και εικο�
 Το project είναι version-controlled με Git. Remote (ιδιοκτησία στο δικό σου GitHub account):
 
 ```text
-git@github.com:spatroudakis/kokkoris_eshop.git
+git@github.com:steliospatros/kokkoris_eshop.git
 ```
 
-(SSH — βλ. 19.3. Παλιό HTTPS: `https://github.com/spatroudakis/kokkoris_eshop.git`.)
+(GitHub account: **steliospatros** / `steliospatros@gmail.com` — το Linux username `spatroudakis`
+είναι μόνο το όνομα χρήστη στο WSL, όχι το GitHub login.)
 
 Κύριο branch ανάπτυξης: **`feature/animal-category-browse`**.
 
@@ -1229,8 +1230,8 @@ git@github.com:spatroudakis/kokkoris_eshop.git
 1. **SSH key** (μία φορά): `ssh-keygen -t ed25519 -C "your@email.com" -f ~/.ssh/id_ed25519`
 2. **GitHub:** Settings → SSH and GPG keys → New SSH key → επικόλλησε το περιεχόμενο του
    `~/.ssh/id_ed25519.pub`
-3. **Remote:** `git remote set-url origin git@github.com:spatroudakis/kokkoris_eshop.git`
-4. **Έλεγχος:** `ssh -T git@github.com` → `Hi spatroudakis!`
+3. **Remote:** `git remote set-url origin git@github.com:steliospatros/kokkoris_eshop.git`
+4. **Έλεγχος:** `ssh -T git@github.com` → `Hi steliospatros!`
 
 Το `~/.ssh/config` στο WSL μπορεί να ορίζει `Host github.com` + `IdentityFile ~/.ssh/id_ed25519`.
 
