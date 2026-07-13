@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'checkout',
     'newsletter',
     'wishlist',
+    'pages',
 ]
 
 MIDDLEWARE = [
@@ -72,6 +73,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    'core.middleware.BreadcrumbMiddleware',
 ]
 
 SITE_ID = 1
@@ -100,6 +102,7 @@ TEMPLATES = [
                 'cart.context_processors.cart_state',
                 'accounts.context_processors.auth_helpers',
                 'wishlist.context_processors.wishlist_state',
+                'core.context_processors.breadcrumbs',
             ],
         },
     },
@@ -243,7 +246,25 @@ DEFAULT_FROM_EMAIL = 'noreply@kokkoriseshop.local'
 # + interactive map pin for precise delivery location). Maps JavaScript API
 # and Places API must be enabled, with billing active, on the Google Cloud
 # project this key belongs to. See README.md for setup instructions.
-GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY', '')
+GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY', '').strip()
+
+# -----------------------------------------------------------------------------
+# Phone SMS verification (Twilio) — DISABLED until Twilio account upgrade
+# -----------------------------------------------------------------------------
+# Set PHONE_VERIFICATION_ENABLED=true in .env after upgrading Twilio and configuring:
+#   TWILIO_ALPHANUMERIC_SENDER=Kokkoris   (required for Greece; US +1 cannot deliver to +30)
+#   TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN
+# Run: python manage.py check_twilio
+PHONE_VERIFICATION_ENABLED = os.environ.get(
+    "PHONE_VERIFICATION_ENABLED", "false"
+).lower() in ("true", "1", "yes")
+
+# Twilio SMS (used when PHONE_VERIFICATION_ENABLED=true)
+TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "").strip()
+TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "").strip()
+TWILIO_PHONE_NUMBER = os.environ.get("TWILIO_PHONE_NUMBER", "").strip()
+TWILIO_MESSAGING_SERVICE_SID = os.environ.get("TWILIO_MESSAGING_SERVICE_SID", "").strip()
+TWILIO_ALPHANUMERIC_SENDER = os.environ.get("TWILIO_ALPHANUMERIC_SENDER", "").strip()
 
 # Google reCAPTCHA v3 — newsletter footer form bot protection.
 # Keys live in .env (see .env.example). Create at https://www.google.com/recaptcha/admin
@@ -253,3 +274,11 @@ RECAPTCHA_SECRET_KEY = os.environ.get("RECAPTCHA_SECRET_KEY", "")
 RECAPTCHA_ACTION = "newsletter_subscribe"
 RECAPTCHA_SCORE_THRESHOLD = 0.5
 RECAPTCHA_ENABLED = bool(RECAPTCHA_SITE_KEY and RECAPTCHA_SECRET_KEY)
+
+# -----------------------------------------------------------------------------
+# Stripe Payments (one-time card checkout)
+# -----------------------------------------------------------------------------
+STRIPE_PUBLISHABLE_KEY = os.environ.get("STRIPE_PUBLISHABLE_KEY", "").strip()
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "").strip()
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "").strip()
+STRIPE_CURRENCY = "eur"

@@ -1,0 +1,15 @@
+{% load i18n static %}
+{# Blocking overlay for logged-in users who have not verified their phone. #}
+{% if phone_verification_enabled and user.is_authenticated and not user.phone_verified_at %}
+<div id="phone-verify-modal"
+     class="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 px-4"
+     aria-hidden="false"
+     role="dialog"
+     aria-modal="true"
+     data-auto-open="true"
+     data-redirect="{{ request.path }}">
+    <div class="w-full max-w-md bg-white text-slate-900 rounded-2xl shadow-2xl p-6 lg:p-8 font-inter">
+        {% include "partials/phone_verify_panel.html" with prefix="pvm" %}
+    </div>
+</div>
+{% endif %}

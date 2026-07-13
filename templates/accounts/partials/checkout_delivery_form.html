@@ -1,0 +1,165 @@
+{% load i18n static %}
+{# Delivery fields — same structure as «Τα στοιχεία μου», always editable at checkout. #}
+<form id="checkout-address-form"
+      method="post"
+      class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden"
+      novalidate>
+    {% csrf_token %}
+
+    <ul class="divide-y divide-slate-100">
+        {% for row in field_rows %}
+            <li class="px-5 py-4">
+                <label for="id_{{ row.name }}" class="block text-xs font-inter font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                    {{ row.label }}
+                </label>
+                {% if row.name == "phone_number" and phone_verified %}
+                    <p class="font-inter text-slate-800">{{ user.phone_number }}</p>
+                    <input type="hidden" name="phone_number" value="{{ user.phone_number }}">
+                    <button type="button"
+                            id="checkout-change-phone"
+                            class="mt-2 text-xs font-inter text-kokkoris-teal-dark hover:underline">
+                        {% trans "Αλλαγή κινητού (επανα-επιβεβαίωση SMS)" %}
+                    </button>
+                {% elif row.multiline %}
+                    <textarea name="{{ row.name }}"
+                              id="id_{{ row.name }}"
+                              rows="3"
+                              class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm font-inter text-slate-800 focus:outline-none focus:border-kokkoris-teal-dark focus:ring-2 focus:ring-kokkoris-teal-dark/25">{{ row.value }}</textarea>
+                {% else %}
+                    <input type="text"
+                           name="{{ row.name }}"
+                           id="id_{{ row.name }}"
+                           value="{{ row.value }}"
+                           class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm font-inter text-slate-800 focus:outline-none focus:border-kokkoris-teal-dark focus:ring-2 focus:ring-kokkoris-teal-dark/25"
+                           autocomplete="{% if row.name == 'phone_number' %}tel{% else %}off{% endif %}">
+                {% endif %}
+                {% if row.error %}
+                    <p class="text-red-600 text-xs mt-1.5 font-inter">{{ row.error }}</p>
+                {% endif %}
+            </li>
+        {% endfor %}
+
+        <li class="account-address-block px-5 py-5">
+            <div class="mb-4">
+                <p class="text-xs font-inter font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                    {% trans "Διεύθυνση παράδοσης" %}
+                </p>
+                <p class="text-sm text-slate-500 font-inter leading-relaxed">
+                    {% trans "Αναζήτησε τη διεύθυνση ή επίλεξε σημείο στον χάρτη — τα στοιχεία αποθηκεύονται δομημένα." %}
+                </p>
+            </div>
+
+            <div class="account-address-grid">
+                <div class="account-address-fields space-y-3">
+                    <div class="account-address-field account-address-field--search" data-address-field="address_search">
+                        <label for="id_address_search" class="block text-xs font-inter font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                            {{ address_search_row.label }}
+                        </label>
+                        <input type="text"
+                               name="address_search"
+                               id="id_address_search"
+                               value="{{ form.address_search.value|default_if_none:'' }}"
+                               class="account-address-field__input w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm font-inter text-slate-800 focus:outline-none focus:border-kokkoris-teal-dark focus:ring-2 focus:ring-kokkoris-teal-dark/25"
+                               autocomplete="off"
+                               placeholder="{% trans 'Π.χ. Ερμού 12, Αθήνα' %}">
+                        {% if address_search_row.error %}
+                            <p class="text-red-600 text-xs mt-1.5 font-inter">{{ address_search_row.error }}</p>
+                        {% endif %}
+                    </div>
+
+                    {% for row in address_auto_rows %}
+                        <div class="account-auto-field" data-auto-field="{{ row.name }}">
+                            <label for="id_{{ row.name }}_display" class="block text-xs font-inter font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                                {{ row.label }}
+                            </label>
+                            <input type="text"
+                                   id="id_{{ row.name }}_display"
+                                   value="{{ row.value }}"
+                                   class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm font-inter text-slate-800 bg-slate-50"
+                                   readonly
+                                   tabindex="-1">
+                            {% if row.error %}
+                                <p class="text-red-600 text-xs mt-1.5 font-inter">{{ row.error }}</p>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+
+                    {% for row in address_extra_rows %}
+                        {% if row.name == "floor" %}
+                            <div class="account-detail-row account-detail-row--floor account-detail-row--editing pt-1" data-field="floor">
+                                <p class="text-xs font-inter font-semibold uppercase tracking-wide text-slate-400 mb-1">{{ row.label }}</p>
+                                <input type="hidden" name="floor" id="id_floor" value="{{ row.value }}" class="account-floor-value">
+                                <div class="account-floor-editor">
+                                    <div class="account-floor-picker flex flex-wrap gap-2" role="listbox">
+                                        {% for option in floor_preset_options %}
+                                            <button type="button"
+                                                    class="account-floor-picker__option rounded-full border border-slate-300 px-3 py-1 text-xs font-inter hover:border-kokkoris-teal-dark"
+                                                    data-value="{{ option }}">{{ option }}</button>
+                                        {% endfor %}
+                                        <button type="button"
+                                                class="account-floor-picker__option account-floor-picker__option--other rounded-full border border-slate-300 px-3 py-1 text-xs font-inter hover:border-kokkoris-teal-dark"
+                                                data-value="__other__">{{ floor_other_label }}</button>
+                                    </div>
+                                    <input type="text"
+                                           class="account-floor-other hidden w-full mt-2 border border-slate-300 rounded-lg px-3 py-2.5 text-sm font-inter"
+                                           placeholder="{% trans 'Πληκτρολόγησε όροφο' %}">
+                                </div>
+                                {% if row.error %}
+                                    <p class="text-red-600 text-xs mt-1.5 font-inter">{{ row.error }}</p>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <div class="pt-1">
+                                <label for="id_{{ row.name }}" class="block text-xs font-inter font-semibold uppercase tracking-wide text-slate-400 mb-1">{{ row.label }}</label>
+                                {% if row.multiline %}
+                                    <textarea name="{{ row.name }}"
+                                              id="id_{{ row.name }}"
+                                              rows="3"
+                                              class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm font-inter text-slate-800 focus:outline-none focus:border-kokkoris-teal-dark focus:ring-2 focus:ring-kokkoris-teal-dark/25">{{ row.value }}</textarea>
+                                {% else %}
+                                    <input type="text"
+                                           name="{{ row.name }}"
+                                           id="id_{{ row.name }}"
+                                           value="{{ row.value }}"
+                                           class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm font-inter text-slate-800 focus:outline-none focus:border-kokkoris-teal-dark focus:ring-2 focus:ring-kokkoris-teal-dark/25">
+                                {% endif %}
+                                {% if row.error %}
+                                    <p class="text-red-600 text-xs mt-1.5 font-inter">{{ row.error }}</p>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                <div class="account-address-map-wrap mt-4 lg:mt-0">
+                    <div id="checkout-address-map"
+                         class="account-address-map w-full rounded-lg border border-slate-300 overflow-hidden min-h-[16rem]"
+                         aria-label="{% trans 'Χάρτης διεύθυνσης' %}"></div>
+                    <p id="checkout-address-map-hint" class="mt-2 text-xs text-slate-500 font-inter"></p>
+                </div>
+            </div>
+
+            {{ form.city }}
+            {{ form.area }}
+            {{ form.street }}
+            {{ form.street_number }}
+            {{ form.address }}
+            {{ form.postal_code }}
+            {{ form.latitude }}
+            {{ form.longitude }}
+            {{ form.address_place_id }}
+            {{ form.address_components_json }}
+        </li>
+    </ul>
+
+    <div class="px-5 py-4 border-t border-slate-100 bg-white flex flex-wrap items-center gap-4">
+        <a href="{% url 'accounts:cart' %}"
+           class="inline-block rounded-full border border-slate-300 px-8 py-3 text-slate-700 font-inter font-medium hover:bg-slate-50 transition-colors">
+            {% trans "Πίσω" %}
+        </a>
+        <button type="submit"
+                class="inline-block rounded-full bg-kokkoris-teal-dark px-8 py-3 text-white font-inter font-medium hover:opacity-90 transition-opacity">
+            {% trans "Συνέχεια στον τρόπο αποστολής" %}
+        </button>
+    </div>
+</form>

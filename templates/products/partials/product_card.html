@@ -16,7 +16,11 @@
             {% endif %}
 
             <h2 class="font-inter font-medium text-slate-800 text-xs sm:text-[13px] leading-snug mt-0.5 line-clamp-3">
+                {% if card.detail_url %}
+                <a href="{{ card.detail_url }}" class="hover:text-kokkoris-teal-dark transition-colors">{{ card.title }}</a>
+                {% else %}
                 {{ card.title }}
+                {% endif %}
             </h2>
 
             <div class="mt-1.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-0.5 text-[10px] uppercase tracking-wide">

@@ -97,6 +97,12 @@ class Order(models.Model):
         decimal_places=2,
         help_text="cart_cost + courier_fee - the final amount the customer actually pays."
     )
+    stripe_payment_intent_id = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text="Stripe PaymentIntent ID for card payments (pi_...). Empty for cash on delivery.",
+    )
     delivery_method = models.CharField(
         max_length=20,
         choices=DELIVERY_METHOD_CHOICES,

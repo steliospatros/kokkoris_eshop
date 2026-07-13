@@ -12,7 +12,11 @@
     <div class="product-card-body flex flex-col flex-1 justify-end w-full min-h-0">
         <div class="mt-2 w-full text-center px-1">
             <p class="font-inter font-medium text-sm lg:text-base text-slate-800 leading-snug line-clamp-3">
+                {% if card.detail_url %}
+                <a href="{{ card.detail_url }}" class="hover:text-kokkoris-teal-dark transition-colors">{{ card.title }}</a>
+                {% else %}
                 {{ card.title }}
+                {% endif %}
             </p>
             <p class="mt-1 font-inter font-bold text-base lg:text-lg text-slate-900">{{ card.price_display }} €</p>
             {% if card.unit_price_display %}

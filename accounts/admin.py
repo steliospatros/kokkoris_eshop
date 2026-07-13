@@ -22,7 +22,7 @@ class CustomUserAdmin(UserAdmin):
         ("Personal info", {"fields": ("first_name", "last_name")}),
         (
             "Delivery details (filled in during checkout)",
-            {"fields": ("phone_number", "city", "address", "postal_code", "delivery_notes")},
+            {"fields": ("phone_number", "city", "area", "street", "street_number", "address", "postal_code", "floor", "doorbell_name", "delivery_notes")},
         ),
         (
             "Permissions",

@@ -1,0 +1,59 @@
+{% extends "page.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Το καλάθι μου" %}{% endblock %}
+
+{% block main_class %}w-full max-w-none bg-slate-50 min-h-[60vh]{% endblock %}
+
+{% block content %}
+<section id="cart-page" class="max-w-[900px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+    {% if cart_lines %}
+        <div class="flex justify-end mb-3">
+            <button type="button"
+                    id="cart-clear-all"
+                    class="text-sm font-inter text-slate-500 hover:text-red-600 underline underline-offset-2 transition-colors">
+                {% trans "Αφαίρεση όλων" %}
+            </button>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-6">
+            <ul id="cart-page-lines" class="divide-y divide-slate-100">
+                {% for line in cart_lines %}
+                    {% include "cart/_line_row.html" with line=line compact=False %}
+                {% endfor %}
+            </ul>
+            <div class="px-5 py-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center font-inter">
+                <span class="font-semibold text-slate-800">{% trans "Σύνολο" %}</span>
+                <span id="cart-page-total" class="font-semibold text-lg text-slate-900">{{ cart_total_display }} €</span>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <a href="{% url 'products:all' %}"
+               class="inline-block rounded-full border border-kokkoris-teal-dark px-8 py-3 text-kokkoris-teal-dark font-inter font-medium hover:bg-kokkoris-brand-cell transition-colors">
+                {% trans "Συνέχεια αγορών" %}
+            </a>
+            {% if user.is_authenticated %}
+            <a href="{% url 'checkout:index' %}"
+               class="inline-block rounded-full bg-kokkoris-teal-dark px-8 py-3 text-white font-inter font-medium hover:opacity-90 transition-opacity">
+                {% trans "Συνέχεια στο checkout" %}
+            </a>
+            {% else %}
+            <button type="button"
+                    id="cart-checkout-btn"
+                    data-checkout-url="{% url 'checkout:index' %}"
+                    class="inline-block rounded-full bg-kokkoris-teal-dark px-8 py-3 text-white font-inter font-medium hover:opacity-90 transition-opacity">
+                {% trans "Συνέχεια στο checkout" %}
+            </button>
+            {% endif %}
+        </div>
+    {% else %}
+        <p class="text-slate-500 font-inter py-16 text-center bg-white rounded-xl border border-slate-200">
+            {% trans "Το καλάθι σου είναι άδειο." %}
+            <a href="{% url 'products:all' %}" class="block mt-3 text-kokkoris-teal-dark hover:underline">
+                {% trans "Δες όλα τα προϊόντα" %}
+            </a>
+        </p>
+    {% endif %}
+</section>
+{% endblock %}

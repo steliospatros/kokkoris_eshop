@@ -1,0 +1,43 @@
+{% extends "page.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Ο λογαριασμός μου" %}{% endblock %}
+
+{% block main_class %}w-full max-w-none bg-slate-50 min-h-[60vh]{% endblock %}
+
+{% block content %}
+<section class="max-w-[720px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+    <nav class="flex flex-col gap-3" aria-label="{% trans 'Κατηγορίες λογαριασμού' %}">
+        <a href="{% url 'accounts:details' %}"
+           class="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm hover:border-kokkoris-teal-dark hover:shadow-md transition-all">
+            <span class="font-inter text-lg text-slate-800">{% trans "Τα στοιχεία μου" %}</span>
+            <span class="text-kokkoris-teal-dark text-xl" aria-hidden="true">›</span>
+        </a>
+        <a href="{% url 'accounts:orders' %}"
+           class="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm hover:border-kokkoris-teal-dark hover:shadow-md transition-all">
+            <span class="font-inter text-lg text-slate-800">{% trans "Ιστορικό παραγγελιών" %}</span>
+            <span class="text-kokkoris-teal-dark text-xl" aria-hidden="true">›</span>
+        </a>
+        <a href="{% url 'wishlist:list' %}"
+           class="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm hover:border-kokkoris-teal-dark hover:shadow-md transition-all">
+            <span class="font-inter text-lg text-slate-800">{% trans "Λίστα αγαπημένων" %}</span>
+            <span class="text-kokkoris-teal-dark text-xl" aria-hidden="true">›</span>
+        </a>
+        <a href="{% url 'accounts:cart' %}"
+           class="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm hover:border-kokkoris-teal-dark hover:shadow-md transition-all">
+            <span class="font-inter text-lg text-slate-800">{% trans "Το καλάθι μου" %}</span>
+            <span class="text-kokkoris-teal-dark text-xl" aria-hidden="true">›</span>
+        </a>
+    </nav>
+
+    <form method="post"
+          action="{% url 'account_logout' %}"
+          class="mt-8">
+        {% csrf_token %}
+        <button type="submit"
+                class="w-full rounded-xl border border-red-200 bg-white px-5 py-4 font-inter text-lg text-red-700 shadow-sm hover:bg-red-50 hover:border-red-300 transition-colors">
+            {% trans "Αποσύνδεση χρήστη" %}
+        </button>
+    </form>
+</section>
+{% endblock %}

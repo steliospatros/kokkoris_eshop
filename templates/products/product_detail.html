@@ -1,0 +1,220 @@
+{% extends "page.html" %}
+{% load i18n static %}
+
+{% block title %}{{ page_title }} — Kokkoris Eshop{% endblock %}
+
+{% block main_class %}w-full max-w-none bg-slate-50 min-h-[60vh]{% endblock %}
+
+{% block content %}
+<section class="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10">
+    <div id="product-detail"
+         class="product-detail"
+         data-product-id="{{ product.id }}"
+         data-user-authenticated="{{ user_is_authenticated|yesno:'true,false' }}"
+         data-variants="{{ variant_options|length }}">
+
+        <div class="grid lg:grid-cols-2 gap-8 lg:gap-12 items-start">
+            {# Image #}
+            <div class="product-detail__gallery bg-white rounded-xl border border-slate-200 p-6 lg:p-10 flex items-center justify-center min-h-[280px] lg:min-h-[420px]">
+                {% if image_url %}
+                    <div class="product-detail__image-wrap"
+                         style="--img-display-scale: {{ image_display_scale|default:1 }};">
+                        <img src="{{ image_url }}" alt="{{ page_title }}" class="product-detail__image max-h-[360px] w-auto object-contain">
+                    </div>
+                {% else %}
+                    <span class="text-slate-300 text-sm">{% trans "Χωρίς εικόνα" %}</span>
+                {% endif %}
+            </div>
+
+            {# Buy box #}
+            <div class="product-detail__buybox bg-white rounded-xl border border-slate-200 p-6 lg:p-8">
+                {% if company_url %}
+                    <a href="{{ company_url }}" class="text-sm font-inter font-medium text-kokkoris-teal-dark hover:underline">{{ company_name }}</a>
+                {% else %}
+                    <p class="text-sm font-inter font-medium text-kokkoris-teal-dark">{{ company_name }}</p>
+                {% endif %}
+
+                <h1 class="mt-2 font-poppins font-light text-2xl lg:text-3xl text-slate-900 leading-snug tracking-wide">
+                    {{ product.name }}
+                </h1>
+
+                {% if filter_links %}
+                <div class="mt-3 flex flex-wrap gap-1.5">
+                    {% for link in filter_links %}
+                    <a href="{{ link.url }}"
+                       class="product-detail__filter-pill inline-block px-2.5 py-0.5 text-[0.7rem] leading-tight font-inter font-medium rounded-full bg-kokkoris-teal-dark text-white hover:bg-kokkoris-teal-mid transition-colors">
+                        {{ link.label }}
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <p id="pd-sku" class="mt-3 text-sm text-slate-500 font-inter">
+                    {% if selected_variant.sku %}
+                        {% trans "Κωδικός" %}: <span class="font-medium text-slate-700">{{ selected_variant.sku }}</span>
+                    {% endif %}
+                </p>
+
+                <p id="pd-availability" class="mt-1 text-sm font-medium font-inter {{ selected_variant.availability_color_class }}">
+                    {{ selected_variant.availability_label }}
+                </p>
+
+                {% if variant_options|length > 1 %}
+                <div class="mt-6">
+                    <p class="text-xs uppercase tracking-wide text-slate-500 font-inter mb-2">{% trans "Μέγεθος" %}</p>
+                    <div id="pd-size-picker" class="flex flex-wrap gap-2" role="group" aria-label="{% trans 'Μέγεθος συσκευασίας' %}">
+                        {% for opt in variant_options %}
+                        <button type="button"
+                                class="pd-size-btn px-4 py-2 rounded-lg border text-sm font-inter transition-colors {% if opt.selected %}border-kokkoris-teal-dark bg-kokkoris-brand-cell text-kokkoris-teal-dark font-semibold{% else %}border-slate-300 text-slate-700 hover:border-kokkoris-teal-dark{% endif %}"
+                                data-variant-id="{{ opt.id }}"
+                                data-sku="{{ opt.sku }}"
+                                data-price="{{ opt.price_display }}"
+                                data-unit-price="{{ opt.unit_price_display }}"
+                                data-unit-label="{{ opt.unit_label }}"
+                                data-availability-label="{{ opt.availability_label }}"
+                                data-availability-class="{{ opt.availability_color_class }}"
+                                data-can-add="{{ opt.can_add|yesno:'true,false' }}"
+                                data-on-order="{{ opt.is_on_order|yesno:'true,false' }}"
+                                data-button-label="{{ opt.button_label }}"
+                                data-cart-qty="{{ opt.cart_qty }}"
+                                {% if opt.max_quantity != None %}data-max-stock="{{ opt.max_quantity }}"{% endif %}
+                                aria-pressed="{{ opt.selected|yesno:'true,false' }}">
+                            {{ opt.size_label }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="mt-6 flex flex-wrap items-end justify-between gap-4">
+                    <div>
+                        <p id="pd-price" class="font-inter font-bold text-3xl text-slate-900">{{ selected_variant.price_display }} €</p>
+                        <p id="pd-unit-price" class="text-sm text-slate-500 font-inter mt-1">
+                            {% if selected_variant.unit_price_display %}
+                                {{ selected_variant.unit_price_display }} € / {{ selected_variant.unit_label }}
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <button type="button"
+                            id="pd-wishlist"
+                            class="wishlist-toggle w-11 h-11 rounded-full border border-slate-200 flex items-center justify-center hover:border-kokkoris-teal-dark transition-colors"
+                            data-product-id="{{ product.id }}"
+                            aria-label="{% trans 'Αγαπημένα' %}"
+                            aria-pressed="{{ is_wishlisted|yesno:'true,false' }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                             class="w-5 h-5 {% if is_wishlisted %}fill-kokkoris-dot-pink stroke-kokkoris-dot-pink{% else %}fill-none stroke-kokkoris-teal-dark{% endif %}"
+                             stroke-width="2">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <div id="pd-cart-footer"
+                     class="mt-6 rounded-full overflow-hidden text-white {% if selected_variant.is_on_order %}bg-kokkoris-blue{% elif selected_variant.can_add %}bg-kokkoris-teal-dark{% else %}bg-slate-400{% endif %}"
+                     data-variant-id="{{ selected_variant.id }}"
+                     data-can-add="{{ selected_variant.can_add|yesno:'true,false' }}"
+                     data-on-order="{{ selected_variant.is_on_order|yesno:'true,false' }}"
+                     data-button-label="{{ selected_variant.button_label }}"
+                     {% if selected_variant.max_quantity != None %}data-max-stock="{{ selected_variant.max_quantity }}"{% endif %}>
+                    {% if selected_variant.cart_qty > 0 %}
+                        <div class="cart-stepper flex items-center justify-between px-6 py-3" data-variant-id="{{ selected_variant.id }}">
+                            <button type="button" class="qty-minus w-8 h-8 rounded-full border border-white/40 hover:bg-white/10 text-xl leading-none" aria-label="{% trans 'Μείωση' %}">−</button>
+                            <span class="qty-value font-semibold text-lg min-w-[2rem] text-center">{{ selected_variant.cart_qty }}</span>
+                            <button type="button" class="qty-plus w-8 h-8 rounded-full border border-white/40 hover:bg-white/10 text-xl leading-none" aria-label="{% trans 'Αύξηση' %}"
+                                    {% if selected_variant.max_quantity != None and selected_variant.cart_qty >= selected_variant.max_quantity %}disabled{% endif %}>+</button>
+                        </div>
+                    {% elif selected_variant.can_add %}
+                        <button type="button" class="cart-add w-full py-3.5 text-sm font-poppins font-medium uppercase tracking-wider" data-variant-id="{{ selected_variant.id }}">
+                            {{ selected_variant.button_label }}
+                        </button>
+                    {% else %}
+                        <button type="button" disabled class="cart-add w-full py-3.5 text-sm font-poppins font-medium uppercase tracking-wider opacity-80 cursor-not-allowed">
+                            {% trans "Αγορά" %}
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {# Description sections #}
+        <div class="mt-10 lg:mt-14 space-y-8">
+            {% if description %}
+            <section class="product-detail__section bg-white rounded-xl border border-slate-200 p-6 lg:p-8">
+                <h2 class="font-poppins font-light text-lg text-kokkoris-teal-dark uppercase tracking-wide mb-4 text-center">{% trans "Περιγραφή" %}</h2>
+                <div class="prose prose-sm max-w-none text-slate-600 font-inter leading-relaxed whitespace-pre-line">{{ description }}</div>
+            </section>
+            {% endif %}
+
+            {% if components %}
+            <section class="product-detail__section bg-white rounded-xl border border-slate-200 p-6 lg:p-8">
+                <h2 class="font-poppins font-light text-lg text-kokkoris-teal-dark uppercase tracking-wide mb-4 text-center">{% trans "Συστατικά" %}</h2>
+                <div class="prose prose-sm max-w-none text-slate-600 font-inter leading-relaxed whitespace-pre-line">{{ components }}</div>
+            </section>
+            {% endif %}
+
+            {% if bundle_contents %}
+            <section class="product-detail__section bg-white rounded-xl border border-slate-200 p-6 lg:p-8">
+                <h2 class="font-poppins font-light text-lg text-kokkoris-teal-dark uppercase tracking-wide mb-4 text-center">{% trans "Περιεχόμενο πακέτου" %}</h2>
+                <div class="prose prose-sm max-w-none text-slate-600 font-inter leading-relaxed whitespace-pre-line">{{ bundle_contents }}</div>
+            </section>
+            {% endif %}
+        </div>
+
+        {% if related_cards %}
+        <section class="mt-12 lg:mt-16 browse-company-section product-detail-related">
+            <h2 class="font-poppins font-light text-xl text-kokkoris-teal-dark tracking-wide mb-6 text-center">{% trans "Σχετικά προϊόντα" %}</h2>
+            <div class="relative flex items-stretch shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-kokkoris-brand-cell">
+                <button type="button"
+                        class="browse-row-prev hidden lg:flex w-10 shrink-0 items-center justify-center text-slate-300 hover:text-slate-500 transition-colors"
+                        aria-label="{% trans 'Προηγούμενα προϊόντα' %}">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5">
+                        <path d="M15 6l-6 6 6 6"/>
+                    </svg>
+                </button>
+
+                <div id="catalog-browse"
+                     class="browse-products-track flex flex-1 overflow-x-auto scroll-smooth snap-x snap-mandatory divide-x divide-slate-300 [&::-webkit-scrollbar]:hidden"
+                     style="scrollbar-width: none;"
+                     data-user-authenticated="{{ user_is_authenticated|yesno:'true,false' }}">
+                    {% for card in related_cards %}
+                        {% include "products/partials/product_browse_cell.html" with card=card %}
+                    {% endfor %}
+                </div>
+
+                <button type="button"
+                        class="browse-row-next hidden lg:flex w-10 shrink-0 items-center justify-center text-slate-300 hover:text-slate-500 transition-colors"
+                        aria-label="{% trans 'Επόμενα προϊόντα' %}">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5">
+                        <path d="M9 6l6 6-6 6"/>
+                    </svg>
+                </button>
+            </div>
+        </section>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_body %}
+<link rel="stylesheet" href="{% static 'css/product-detail.css' %}">
+<script src="{% static 'js/product-detail.js' %}"></script>
+<script src="{% static 'js/catalog.js' %}"></script>
+<script>
+(function () {
+    document.querySelectorAll(".product-detail-related").forEach(function (section) {
+        var track = section.querySelector(".browse-products-track");
+        var prev = section.querySelector(".browse-row-prev");
+        var next = section.querySelector(".browse-row-next");
+        if (!track || !prev || !next) {
+            return;
+        }
+        function scrollByPage(direction) {
+            track.scrollBy({ left: direction * track.clientWidth * 0.8, behavior: "smooth" });
+        }
+        prev.addEventListener("click", function () { scrollByPage(-1); });
+        next.addEventListener("click", function () { scrollByPage(1); });
+    });
+})();
+</script>
+{% endblock %}

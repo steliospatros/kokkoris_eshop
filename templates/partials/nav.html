@@ -107,9 +107,9 @@
         <div class="nav-toolbar__icons">
             {# Account icon — opens auth modal when signed out; profile when signed in. #}
             {% if user.is_authenticated %}
-            <a href="{% url 'accounts:profile' %}"
+            <a href="{% url 'accounts:hub' %}"
                aria-label="{% trans 'Ο λογαριασμός μου' %}"
-               class="flex items-center justify-center h-9 lg:h-[46px] hover:opacity-70 transition-opacity">
+               class="nav-account-icon nav-account-icon--signed-in flex items-center justify-center h-9 lg:h-[46px] hover:opacity-70 transition-opacity">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-full w-auto max-h-9 lg:max-h-[46px] aspect-square drop-shadow-[0_3px_5px_rgba(0,0,0,0.35)]">
                     <circle cx="12" cy="7.4" r="4.1"/>
                     <path d="M12 13.4c-5.3 0-9.6 3.1-9.6 6.9v.7a1 1 0 0 0 1 1h17.2a1 1 0 0 0 1-1v-.7c0-3.8-4.3-6.9-9.6-6.9z"/>
@@ -119,26 +119,45 @@
             <button type="button"
                     data-auth-trigger
                     aria-label="{% trans 'Ο λογαριασμός μου' %}"
-                    class="flex items-center justify-center h-9 lg:h-[46px] hover:opacity-70 transition-opacity">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-full w-auto max-h-9 lg:max-h-[46px] aspect-square drop-shadow-[0_3px_5px_rgba(0,0,0,0.35)]">
+                    class="nav-account-icon nav-account-icon--guest flex items-center justify-center h-9 lg:h-[46px] transition-opacity">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-full w-auto max-h-9 lg:max-h-[46px] aspect-square">
                     <circle cx="12" cy="7.4" r="4.1"/>
                     <path d="M12 13.4c-5.3 0-9.6 3.1-9.6 6.9v.7a1 1 0 0 0 1 1h17.2a1 1 0 0 0 1-1v-.7c0-3.8-4.3-6.9-9.6-6.9z"/>
                 </svg>
             </button>
             {% endif %}
 
-            {# Cart icon — links to checkout when items exist; badge shows live count. #}
-            <a href="{% url 'checkout:delivery' %}"
-               aria-label="{% trans 'Καλάθι' %}"
-               class="relative flex items-center justify-center h-9 lg:h-[46px] hover:opacity-70 transition-opacity">
-                <img src="{% static 'images/cart-icon-white.png' %}"
-                     alt=""
-                     class="h-full w-auto max-h-9 lg:max-h-[46px] object-contain drop-shadow-[0_3px_5px_rgba(0,0,0,0.35)]">
-                <span id="nav-cart-badge"
-                      class="{% if not cart_total_items %}hidden{% endif %} absolute -top-1 -right-1 min-w-[1.25rem] h-5 px-1 rounded-full bg-kokkoris-dot-orange text-white text-[11px] font-semibold flex items-center justify-center leading-none">
-                    {{ cart_total_items|default:0 }}
-                </span>
-            </a>
+            {# Cart icon — hover shows mini panel; click navigates to cart page. #}
+            <div id="nav-cart-widget" class="nav-cart-widget relative">
+                <a href="{% url 'accounts:cart' %}"
+                   aria-label="{% trans 'Καλάθι' %}"
+                   class="relative flex items-center justify-center h-9 lg:h-[46px] hover:opacity-70 transition-opacity">
+                    <img src="{% static 'images/cart-icon-white.png' %}"
+                         alt=""
+                         class="h-full w-auto max-h-9 lg:max-h-[46px] object-contain drop-shadow-[0_3px_5px_rgba(0,0,0,0.35)]">
+                    <span id="nav-cart-badge"
+                          class="{% if not cart_total_items %}hidden{% endif %} absolute -top-1 -right-1 min-w-[1.25rem] h-5 px-1 rounded-full bg-kokkoris-dot-orange text-white text-[11px] font-semibold flex items-center justify-center leading-none">
+                        {{ cart_total_items|default:0 }}
+                    </span>
+                </a>
+
+                <div id="nav-cart-panel"
+                     class="nav-cart-panel hidden absolute right-0 top-full pt-2 w-[min(20rem,calc(100vw-2rem))] z-50">
+                    <div class="rounded-xl bg-white text-slate-800 shadow-xl border border-slate-100 overflow-hidden">
+                        <div id="nav-cart-panel-body" class="max-h-80 overflow-y-auto">
+                            <p class="px-4 py-6 text-sm text-slate-400 text-center font-inter">
+                                {% trans "Φόρτωση…" %}
+                            </p>
+                        </div>
+                        <div class="border-t border-slate-100 p-3 bg-slate-50">
+                            <a href="{% url 'accounts:cart' %}"
+                               class="block w-full text-center rounded-full bg-kokkoris-teal-dark text-white text-sm font-inter font-medium py-2.5 hover:opacity-90 transition-opacity">
+                                {% trans "Μετάβαση στο καλάθι μου" %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             {# Wishlist — session list for guests; persistent for logged-in users. #}
             <a href="{% url 'wishlist:list' %}"
@@ -223,14 +242,14 @@
                 var thumb = product.image_url
                     ? '<img src="' + escapeHtml(product.image_url) + '" alt="" class="w-8 h-8 rounded object-cover shrink-0">'
                     : '<span class="w-8 h-8 rounded bg-slate-100 shrink-0"></span>';
+                var href = product.url ? escapeHtml(product.url) : "#";
                 return (
-                    '<li class="flex items-center gap-3 px-4 py-2 text-sm hover:bg-slate-50">' +
+                    '<li><a href="' + href + '" class="flex items-center gap-3 px-4 py-2 text-sm hover:bg-slate-50">' +
                     thumb +
                     '<span class="flex flex-col leading-tight">' +
-                    '<span class="font-medium">' + escapeHtml(product.name) + "</span>" +
+                    '<span class="font-medium text-slate-800">' + escapeHtml(product.name) + "</span>" +
                     '<span class="text-xs text-slate-400">' + escapeHtml(product.company) + "</span>" +
-                    "</span>" +
-                    "</li>"
+                    "</span></a></li>"
                 );
             })
             .join("");

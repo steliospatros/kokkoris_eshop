@@ -1,0 +1,102 @@
+{% load i18n %}
+
+<div class="order-detail-card">
+    <h2 class="order-detail-card__title">{% trans "Ενημέρωση παράδοσης" %}</h2>
+    <p class="order-detail-eta">{{ eta_message }}</p>
+</div>
+
+<div class="order-detail-card">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h2 class="order-detail-card__title mb-0">{% trans "Κατάσταση παραγγελίας" %}</h2>
+        <span class="order-detail-status order-detail-status--{{ order.status }}">
+            {{ status_label }}
+        </span>
+    </div>
+    <dl class="order-detail-meta-grid order-detail-meta">
+        <div>
+            <dt>{% trans "Αριθμός παραγγελίας" %}</dt>
+            <dd>#{{ order.id }}</dd>
+        </div>
+        <div>
+            <dt>{% trans "Ημερομηνία καταχώρησης" %}</dt>
+            <dd>{{ order_date_display }}</dd>
+        </div>
+        <div>
+            <dt>{% trans "Τρόπος πληρωμής" %}</dt>
+            <dd>{{ payment_label }}</dd>
+        </div>
+        <div>
+            <dt>{% trans "Τρόπος παράδοσης" %}</dt>
+            <dd>{{ delivery_label }}</dd>
+        </div>
+    </dl>
+</div>
+
+<div class="order-detail-card">
+    <h2 class="order-detail-card__title">{% trans "Προϊόντα" %}</h2>
+    <div class="order-detail-items">
+        {% for row in item_rows %}
+        <div class="order-detail-item">
+            {% if row.image_url %}
+            <img src="{{ row.image_url }}" alt="{{ row.name }}" class="order-detail-item__image">
+            {% else %}
+            <span class="order-detail-item__placeholder">{% trans "Χωρίς εικόνα" %}</span>
+            {% endif %}
+            <div>
+                <p class="order-detail-item__name">{{ row.name }}</p>
+                <p class="order-detail-item__meta">
+                    {{ row.quantity }}× {{ row.weight }} kg · {{ row.unit_price_display }} €
+                </p>
+            </div>
+            <p class="order-detail-item__price">{{ row.line_total_display }} €</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="order-detail-card">
+    <h2 class="order-detail-card__title">{% trans "Κόστος παραγγελίας" %}</h2>
+    <div class="order-detail-summary-row">
+        <span>{% trans "Τιμή προϊόντων" %}</span>
+        <span>{{ cart_cost_display }} €</span>
+    </div>
+    <div class="order-detail-summary-row">
+        <span>{% trans "Αποστολή" %}</span>
+        <span>
+            {% if courier_fee_is_free %}
+                {% trans "Δωρεάν" %}
+            {% else %}
+                {{ courier_fee_display }} €
+            {% endif %}
+        </span>
+    </div>
+    <div class="order-detail-summary-row order-detail-summary-row--total">
+        <span>{% trans "Σύνολο πληρωμής" %}</span>
+        <span>{{ total_cost_display }} €</span>
+    </div>
+</div>
+
+<div class="order-detail-card">
+    <h2 class="order-detail-card__title">{% trans "Διεύθυνση παράδοσης" %}</h2>
+    <p class="text-sm text-slate-600 font-inter mb-3">{{ delivery_address_display }}</p>
+    {% if order.delivery_phone_number %}
+    <p class="text-sm text-slate-500 font-inter mb-3">
+        {% trans "Τηλέφωνο" %}: {{ order.delivery_phone_number }}
+    </p>
+    {% endif %}
+    {% if delivery_map_url %}
+    <img src="{{ delivery_map_url }}"
+         alt="{% trans 'Χάρτης παράδοσης' %}"
+         class="order-detail-map"
+         loading="lazy">
+    {% else %}
+    <p class="text-sm text-slate-400 font-inter">
+        {% trans "Ο χάρτης δεν είναι διαθέσιμος." %}
+    </p>
+    {% endif %}
+    {% if order.delivery_notes %}
+    <p class="text-sm text-slate-500 font-inter mt-3">
+        {% trans "Σημειώσεις" %}: {{ order.delivery_notes }}
+    </p>
+    {% endif %}
+</div>

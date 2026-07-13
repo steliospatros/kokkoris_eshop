@@ -101,6 +101,15 @@
                 </button>
             </form>
 
+            <p class="mt-4 text-center text-sm text-slate-600">
+                {% trans "Δεν έχεις λογαριασμό;" %}
+                <button type="button"
+                        id="auth-switch-to-signup"
+                        class="text-kokkoris-teal-dark font-medium hover:underline underline-offset-2">
+                    {% trans "Εγγραφή" %}
+                </button>
+            </p>
+
             <div class="my-5 flex items-center gap-3">
                 <span class="h-px flex-1 bg-slate-200"></span>
                 <span class="text-xs uppercase tracking-wide text-slate-400">{% trans "ή" %}</span>
@@ -192,6 +201,15 @@
                 </button>
             </form>
 
+            <p class="mt-4 text-center text-sm text-slate-600">
+                {% trans "Έχεις ήδη λογαριασμό;" %}
+                <button type="button"
+                        id="auth-switch-to-login"
+                        class="text-kokkoris-teal-dark font-medium hover:underline underline-offset-2">
+                    {% trans "Σύνδεση" %}
+                </button>
+            </p>
+
             <div class="my-5 flex items-center gap-3">
                 <span class="h-px flex-1 bg-slate-200"></span>
                 <span class="text-xs uppercase tracking-wide text-slate-400">{% trans "ή" %}</span>
@@ -217,6 +235,13 @@
             </p>
             {% endif %}
         </div>
+
+        {# ── Step 3: phone SMS verification (after login/signup) — only when enabled ── #}
+        {% if phone_verification_enabled %}
+        <div id="auth-panel-phone" class="auth-panel hidden">
+            {% include "partials/phone_verify_panel.html" with prefix="auth" %}
+        </div>
+        {% endif %}
 
         {# ── Reset email sent (uses login email, no extra input) ── #}
         <div id="auth-panel-reset-sent" class="auth-panel hidden text-center">

@@ -23,14 +23,15 @@ from products import views as products_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('accounts/', include('allauth.urls')),
     path('accounts/', include('accounts.urls')),
+    path('accounts/', include('allauth.urls')),
     path('checkout/', include('checkout.urls')),
     path('orders/', include('orders.urls')),
     path('products/', include('products.urls')),
     path('newsletter/', include('newsletter.urls')),
     path('cart/', include('cart.urls')),
     path('wishlist/', include('wishlist.urls')),
+    path('', include('pages.urls')),
     path('', products_views.home, name='home'),
 ]
 

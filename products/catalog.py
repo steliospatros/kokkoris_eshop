@@ -7,6 +7,7 @@ from urllib.parse import urlencode
 
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Count, DecimalField, ExpressionWrapper, F, Max, Min, OuterRef, Prefetch, Q, Subquery
+from django.urls import reverse
 
 from .models import Category, Company, Product, ProductVariant
 
@@ -534,6 +535,173 @@ def build_catalog_card(product, *, cart_qty=0, is_wishlisted=False):
         "image_display_scale": get_product_image_display_scale(product),
         "cart_qty": cart_qty,
         "is_wishlisted": is_wishlisted,
+        "product_slug": product.slug,
+        "detail_url": reverse("products:detail", kwargs={"slug": product.slug}),
+    }
+
+
+def get_product_detail_queryset():
+    return (
+        Product.objects.filter(is_active=True)
+        .select_related("company", "animal_type", "category")
+        .prefetch_related(
+            Prefetch("variants", queryset=ProductVariant.objects.order_by("weight"))
+        )
+    )
+
+
+def build_variant_option(variant, *, selected=False, cart_qty=0):
+    """One package-size row for the product detail size picker."""
+    stock_display = get_stock_display(variant)
+    unit_price = variant.unit_price
+    return {
+        "id": variant.id,
+        "weight": variant.weight,
+        "weight_display": format_weight(variant.weight),
+        "unit_label": variant.unit_label,
+        "size_label": f"{format_weight(variant.weight)} {variant.unit_label}",
+        "sku": variant.sku or "",
+        "price": variant.price,
+        "price_display": format_decimal_greek(variant.price),
+        "unit_price_display": format_decimal_greek(unit_price) if unit_price else "",
+        "availability_label": stock_display["label"],
+        "availability_color_class": stock_display["color_class"],
+        "can_add": stock_display["can_add"],
+        "max_quantity": stock_display["max_quantity"],
+        "is_on_order": stock_display["status"] == STOCK_STATUS_ON_ORDER,
+        "button_label": stock_display.get("button_label", "Αγορά"),
+        "selected": selected,
+        "cart_qty": cart_qty,
+    }
+
+
+def get_related_products_for_detail(product, *, limit=24):
+    """
+    Related products for the detail page (horizontal row).
+
+    Priority (κατάβαση): same animal + category + brand, then same animal +
+    category, then same animal + brand. Same animal only does not qualify.
+    """
+    candidates = []
+    queryset = (
+        get_catalog_queryset()
+        .filter(animal_type_id=product.animal_type_id)
+        .exclude(pk=product.pk)
+    )
+
+    for candidate in queryset:
+        same_category = candidate.category_id == product.category_id
+        same_company = candidate.company_id == product.company_id
+
+        if same_category and same_company:
+            tier = 0
+        elif same_category:
+            tier = 1
+        elif same_company:
+            tier = 2
+        else:
+            continue
+
+        candidates.append((tier, candidate.company.name.lower(), candidate.name.lower(), candidate))
+
+    candidates.sort(key=lambda row: (row[0], row[1], row[2]))
+    return [row[3] for row in candidates[:limit]]
+
+
+def build_product_filter_links(product):
+    """Pill links below the buy box — each opens catalog with one filter applied."""
+    animal_slug = product.animal_type.slug
+    category_slug = product.category.slug
+    return [
+        {
+            "type": "animal",
+            "label": ANIMAL_SLUG_LABELS.get(animal_slug, product.animal_type.name),
+            "url": f"{reverse('products:all')}?{urlencode([('animal', animal_slug)])}",
+        },
+        {
+            "type": "category",
+            "label": CATEGORY_LABELS.get(product.category.name, product.category.name),
+            "url": f"{reverse('products:all')}?{urlencode([('category', category_slug)])}",
+        },
+        {
+            "type": "brand",
+            "label": product.company.name,
+            "url": f"{reverse('products:all')}?{urlencode([('brand', product.company.code)])}",
+        },
+    ]
+
+
+def build_product_detail_context(request, product, *, selected_variant_id=None):
+    """Template context for the product detail page (petcity-style)."""
+    variants = list(product.variants.all())
+    if not variants:
+        return None
+
+    selected = None
+    if selected_variant_id:
+        selected = next((v for v in variants if v.id == selected_variant_id), None)
+    if selected is None:
+        selected = get_default_variant(product) or variants[0]
+
+    cart_quantities = {}
+    if hasattr(request, "session"):
+        from cart.cart import get_cart
+
+        cart_quantities = {
+            item.product_variant.pk: item.quantity for item in get_cart(request).items
+        }
+
+    wishlisted_ids = set()
+    if hasattr(request, "session"):
+        from wishlist.wishlist import get_wishlist
+
+        wishlisted_ids = get_wishlist(request).product_ids
+
+    variant_options = [
+        build_variant_option(
+            v,
+            selected=(v.id == selected.id),
+            cart_qty=cart_quantities.get(v.id, 0),
+        )
+        for v in variants
+    ]
+    selected_option = next(o for o in variant_options if o["selected"])
+
+    animal_label = ANIMAL_SLUG_LABELS.get(product.animal_type.slug, product.animal_type.name)
+    category_label = CATEGORY_LABELS.get(product.category.name, product.category.name)
+
+    related_products = get_related_products_for_detail(product)
+    related_cards = build_catalog_cards(
+        related_products,
+        cart_quantities=cart_quantities,
+        wishlisted_ids=wishlisted_ids,
+    )
+
+    company_url = None
+    if product.company_id:
+        from products.company_pages import has_brand_page
+
+        if has_brand_page(product.company.code):
+            company_url = reverse("products:company", kwargs={"company_code": product.company.code})
+
+    return {
+        "product": product,
+        "page_title": get_display_title(product, selected),
+        "company_name": product.company.name,
+        "company_url": company_url,
+        "filter_links": build_product_filter_links(product),
+        "animal_label": animal_label,
+        "category_label": category_label,
+        "image_url": product.image.url if product.image else None,
+        "image_display_scale": get_product_image_display_scale(product),
+        "description": product.description.strip() if product.description else "",
+        "components": product.components.strip() if product.components else "",
+        "bundle_contents": product.bundle_contents.strip() if product.bundle_contents else "",
+        "variant_options": variant_options,
+        "selected_variant": selected_option,
+        "is_wishlisted": product.id in wishlisted_ids,
+        "related_cards": related_cards,
+        "user_is_authenticated": request.user.is_authenticated,
     }
 
 

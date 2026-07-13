@@ -21,9 +21,12 @@ def _google_oauth_ready():
 
 
 def auth_helpers(request):
+    from django.conf import settings
+
     google_ready = _google_oauth_ready()
     return {
         "password_rules": PASSWORD_RULES,
         "google_oauth_ready": google_ready,
         "google_login_url": reverse("google_login") if google_ready else "",
+        "phone_verification_enabled": getattr(settings, "PHONE_VERIFICATION_ENABLED", False),
     }

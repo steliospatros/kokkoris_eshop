@@ -1,0 +1,33 @@
+{% load i18n %}
+<nav class="checkout-steps" aria-label="{% trans 'Βήματα checkout' %}">
+    <ol class="checkout-steps__list">
+        {% for step in checkout_steps %}
+        <li class="checkout-step checkout-step--{{ step.state }}{% if step.key == checkout_step %} checkout-step--current{% endif %}">
+            <div class="checkout-step__marker" aria-hidden="true">
+                {% if step.state == "completed" %}
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="checkout-step__check">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                {% else %}
+                    <span class="checkout-step__number">{{ step.number }}</span>
+                {% endif %}
+            </div>
+
+            <div class="checkout-step__body">
+                <div class="checkout-step__header">
+                    <h2 class="checkout-step__title">{{ step.label }}</h2>
+                    {% if step.state == "completed" and step.url %}
+                        <a href="{{ step.url }}" class="checkout-step__edit">{% trans "Επεξεργασία" %}</a>
+                    {% endif %}
+                </div>
+
+                {% if step.state == "completed" and step.summary %}
+                    <p class="checkout-step__summary">{{ step.summary }}</p>
+                {% elif step.state == "locked" %}
+                    <p class="checkout-step__hint">{% trans "Ολοκλήρωσε πρώτα το προηγούμενο βήμα." %}</p>
+                {% endif %}
+            </div>
+        </li>
+        {% endfor %}
+    </ol>
+</nav>

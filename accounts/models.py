@@ -54,17 +54,35 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     phone_number = models.CharField(
         max_length=20,
         blank=True,
-        help_text="Mobile phone number. Filled in during checkout, not at signup."
+        help_text="Greek mobile (69XXXXXXXX). Required at signup; optional until then on legacy accounts.",
     )
     city = models.CharField(
         max_length=100,
         blank=True,
         help_text="City of residence. Filled in during checkout, not at signup."
     )
+    area = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        help_text="Neighborhood / suburb (e.g. Χαλανδρί when city is Αθήνα).",
+    )
+    street = models.CharField(
+        max_length=150,
+        blank=True,
+        default="",
+        help_text="Street name (route) from parsed delivery address.",
+    )
+    street_number = models.CharField(
+        max_length=20,
+        blank=True,
+        default="",
+        help_text="Street number from parsed delivery address.",
+    )
     address = models.CharField(
         max_length=255,
         blank=True,
-        help_text="Street address. Filled in during checkout, not at signup."
+        help_text="Legacy single-line address (street + number). Kept for checkout compat.",
     )
     postal_code = models.CharField(
         max_length=10,
@@ -76,10 +94,16 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         help_text="Special delivery instructions. Filled in during checkout, not at signup."
     )
     floor = models.CharField(
-        max_length=20,
+        max_length=50,
         blank=True,
         default="",
-        help_text="Delivery floor (e.g. 'Ισόγειο', '3ος'). Filled in during checkout."
+        help_text="Delivery floor (preset or custom). Filled in during checkout.",
+    )
+    doorbell_name = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        help_text="Name on the doorbell / intercom at delivery address.",
     )
     latitude = models.DecimalField(
         max_digits=9,
@@ -94,6 +118,11 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         null=True,
         blank=True,
         help_text="GPS longitude of the delivery address pin, set via Google Maps at checkout."
+    )
+    phone_verified_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the mobile number was confirmed via SMS OTP.",
     )
 
     # --- Django auth/admin bookkeeping fields. ---

@@ -176,6 +176,33 @@ class Product(models.Model):
         default=True,
         help_text="Whether this product is currently available for sale."
     )
+    # Physical shipping attributes used by the ELTA Courier cost algorithm.
+    # These describe the packaged product as shipped (not the variant's
+    # catalogue "weight" field on ProductVariant, which is package size).
+    weight = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        default=0.00,
+        help_text="Shipping weight in kilograms (kg) for courier billing.",
+    )
+    length = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        default=0.00,
+        help_text="Package length in centimetres (cm) for volumetric weight.",
+    )
+    width = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        default=0.00,
+        help_text="Package width in centimetres (cm) for volumetric weight.",
+    )
+    height = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        default=0.00,
+        help_text="Package height in centimetres (cm) for volumetric weight.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

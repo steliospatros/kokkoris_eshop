@@ -1,63 +1,115 @@
-{% extends "base.html" %}
-{% load i18n %}
+{% extends "page.html" %}
+{% load i18n static %}
 
-{% block title %}Checkout - Τρόπος Πληρωμής{% endblock %}
+{% block title %}{% trans "Checkout — Τρόπος πληρωμής" %}{% endblock %}
+
+{% block main_class %}w-full max-w-none bg-slate-50 min-h-[60vh]{% endblock %}
 
 {% block content %}
-    <h1 class="text-2xl font-bold text-slate-800 mb-1">Βήμα 3: Τρόπος Πληρωμής</h1>
-    <p class="text-slate-500 mb-6">Έλεγξε την παραγγελία σου και επίλεξε πώς θα πληρώσεις.</p>
+<section class="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+    <div class="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-8 items-start">
+        <div class="min-w-0">
+            {% include "checkout/_steps.html" %}
 
-    <div class="bg-white rounded-lg shadow p-6 max-w-lg mb-6">
-        <h2 class="text-sm font-semibold text-slate-700 mb-3">Παραγγελία</h2>
-        <ul class="divide-y divide-slate-100 mb-4">
-            {% for item in cart.items %}
-                <li class="py-2 flex items-center justify-between text-sm">
-                    <span class="text-slate-600">{{ item.quantity }}x {{ item.product_variant }}</span>
-                    <span class="text-slate-800 font-medium">{{ item.subtotal }}€</span>
-                </li>
-            {% endfor %}
-        </ul>
-        <div class="text-sm space-y-1 border-t border-slate-200 pt-3">
-            <div class="flex justify-between text-slate-600">
-                <span>Κόστος προϊόντων</span>
-                <span>{{ cart_total }}€</span>
-            </div>
-            <div class="flex justify-between text-slate-600">
-                <span>Μεταφορικά</span>
-                <span>{% if courier_fee %}{{ courier_fee }}€{% else %}Δωρεάν{% endif %}</span>
-            </div>
-            <div class="flex justify-between text-base font-bold text-slate-800 pt-1">
-                <span>Σύνολο</span>
-                <span>{{ total_cost }}€</span>
+            <div class="checkout-step-panel">
+                <form method="post"
+                      id="checkout-payment-form"
+                      class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6"
+                      data-cart-total="{{ cart_total }}"
+                      data-base-shipping="{{ courier_fee }}"
+                      data-cod-shipping="{{ cod_courier_fee }}"
+                      data-stripe-enabled="{{ stripe_enabled|yesno:'true,false' }}"
+                      data-stripe-publishable-key="{{ stripe_publishable_key }}"
+                      data-payment-intent-url="{% url 'checkout:payment_intent' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="stripe_payment_intent_id" id="stripe-payment-intent-id" value="">
+
+                    <div>
+                        <h3 class="font-poppins font-medium text-base text-slate-800 mb-1">
+                            {% trans "Επιλογή τρόπου πληρωμής" %}
+                        </h3>
+                        <p class="text-sm text-slate-500 font-inter">
+                            {% trans "Επίλεξε πώς θέλεις να ολοκληρώσεις την παραγγελία σου." %}
+                        </p>
+                    </div>
+
+                    <div class="grid sm:grid-cols-2 gap-3">
+                        {% for option in payment_options %}
+                        <label class="checkout-payment-option">
+                            <input type="radio"
+                                   name="payment_method"
+                                   value="{{ option.value }}"
+                                   class="checkout-payment-option__input"
+                                   data-cod-surcharge="{{ option.cod_surcharge }}"
+                                   data-total="{{ option.total_with_surcharge }}"
+                                   {% if option.value == selected_payment_method %}checked{% endif %}
+                                   required>
+                            <span class="checkout-payment-option__card">
+                                {% if option.value == "cash_on_delivery" %}
+                                <span class="checkout-payment-option__icon" aria-hidden="true">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="w-6 h-6">
+                                        <rect x="2" y="6" width="20" height="12" rx="2"/>
+                                        <circle cx="12" cy="12" r="2.5"/>
+                                        <path d="M6 12h.01M18 12h.01"/>
+                                    </svg>
+                                </span>
+                                {% else %}
+                                <span class="checkout-payment-option__icon" aria-hidden="true">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="w-6 h-6">
+                                        <rect x="2" y="5" width="20" height="14" rx="2"/>
+                                        <path d="M2 10h20"/>
+                                    </svg>
+                                </span>
+                                {% endif %}
+                                <span class="checkout-payment-option__label">{{ option.label }}</span>
+                            </span>
+                        </label>
+                        {% endfor %}
+                    </div>
+
+                    {% if form.payment_method.errors %}
+                        <p class="text-red-500 text-xs font-inter">{{ form.payment_method.errors|striptags }}</p>
+                    {% endif %}
+
+                    {% for option in payment_options %}
+                    <div class="checkout-payment-detail{% if option.value != selected_payment_method %} hidden{% endif %}"
+                         data-payment-detail="{{ option.value }}">
+                        <p class="checkout-payment-detail__text">{{ option.description }}</p>
+                        <p class="checkout-payment-detail__note">{{ option.note }}</p>
+
+                        {% if option.value == "card" %}
+                        <div id="stripe-card-element" class="checkout-stripe-element"></div>
+                        <p id="stripe-payment-error"
+                           class="checkout-stripe-error hidden"
+                           role="alert"
+                           aria-live="polite"></p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    <div class="flex flex-wrap gap-4 pt-2 border-t border-slate-100">
+                        <a href="{% url 'checkout:delivery' %}"
+                           class="inline-block rounded-full border border-slate-300 px-8 py-3 text-slate-700 font-inter font-medium hover:bg-slate-50 transition-colors">
+                            {% trans "Πίσω" %}
+                        </a>
+                        <button type="submit"
+                                id="checkout-payment-submit"
+                                class="inline-block rounded-full bg-kokkoris-teal-dark px-8 py-3 text-white font-inter font-medium hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed">
+                            {% trans "Ολοκλήρωση παραγγελίας" %}
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
+        {% include "checkout/_cart_sidebar_locked.html" %}
     </div>
+</section>
+{% endblock %}
 
-    <div class="bg-white rounded-lg shadow p-6 max-w-lg mb-6 text-sm text-slate-600">
-        <h2 class="text-sm font-semibold text-slate-700 mb-2">Παράδοση σε</h2>
-        <p>{{ checkout_data.address }}, {{ checkout_data.city }} {{ checkout_data.postal_code }}</p>
-        <p>Τηλέφωνο: {{ checkout_data.phone_number }}</p>
-    </div>
-
-    <form method="post" class="bg-white rounded-lg shadow p-6 max-w-lg space-y-4">
-        {% csrf_token %}
-        <div class="space-y-3">
-            {% for radio in form.payment_method %}
-                <label class="flex items-center gap-3 border border-slate-300 rounded px-4 py-3 cursor-pointer hover:border-emerald-500">
-                    {{ radio.tag }}
-                    <span class="text-sm text-slate-700">{{ radio.choice_label }}</span>
-                </label>
-            {% endfor %}
-        </div>
-        {% if form.payment_method.errors %}
-            <p class="text-red-500 text-xs">{{ form.payment_method.errors|striptags }}</p>
-        {% endif %}
-        <p class="text-xs text-slate-400">
-            Η πληρωμή με κάρτα δεν χρεώνεται ακόμα εδώ - η παραγγελία καταχωρείται και το
-            προσωπικό επιβεβαιώνει την πληρωμή χειροκίνητα.
-        </p>
-        <button type="submit" class="bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700">
-            Ολοκλήρωση Παραγγελίας
-        </button>
-    </form>
+{% block extra_body %}
+<link rel="stylesheet" href="{% static 'css/checkout.css' %}">
+{% if stripe_enabled %}
+<script src="https://js.stripe.com/v3/"></script>
+{% endif %}
+<script src="{% static 'js/checkout-payment.js' %}"></script>
 {% endblock %}

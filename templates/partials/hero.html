@@ -1,4 +1,4 @@
-{% load static %}
+{% load static i18n %}
 {# Part 2 — hero section: the exact background photo/graphic from the      #}
 {# mockup (page 1, right below the top nav strip) — the radial teal        #}
 {# gradient behind the dog/cats/puppy collage plus the KOKKORIS Pet Food   #}
@@ -6,10 +6,20 @@
 {# artwork (not something to be redrawn with CSS/SVG), cropped pixel-exact #}
 {# from the PDF (starts right where the nav strip ends, stops right before #}
 {# the "about us" heading, which belongs to the next content section).     #}
-<div class="w-full bg-white leading-[0]">
+<div class="relative w-full bg-white">
     <img src="{% static 'images/hero-section.png' %}"
          alt=""
-         class="w-full h-auto block">
+         class="relative z-0 w-full h-auto block">
+    {% if user.is_authenticated %}
+        <div class="hero-welcome pointer-events-none absolute z-20 px-4">
+            <p class="hero-welcome__greeting">{% trans "Καλωσήρθατε στην σελίδα μας," %}</p>
+            {% if user.first_name or user.last_name %}
+                <p class="hero-welcome__name">
+                    {{ user.first_name }}{% if user.first_name and user.last_name %} {% endif %}{{ user.last_name }}
+                </p>
+            {% endif %}
+        </div>
+    {% endif %}
 </div>
 {# The rest of the white "part 2" body (the "about us" heading + copy and #}
 {# the brand carousel) is deliberately NOT part of this pass — it's built #}

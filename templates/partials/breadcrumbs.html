@@ -1,0 +1,28 @@
+{% load i18n %}
+{% if breadcrumbs %}
+<nav class="site-breadcrumbs w-full border-b border-slate-100/80 bg-white"
+     aria-label="{% trans 'Διαδρομή πλοήγησης' %}">
+    <div class="max-w-[960px] mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-5">
+        <ol class="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1.5 font-poppins font-light text-sm sm:text-base lg:text-lg text-slate-500 tracking-wide text-center">
+            {% for crumb in breadcrumbs %}
+                {% if not forloop.first %}
+                    <li class="text-slate-300 select-none leading-none" aria-hidden="true">/</li>
+                {% endif %}
+                <li class="min-w-0 max-w-full">
+                    {% if forloop.last %}
+                        <h1 class="inline text-slate-800 font-normal truncate max-w-full m-0 p-0 text-inherit leading-inherit tracking-inherit"
+                            aria-current="page">
+                            {{ crumb.label }}
+                        </h1>
+                    {% else %}
+                        <a href="{{ crumb.url }}"
+                           class="text-kokkoris-teal-dark hover:text-kokkoris-teal-mid hover:underline underline-offset-2 transition-colors truncate inline-block max-w-full">
+                            {{ crumb.label }}
+                        </a>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ol>
+    </div>
+</nav>
+{% endif %}

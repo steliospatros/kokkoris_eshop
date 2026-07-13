@@ -58,6 +58,7 @@
     {# Όλες οι άλλες σελίδες: {% extends "page.html" %} ή base + content. #}
     {% block hero %}{% endblock %}
     <main class="{% block main_class %}max-w-5xl mx-auto px-4 py-8{% endblock %} flex-1 w-full">
+        {% include "partials/breadcrumbs.html" %}
         {% block content %}{% endblock %}
     </main>
     {% block pre_footer %}{% endblock %}
@@ -66,9 +67,15 @@
     {% include "partials/footer.html" %}
     {% include "partials/cookie-consent.html" %}
     {% include "partials/auth-modal.html" %}
+    {% if phone_verification_enabled %}
+    {% include "partials/phone-verify-modal.html" %}
+    <link rel="stylesheet" href="{% static 'css/auth-phone-verify.css' %}">
+    <script src="{% static 'js/auth-phone-verify.js' %}"></script>
+    {% endif %}
     <script src="{% static 'js/cookie-consent.js' %}"></script>
     <script src="{% static 'js/password-rules.js' %}"></script>
     <script src="{% static 'js/auth-modal.js' %}"></script>
+    <script src="{% static 'js/cart-widget.js' %}"></script>
     {% block extra_body %}{% endblock %}
     </div>
 </body>

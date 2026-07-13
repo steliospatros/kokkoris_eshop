@@ -40,6 +40,9 @@ backups/
 .env.*
 !.env.example
 
+# Personal dev control notes (never commit)
+.dev-control.md
+
 # Virtual environments
 venv/
 env/

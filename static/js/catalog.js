@@ -35,6 +35,10 @@
     }
 
     function updateNavBadge(total) {
+        if (window.KokkorisCart && window.KokkorisCart.updateNavBadge) {
+            window.KokkorisCart.updateNavBadge(total);
+            return;
+        }
         var badge = document.getElementById("nav-cart-badge");
         if (!badge) {
             return;
@@ -44,6 +48,13 @@
             badge.classList.remove("hidden");
         } else {
             badge.classList.add("hidden");
+        }
+    }
+
+    function syncCartUi(total) {
+        updateNavBadge(total);
+        if (window.KokkorisCart && window.KokkorisCart.invalidatePreview) {
+            window.KokkorisCart.invalidatePreview();
         }
     }
 
@@ -158,7 +169,7 @@
         postJson("/cart/add/", { variant_id: parseInt(variantId, 10) })
             .then(function (data) {
                 renderStepper(card, data.quantity);
-                updateNavBadge(data.total_items);
+                syncCartUi(data.total_items);
             })
             .catch(handleCartError);
     }
@@ -179,7 +190,7 @@
                 } else {
                     renderBuyButton(card);
                 }
-                updateNavBadge(data.total_items);
+                syncCartUi(data.total_items);
             })
             .catch(handleCartError);
     }
@@ -256,7 +267,9 @@
             return response.json();
         })
         .then(function (data) {
-            updateNavBadge(data.total_items || 0);
+            if (!window.KokkorisCart) {
+                updateNavBadge(data.total_items || 0);
+            }
         })
         .catch(function () {});
 

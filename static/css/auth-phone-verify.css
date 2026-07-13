@@ -1,0 +1,187 @@
+/* Auth modal — phone SMS verification (Peatix-style) */
+.phone-verify-panel {
+    text-align: center;
+    padding: 0.25rem 0;
+}
+
+.phone-verify-panel__icon {
+    margin: 0 auto 1.25rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    color: #42746c;
+}
+
+.phone-verify-panel__icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.phone-verify-panel__title {
+    margin: 0 0 1.5rem;
+    font-family: Poppins, Inter, sans-serif;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+.phone-verify-panel__body {
+    max-width: 22rem;
+    margin: 0 auto;
+}
+
+.phone-verify-panel__lead {
+    margin: 0 0 1.25rem;
+    font-family: Inter, sans-serif;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: #64748b;
+}
+
+.phone-verify-panel__sent {
+    margin: 0 0 0.75rem;
+    font-family: Inter, sans-serif;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: #475569;
+}
+
+.phone-verify-panel__sent strong {
+    font-weight: 600;
+    color: #1e293b;
+    font-family: ui-monospace, monospace;
+    letter-spacing: 0.04em;
+}
+
+.phone-verify-panel__expiry {
+    margin: 0 0 1.25rem;
+    font-family: Inter, sans-serif;
+    font-size: 0.8125rem;
+    color: #94a3b8;
+}
+
+.phone-verify-panel__phone-input {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 0.25rem;
+    padding: 0.75rem 1rem;
+    font-family: Inter, ui-monospace, monospace;
+    font-size: 1.0625rem;
+    letter-spacing: 0.08em;
+    text-align: center;
+    color: #1e293b;
+    background: #fff;
+}
+
+.phone-verify-panel__phone-input::placeholder {
+    color: #cbd5e1;
+    letter-spacing: 0.1em;
+}
+
+.phone-verify-panel__phone-input:focus {
+    outline: none;
+    border-color: #42746c;
+    box-shadow: 0 0 0 2px rgba(66, 116, 108, 0.15);
+}
+
+.phone-verify-panel__phone-input--locked {
+    background: #f8fafc;
+    color: #64748b;
+}
+
+.phone-verify-panel__phone-input--error,
+.phone-verify-panel__otp-cell--error {
+    border-color: #ef4444 !important;
+}
+
+.phone-verify-panel__otp-row {
+    display: flex;
+    justify-content: center;
+    gap: 0.625rem;
+    margin-bottom: 1.5rem;
+}
+
+.phone-verify-panel__otp-cell {
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.25rem;
+    text-align: center;
+    font-family: Inter, ui-monospace, monospace;
+    font-size: 1.375rem;
+    font-weight: 600;
+    color: #1e293b;
+    background: #fff;
+    padding: 0;
+    caret-color: #42746c;
+}
+
+.phone-verify-panel__otp-cell:focus {
+    outline: none;
+    border-color: #42746c;
+    box-shadow: 0 0 0 2px rgba(66, 116, 108, 0.15);
+}
+
+.phone-verify-panel__btn {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    border: none;
+    border-radius: 0.25rem;
+    background: #42746c;
+    padding: 0.8125rem 1.5rem;
+    font-family: Inter, sans-serif;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.phone-verify-panel__btn:hover:not(:disabled) {
+    opacity: 0.92;
+}
+
+.phone-verify-panel__btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.phone-verify-panel__error {
+    margin-top: 0.625rem;
+    font-size: 0.8125rem;
+    color: #dc2626;
+    font-family: Inter, sans-serif;
+}
+
+.phone-verify-panel__footer-links {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1.25rem;
+    font-size: 0.875rem;
+}
+
+.phone-verify-panel__link {
+    border: none;
+    background: none;
+    padding: 0;
+    color: #42746c;
+    font-family: Inter, sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.phone-verify-panel__link:hover:not(:disabled) {
+    text-decoration: underline;
+}
+
+.phone-verify-panel__link:disabled {
+    color: #94a3b8;
+    cursor: not-allowed;
+    text-decoration: none;
+}

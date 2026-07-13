@@ -1,0 +1,40 @@
+{% load i18n %}
+{# Reusable cart line — used on cart page and rendered by cart-widget.js for the mini panel. #}
+<li class="cart-line-row flex items-center gap-3 {% if compact %}py-2.5{% else %}py-4 px-5{% endif %}"
+    data-variant-id="{{ line.variant_id }}"
+    {% if line.max_quantity != None %}data-max-stock="{{ line.max_quantity }}"{% endif %}>
+    <div class="shrink-0 {% if compact %}w-12 h-12{% else %}w-16 h-16{% endif %} rounded-lg border border-slate-100 bg-slate-50 overflow-hidden flex items-center justify-center">
+        {% if line.image_url %}
+            <img src="{{ line.image_url }}"
+                 alt=""
+                 class="w-full h-full object-contain">
+        {% else %}
+            <span class="w-full h-full bg-slate-100"></span>
+        {% endif %}
+    </div>
+
+    <div class="flex-1 min-w-0">
+        <p class="font-inter font-medium text-slate-800 {% if compact %}text-xs leading-snug line-clamp-2{% else %}text-sm leading-snug{% endif %}">
+            {{ line.title }}
+        </p>
+        {% if not compact %}
+            <p class="text-xs text-slate-500 font-inter mt-0.5">{{ line.unit_price_display }} €</p>
+        {% endif %}
+    </div>
+
+    <div class="cart-stepper flex items-center gap-1.5 shrink-0 bg-kokkoris-teal-dark text-white rounded-full px-1.5 py-1"
+         data-variant-id="{{ line.variant_id }}">
+        <button type="button"
+                class="qty-minus w-6 h-6 rounded-full border border-white/40 hover:bg-white/10 text-base leading-none flex items-center justify-center"
+                aria-label="{% trans 'Μείωση ποσότητας' %}">−</button>
+        <span class="qty-value font-semibold text-sm min-w-[1.25rem] text-center">{{ line.quantity }}</span>
+        <button type="button"
+                class="qty-plus w-6 h-6 rounded-full border border-white/40 hover:bg-white/10 text-base leading-none flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label="{% trans 'Αύξηση ποσότητας' %}"
+                {% if line.max_quantity != None and line.quantity >= line.max_quantity %}disabled{% endif %}>+</button>
+    </div>
+
+    <p class="cart-line-subtotal font-inter font-semibold text-slate-800 {% if compact %}text-xs w-14 text-right{% else %}text-sm w-20 text-right{% endif %} shrink-0">
+        {{ line.subtotal_display }} €
+    </p>
+</li>

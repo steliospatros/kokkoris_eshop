@@ -98,7 +98,7 @@ class DBCart(BaseCart):
 
     @property
     def items(self):
-        return list(self.cart.items.select_related("product_variant"))
+        return list(self.cart.items.select_related("product_variant__product"))
 
     def add_item(self, product_variant, quantity=1):
         if quantity < 1:

@@ -1,10 +1,16 @@
 {% load i18n %}
 <div class="product-image-slot product-image-slot--browse relative shrink-0 bg-kokkoris-brand-cell"
      style="--img-display-scale: {{ card.image_display_scale|default:1 }};">
-    {% if card.image_url %}
-        <img src="{{ card.image_url }}" alt="">
-    {% else %}
-        <span class="text-slate-400 text-xs">{% trans "Χωρίς εικόνα" %}</span>
+    {% if card.detail_url %}
+    <a href="{{ card.detail_url }}" class="product-image-slot__link flex items-center justify-center w-full h-full">
+    {% endif %}
+        {% if card.image_url %}
+            <img src="{{ card.image_url }}" alt="">
+        {% else %}
+            <span class="text-slate-400 text-xs">{% trans "Χωρίς εικόνα" %}</span>
+        {% endif %}
+    {% if card.detail_url %}
+    </a>
     {% endif %}
 
     <button type="button"

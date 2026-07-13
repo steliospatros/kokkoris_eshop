@@ -14,9 +14,11 @@ from products.catalog import (
     build_catalog_filter_context,
     build_catalog_pagination_context,
     build_catalog_sort_context,
+    build_product_detail_context,
     get_browse_page_title,
     get_catalog_price_bounds,
     get_catalog_queryset,
+    get_product_detail_queryset,
     paginate_catalog_queryset,
     parse_filter_values,
     parse_page_number,
@@ -298,6 +300,29 @@ def catalog_brands(request):
     )
 
 
+@ensure_csrf_cookie
+def product_detail(request, slug):
+    """Single product page — petcity-style layout with size picker and description."""
+    product = get_object_or_404(get_product_detail_queryset(), slug=slug)
+
+    selected_variant_id = None
+    raw_variant = request.GET.get("variant", "").strip()
+    if raw_variant.isdigit():
+        selected_variant_id = int(raw_variant)
+
+    context = build_product_detail_context(
+        request,
+        product,
+        selected_variant_id=selected_variant_id,
+    )
+    if context is None:
+        from django.http import Http404
+
+        raise Http404("Product has no purchasable variants.")
+
+    return render(request, "products/product_detail.html", context)
+
+
 def search_suggestions(request):
     """
     JSON endpoint backing the nav's live search dropdown.
@@ -324,6 +349,7 @@ def search_suggestions(request):
             "name": product.name,
             "company": product.company.name,
             "image_url": product.image.url if product.image else None,
+            "url": reverse("products:detail", kwargs={"slug": product.slug}),
         }
         for product in products
     ]

@@ -1,0 +1,138 @@
+.account-detail-row {
+    transition: background-color 0.15s ease;
+}
+
+.account-detail-row--editing,
+.account-detail-row--empty-field {
+    background-color: rgba(66, 116, 108, 0.06);
+}
+
+.account-detail-row--dirty .account-detail-row__display {
+    color: #42746c;
+    font-weight: 500;
+}
+
+.account-detail-row__edit {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    color: #42746c;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.account-detail-row__edit:hover {
+    background-color: rgba(66, 116, 108, 0.1);
+}
+
+.account-detail-row__edit--active {
+    background-color: #42746c;
+    color: #ffffff;
+    border-color: #42746c;
+}
+
+.account-detail-row__edit--active:hover {
+    background-color: #365f58;
+}
+
+.account-details-actions {
+    transition: box-shadow 0.2s ease;
+}
+
+.account-details-actions--dirty {
+    box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.08);
+}
+
+.account-detail-row__input:not(.hidden) {
+    margin-top: 0.25rem;
+}
+
+.account-detail-row__empty {
+    color: #94a3b8;
+    font-style: italic;
+}
+
+.account-address-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+}
+
+@media (min-width: 900px) {
+    .account-address-grid {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+        align-items: start;
+    }
+}
+
+.account-address-map {
+    height: 280px;
+}
+
+.pac-container {
+    z-index: 10000;
+    font-family: inherit;
+}
+
+.account-detail-row--inline {
+    border-top: 1px solid #f1f5f9;
+    padding-top: 0.75rem;
+}
+
+.account-floor-picker {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.375rem;
+}
+
+@media (min-width: 480px) {
+    .account-floor-picker {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+.account-floor-picker__option {
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.625rem;
+    font-size: 0.8125rem;
+    font-family: inherit;
+    color: #334155;
+    background: #ffffff;
+    text-align: center;
+    transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.account-floor-picker__option:hover {
+    border-color: #42746c;
+    color: #42746c;
+    background: rgba(66, 116, 108, 0.06);
+}
+
+.account-floor-picker__option--selected {
+    border-color: #42746c;
+    background: rgba(66, 116, 108, 0.12);
+    color: #365f58;
+    font-weight: 500;
+}
+
+.account-floor-picker__option--other {
+    grid-column: 1 / -1;
+}
+
+@media (min-width: 900px) {
+    .account-address-map {
+        height: 320px;
+    }
+}
+
+.account-address-field--dirty .account-address-field__input {
+    border-color: #42746c;
+}
+
+.account-address-field__input[readonly] {
+    cursor: default;
+}

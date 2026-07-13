@@ -10,8 +10,11 @@
         choice: document.getElementById("auth-panel-choice"),
         login: document.getElementById("auth-panel-login"),
         signup: document.getElementById("auth-panel-signup"),
+        phone: document.getElementById("auth-panel-phone"),
         "reset-sent": document.getElementById("auth-panel-reset-sent"),
     };
+
+    var phoneVerify = null;
 
     var loginForm = document.getElementById("auth-login-form");
     var signupForm = document.getElementById("auth-signup-form");
@@ -53,6 +56,33 @@
 
     function csrfToken() {
         return getCookie("csrftoken");
+    }
+
+    function switchToPanel(name) {
+        clearErrors();
+        if (name === "login") {
+            var signupEmail = document.getElementById("auth-signup-email");
+            var loginEmail = document.getElementById("auth-login-email");
+            if (signupEmail && loginEmail && signupEmail.value.trim() && !loginEmail.value.trim()) {
+                loginEmail.value = signupEmail.value.trim();
+            }
+            showPanel("login");
+            if (loginEmail) {
+                loginEmail.focus();
+            }
+            return;
+        }
+        if (name === "signup") {
+            var loginEmailField = document.getElementById("auth-login-email");
+            var signupEmailField = document.getElementById("auth-signup-email");
+            if (loginEmailField && signupEmailField && loginEmailField.value.trim() && !signupEmailField.value.trim()) {
+                signupEmailField.value = loginEmailField.value.trim();
+            }
+            showPanel("signup");
+            if (signupEmailField) {
+                signupEmailField.focus();
+            }
+        }
     }
 
     function showPanel(name) {
@@ -248,6 +278,26 @@
     }
 
     function handleAuthSuccess(data) {
+        if (data.phone_verified === false) {
+            if (!phoneVerify && window.kokkorisInitPhoneVerify) {
+                phoneVerify = window.kokkorisInitPhoneVerify("auth", {
+                    redirect: data.redirect || nextUrl,
+                    onSuccess: function () {
+                        hideModal();
+                        if (data.redirect) {
+                            window.location.href = data.redirect;
+                        } else {
+                            window.location.reload();
+                        }
+                    },
+                });
+            } else if (phoneVerify) {
+                phoneVerify.setRedirect(data.redirect || nextUrl);
+                phoneVerify.show();
+            }
+            showPanel("phone");
+            return;
+        }
         hideModal();
         if (data.redirect) {
             window.location.href = data.redirect;
@@ -312,6 +362,20 @@
         if (resetBackLoginBtn) {
             resetBackLoginBtn.addEventListener("click", function () {
                 showPanel("login");
+            });
+        }
+
+        var switchToSignupBtn = document.getElementById("auth-switch-to-signup");
+        if (switchToSignupBtn) {
+            switchToSignupBtn.addEventListener("click", function () {
+                switchToPanel("signup");
+            });
+        }
+
+        var switchToLoginBtn = document.getElementById("auth-switch-to-login");
+        if (switchToLoginBtn) {
+            switchToLoginBtn.addEventListener("click", function () {
+                switchToPanel("login");
             });
         }
 
@@ -432,5 +496,15 @@
                 window.kokkorisOpenAuthModal(panel);
             });
         });
+
+        if (panels.phone && window.kokkorisInitPhoneVerify) {
+            phoneVerify = window.kokkorisInitPhoneVerify("auth", {
+                redirect: nextUrl,
+                onSuccess: function () {
+                    hideModal();
+                    window.location.href = nextUrl;
+                },
+            });
+        }
     });
 })();

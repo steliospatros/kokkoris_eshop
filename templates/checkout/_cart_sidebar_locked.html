@@ -1,0 +1,34 @@
+{% load i18n %}
+<aside class="checkout-cart-sidebar lg:sticky lg:top-4 h-fit rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+    <div class="px-4 py-3 border-b border-slate-100 bg-slate-50">
+        <h2 class="font-inter font-semibold text-sm text-slate-800">{% trans "Το καλάθι μου" %} ({{ cart_total_items }})</h2>
+    </div>
+    <ul class="divide-y divide-slate-100 max-h-[28rem] overflow-y-auto">
+        {% for line in cart_lines %}
+            {% include "cart/_line_row_readonly.html" with line=line %}
+        {% endfor %}
+    </ul>
+    <div class="px-4 py-3 border-t border-slate-100 bg-slate-50 space-y-2 font-inter text-sm text-slate-700">
+        <div class="flex justify-between">
+            <span>{% trans "Τιμή προϊόντων" %}</span>
+            <span>{{ cart_total_display }} €</span>
+        </div>
+        {% if show_shipping_breakdown %}
+        <div class="flex justify-between">
+            <span>{% trans "Αποστολή" %}</span>
+            <span id="checkout-sidebar-shipping">
+                {% if courier_fee > 0 %}{{ courier_fee_display }} €{% else %}{% trans "Δωρεάν" %}{% endif %}
+            </span>
+        </div>
+        <div class="flex justify-between font-semibold text-slate-800 pt-1 border-t border-slate-200">
+            <span>{% trans "Σύνολο" %}</span>
+            <span id="checkout-sidebar-grand-total">{{ checkout_grand_total_display }} €</span>
+        </div>
+        {% else %}
+        <div class="flex justify-between font-semibold text-slate-800">
+            <span>{% trans "Σύνολο" %}</span>
+            <span>{{ cart_total_display }} €</span>
+        </div>
+        {% endif %}
+    </div>
+</aside>

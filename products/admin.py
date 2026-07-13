@@ -42,11 +42,53 @@ class ProductVariantInline(admin.TabularInline):
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     """Admin configuration for the main Product catalog."""
-    list_display = ("name", "company", "animal_type", "category", "is_active")
+    list_display = (
+        "name",
+        "company",
+        "animal_type",
+        "category",
+        "weight",
+        "length",
+        "width",
+        "height",
+        "is_active",
+    )
     list_filter = ("company", "animal_type", "category", "is_active")
     search_fields = ("name", "company__name")
     prepopulated_fields = {"slug": ("name",)}
     inlines = [ProductVariantInline]
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    "name",
+                    "slug",
+                    "company",
+                    "animal_type",
+                    "category",
+                    "image",
+                    "is_active",
+                ),
+            },
+        ),
+        (
+            "Shipping dimensions (ELTA Courier)",
+            {
+                "description": (
+                    "Physical package measurements used to calculate courier "
+                    "shipping cost (real weight vs volumetric weight)."
+                ),
+                "fields": ("weight", "length", "width", "height"),
+            },
+        ),
+        (
+            "Content",
+            {
+                "fields": ("description", "components", "bundle_contents"),
+            },
+        ),
+    )
 
 
 @admin.register(ProductVariant)

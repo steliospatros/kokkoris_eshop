@@ -50,6 +50,18 @@
     gap: var(--nav-gap-icons);
 }
 
+.nav-account-icon--signed-in {
+    color: #ffffff;
+}
+
+.nav-account-icon--guest {
+    color: rgba(203, 213, 225, 0.38);
+}
+
+.nav-account-icon--guest:hover {
+    color: rgba(226, 232, 240, 0.62);
+}
+
 @media (min-width: 640px) {
     .nav-toolbar__search-input {
         width: var(--nav-search-width-sm);
@@ -83,5 +95,10 @@
 
     .nav-toolbar__icons {
         margin-left: var(--nav-gap-filters-icons);
+    }
+
+    .nav-cart-widget:hover .nav-cart-panel,
+    .nav-cart-widget:focus-within .nav-cart-panel {
+        display: block;
     }
 }

@@ -1,0 +1,345 @@
+{% extends "page.html" %}
+{% load i18n static %}
+
+{% block title %}{% trans "Τα στοιχεία μου" %}{% endblock %}
+
+{% block main_class %}w-full max-w-none bg-slate-50 min-h-[60vh]{% endblock %}
+
+{% block content %}
+<section class="max-w-[960px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+    <p class="mb-6 text-sm text-slate-500 font-inter leading-relaxed">
+        {% trans "Συμπλήρωσε τα κενά πεδία ή πάτα το μολύβι για αλλαγές. Η διεύθυνση συνδέεται με τον χάρτη." %}
+    </p>
+
+    {% if messages %}
+        <div class="mb-4 space-y-2">
+            {% for message in messages %}
+                <p class="rounded-lg px-4 py-2 text-sm font-inter {% if message.tags == 'error' %}bg-red-50 text-red-800{% else %}bg-emerald-50 text-emerald-800{% endif %}">
+                    {{ message }}
+                </p>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <form id="account-details-form"
+          method="post"
+          class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden"
+          novalidate>
+        {% csrf_token %}
+
+        <ul class="divide-y divide-slate-100">
+            <li class="grid grid-cols-[1fr_auto] gap-3 items-center px-5 py-4 bg-slate-50/80">
+                <div class="min-w-0">
+                    <p class="text-xs font-inter font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                        {% trans "Email" %}
+                    </p>
+                    <p class="font-inter text-slate-800 break-all">{{ user.email }}</p>
+                </div>
+            </li>
+
+            {% for row in field_rows %}
+                <li class="account-detail-row grid grid-cols-[1fr_auto] gap-3 items-start px-5 py-4{% if not row.value %} account-detail-row--empty-field{% endif %}"
+                    data-field="{{ row.name }}"
+                    data-initial="{{ row.value|escapejs }}">
+                    <div class="min-w-0">
+                        <p class="text-xs font-inter font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                            {{ row.label }}
+                        </p>
+                        <p class="account-detail-row__display font-inter text-slate-800 whitespace-pre-wrap break-words{% if not row.value %} hidden account-detail-row__empty{% endif %}">{{ row.display }}</p>
+                        {% if row.multiline %}
+                            <textarea name="{{ row.name }}"
+                                      rows="3"
+                                      class="account-detail-row__input{% if row.value %} hidden{% endif %} w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm font-inter text-slate-800 focus:outline-none focus:border-kokkoris-teal-dark focus:ring-2 focus:ring-kokkoris-teal-dark/25"
+                                      aria-label="{{ row.label }}"
+                                      placeholder="{% trans 'Συμπλήρωσε εδώ' %}">{{ row.value }}</textarea>
+                        {% else %}
+                            <input type="text"
+                                   name="{{ row.name }}"
+                                   value="{{ row.value }}"
+                                   class="account-detail-row__input{% if row.value %} hidden{% endif %} w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm font-inter text-slate-800 focus:outline-none focus:border-kokkoris-teal-dark focus:ring-2 focus:ring-kokkoris-teal-dark/25"
+                                   aria-label="{{ row.label }}"
+                                   placeholder="{% trans 'Συμπλήρωσε εδώ' %}"
+                                   autocomplete="{% if row.name == 'phone_number' %}tel{% elif row.name == 'postal_code' %}postal-code{% elif row.name == 'address' %}street-address{% elif row.name == 'city' %}address-level2{% else %}off{% endif %}">
+                        {% endif %}
+                        {% if row.error %}
+                            <p class="account-detail-row__error text-red-600 text-xs mt-1.5 font-inter">{{ row.error }}</p>
+                        {% endif %}
+                    </div>
+                    <button type="button"
+                            class="account-detail-row__edit shrink-0 mt-5{% if not row.value %} hidden{% endif %}"
+                            aria-pressed="false"
+                            aria-label="{% trans 'Επεξεργασία' %} {{ row.label }}">
+                        <svg class="account-detail-row__icon-pencil w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                        </svg>
+                        <svg class="account-detail-row__icon-check w-5 h-5 hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                        </svg>
+                    </button>
+                </li>
+            {% endfor %}
+
+            <li class="account-address-block px-5 py-5 border-t border-slate-100">
+                <div class="mb-4">
+                    <p class="text-xs font-inter font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                        {% trans "Διεύθυνση παράδοσης" %}
+                    </p>
+                    <p class="text-sm text-slate-500 font-inter leading-relaxed">
+                        {% trans "Αναζήτησε τη διεύθυνση ή επίλεξε σημείο στον χάρτη — τα στοιχεία αποθηκεύονται δομημένα." %}
+                    </p>
+                </div>
+
+                <div class="account-address-grid">
+                    <div class="account-address-fields space-y-3">
+                        <div class="account-address-field account-address-field--search"
+                             data-address-field="address_search">
+                            <label for="id_address_search" class="block text-xs font-inter font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                                {{ address_search_row.label }}
+                            </label>
+                            <input type="text"
+                                   name="address_search"
+                                   id="id_address_search"
+                                   value="{{ form.address_search.value|default_if_none:'' }}"
+                                   class="account-address-field__input w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm font-inter text-slate-800 focus:outline-none focus:border-kokkoris-teal-dark focus:ring-2 focus:ring-kokkoris-teal-dark/25"
+                                   autocomplete="off"
+                                   aria-label="{{ address_search_row.label }}"
+                                   placeholder="{% trans 'Π.χ. Ερμού 12, Αθήνα' %}">
+                            {% if address_search_row.search_hint %}
+                                <p class="mt-1.5 text-xs text-slate-400 font-inter">
+                                    {% trans "Αποθηκευμένη:" %} {{ address_search_row.search_hint }}
+                                </p>
+                            {% endif %}
+                            {% if address_search_row.error %}
+                                <p class="account-detail-row__error text-red-600 text-xs mt-1.5 font-inter">{{ address_search_row.error }}</p>
+                            {% endif %}
+                        </div>
+
+                        {% for row in address_auto_rows %}
+                            <div class="account-auto-field"
+                                 data-auto-field="{{ row.name }}"
+                                 data-initial="{{ row.value|escapejs }}">
+                                <label for="id_{{ row.name }}_display" class="block text-xs font-inter font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                                    {{ row.label }}
+                                </label>
+                                <input type="text"
+                                       id="id_{{ row.name }}_display"
+                                       value="{{ row.value }}"
+                                       class="account-auto-field__display w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm font-inter text-slate-800 bg-slate-50"
+                                       readonly
+                                       tabindex="-1"
+                                       aria-label="{{ row.label }}"
+                                       placeholder="{% trans 'Συμπληρώνεται αυτόματα' %}">
+                                {% if row.error %}
+                                    <p class="account-detail-row__error text-red-600 text-xs mt-1.5 font-inter">{{ row.error }}</p>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+
+                        {% for row in address_extra_rows %}
+                            {% if row.name == "floor" %}
+                                <div class="account-detail-row account-detail-row--inline account-detail-row--floor grid grid-cols-[1fr_auto] gap-3 items-start pt-1{% if not row.value %} account-detail-row--empty-field{% endif %}"
+                                     data-field="floor"
+                                     data-initial="{{ row.value|escapejs }}">
+                                    <div class="min-w-0">
+                                        <p class="text-xs font-inter font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                                            {{ row.label }}
+                                        </p>
+                                        <p class="account-detail-row__display account-floor-display font-inter text-slate-800 break-words{% if not row.value %} hidden account-detail-row__empty{% endif %}">{{ row.display }}</p>
+                                        <input type="hidden"
+                                               name="floor"
+                                               id="id_floor"
+                                               value="{{ row.value }}"
+                                               class="account-floor-value">
+                                        <button type="button"
+                                                class="account-floor-empty-trigger w-full text-left border border-dashed border-slate-300 rounded-lg px-3 py-2.5 text-sm font-inter text-slate-400 hover:border-kokkoris-teal-dark hover:text-kokkoris-teal-dark transition-colors{% if row.value %} hidden{% endif %}">
+                                            {% trans "Επίλεξε όροφο" %}
+                                        </button>
+                                        <div class="account-floor-editor hidden mt-1">
+                                            <div class="account-floor-picker" role="listbox" aria-label="{{ row.label }}">
+                                                {% for option in floor_preset_options %}
+                                                    <button type="button"
+                                                            class="account-floor-picker__option"
+                                                            data-value="{{ option }}"
+                                                            role="option">
+                                                        {{ option }}
+                                                    </button>
+                                                {% endfor %}
+                                                <button type="button"
+                                                        class="account-floor-picker__option account-floor-picker__option--other"
+                                                        data-value="__other__"
+                                                        role="option">
+                                                    {{ floor_other_label }}
+                                                </button>
+                                            </div>
+                                            <input type="text"
+                                                   class="account-floor-other hidden w-full mt-2 border border-slate-300 rounded-lg px-3 py-2.5 text-sm font-inter text-slate-800 focus:outline-none focus:border-kokkoris-teal-dark focus:ring-2 focus:ring-kokkoris-teal-dark/25"
+                                                   placeholder="{% trans 'Πληκτρολόγησε όροφο' %}"
+                                                   autocomplete="off"
+                                                   aria-label="{% trans 'Άλλος όροφος' %}">
+                                        </div>
+                                        {% if row.error %}
+                                            <p class="account-detail-row__error text-red-600 text-xs mt-1.5 font-inter">{{ row.error }}</p>
+                                        {% endif %}
+                                    </div>
+                                    <button type="button"
+                                            class="account-detail-row__edit shrink-0 mt-5{% if not row.value %} hidden{% endif %}"
+                                            aria-pressed="false"
+                                            aria-label="{% trans 'Επεξεργασία' %} {{ row.label }}">
+                                        <svg class="account-detail-row__icon-pencil w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                                        </svg>
+                                        <svg class="account-detail-row__icon-check w-5 h-5 hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                            <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            {% else %}
+                            <div class="account-detail-row account-detail-row--inline grid grid-cols-[1fr_auto] gap-3 items-start pt-1{% if not row.value %} account-detail-row--empty-field{% endif %}"
+                                 data-field="{{ row.name }}"
+                                 data-initial="{{ row.value|escapejs }}">
+                                <div class="min-w-0">
+                                    <p class="text-xs font-inter font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                                        {{ row.label }}
+                                    </p>
+                                    <p class="account-detail-row__display font-inter text-slate-800 whitespace-pre-wrap break-words{% if not row.value %} hidden account-detail-row__empty{% endif %}">{{ row.display }}</p>
+                                    {% if row.multiline %}
+                                        <textarea name="{{ row.name }}"
+                                                  rows="3"
+                                                  class="account-detail-row__input{% if row.value %} hidden{% endif %} w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm font-inter text-slate-800 focus:outline-none focus:border-kokkoris-teal-dark focus:ring-2 focus:ring-kokkoris-teal-dark/25"
+                                                  aria-label="{{ row.label }}"
+                                                  placeholder="{% trans 'Συμπλήρωσε εδώ' %}">{{ row.value }}</textarea>
+                                    {% else %}
+                                        <input type="text"
+                                               name="{{ row.name }}"
+                                               id="id_{{ row.name }}"
+                                               value="{{ row.value }}"
+                                               class="account-detail-row__input{% if row.value %} hidden{% endif %} w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm font-inter text-slate-800 focus:outline-none focus:border-kokkoris-teal-dark focus:ring-2 focus:ring-kokkoris-teal-dark/25"
+                                               aria-label="{{ row.label }}"
+                                               placeholder="{% trans 'Συμπλήρωσε εδώ' %}"
+                                               autocomplete="off">
+                                    {% endif %}
+                                    {% if row.error %}
+                                        <p class="account-detail-row__error text-red-600 text-xs mt-1.5 font-inter">{{ row.error }}</p>
+                                    {% endif %}
+                                </div>
+                                <button type="button"
+                                        class="account-detail-row__edit shrink-0 mt-5{% if not row.value %} hidden{% endif %}"
+                                        aria-pressed="false"
+                                        aria-label="{% trans 'Επεξεργασία' %} {{ row.label }}">
+                                    <svg class="account-detail-row__icon-pencil w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                                    </svg>
+                                    <svg class="account-detail-row__icon-check w-5 h-5 hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                        <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    <div class="account-address-map-wrap">
+                        <div id="account-address-map"
+                             class="account-address-map w-full rounded-lg border border-slate-300 overflow-hidden"
+                             aria-label="{% trans 'Χάρτης διεύθυνσης' %}"></div>
+                        <p id="account-address-map-hint"
+                           class="mt-2 text-xs text-slate-500 font-inter leading-relaxed">
+                            {% if not google_maps_api_key %}
+                                {% trans "Ο χάρτης δεν είναι διαθέσιμος — πρόσθεσε GOOGLE_MAPS_API_KEY στο .env." %}
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+
+                {{ form.city }}
+                {{ form.area }}
+                {{ form.street }}
+                {{ form.street_number }}
+                {{ form.address }}
+                {{ form.postal_code }}
+                {{ form.latitude }}
+                {{ form.longitude }}
+                {{ form.address_place_id }}
+                {{ form.address_components_json }}
+            </li>
+
+            <li class="grid grid-cols-[1fr_auto] gap-3 items-center px-5 py-4 bg-slate-50/80">
+                <div class="min-w-0">
+                    <p class="text-xs font-inter font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                        {% trans "Κωδικός" %}
+                    </p>
+                    <p class="font-inter text-slate-800 tracking-widest">••••••••</p>
+                </div>
+                <a href="{% url 'account_reset_password' %}"
+                   class="text-sm font-inter font-medium text-kokkoris-teal-dark hover:underline whitespace-nowrap px-2">
+                    {% trans "Αλλαγή κωδικού" %}
+                </a>
+            </li>
+        </ul>
+
+        <div id="account-details-actions"
+             class="account-details-actions sticky bottom-0 px-5 py-4 border-t border-slate-100 bg-white flex flex-wrap items-center gap-3">
+            <button type="submit"
+                    id="account-details-submit"
+                    disabled
+                    class="rounded-full bg-kokkoris-teal-dark px-8 py-2.5 text-white font-inter font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed">
+                {% trans "Υποβολή αλλαγών" %}
+            </button>
+            <button type="button"
+                    id="account-details-cancel"
+                    class="hidden text-sm font-inter text-slate-600 hover:text-slate-900 underline-offset-2 hover:underline">
+                {% trans "Ακύρωση αλλαγών" %}
+            </button>
+            <p id="account-details-hint"
+               class="hidden w-full text-xs text-slate-400 font-inter sm:w-auto sm:ml-auto">
+                {% trans "Υπάρχουν μη αποθηκευμένες αλλαγές" %}
+            </p>
+        </div>
+    </form>
+</section>
+{% endblock %}
+
+{% block extra_body %}
+<link rel="stylesheet" href="{% static 'css/account-details.css' %}">
+<script src="{% static 'js/account-details.js' %}"></script>
+<script src="{% static 'js/greece-address-map.js' %}"></script>
+{% if google_maps_api_key %}
+<script>
+    window.gm_authFailure = function () {
+        var hint = document.getElementById("account-address-map-hint");
+        if (hint) {
+            hint.textContent =
+                "Ο χάρτης δεν φορτώθηκε. Έλεγξε στο Google Cloud: billing, Maps JavaScript API, Places API, και HTTP referrers http://127.0.0.1:8000/* και http://localhost:8000/* (python manage.py check_maps).";
+        }
+    };
+
+    function initAccountDetailsMap() {
+        try {
+            window.kokkorisInitGreeceAddressMap({
+            mapId: "account-address-map",
+            addressInputId: "id_address_search",
+            componentsInputId: "id_address_components_json",
+            latInputId: "id_latitude",
+            lngInputId: "id_longitude",
+            placeIdInputId: "id_address_place_id",
+            hintId: "account-address-map-hint",
+            initialLat: "{{ form.latitude.value|default_if_none:'' }}",
+            initialLng: "{{ form.longitude.value|default_if_none:'' }}",
+            initialPlaceId: "{{ form.address_place_id.value|default:'' }}",
+            onFieldsUpdated: function () {
+                if (typeof window.kokkorisAccountDetailsSync === "function") {
+                    window.kokkorisAccountDetailsSync();
+                }
+            },
+            });
+        } catch (error) {
+            var hint = document.getElementById("account-address-map-hint");
+            if (hint) {
+                hint.textContent = "Σφάλμα φόρτωσης χάρτη: " + (error && error.message ? error.message : "άγνωστο");
+            }
+        }
+    }
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places&language=el&region=gr&loading=async&callback=initAccountDetailsMap" async defer></script>
+{% endif %}
+{% endblock %}

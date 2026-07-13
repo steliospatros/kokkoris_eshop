@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_GET, require_POST
 
 from cart.cart import CartError, get_cart
+from cart.presentation import build_cart_summary
 from products.models import ProductVariant
 
 
@@ -45,6 +46,24 @@ def status(request):
     """Return current cart totals and per-variant quantities for the catalog UI."""
     cart = get_cart(request)
     return JsonResponse(_cart_payload(cart))
+
+
+@require_GET
+def preview(request):
+    """Return cart lines with product details for the nav mini-panel and cart page."""
+    cart = get_cart(request)
+    payload = build_cart_summary(cart)
+    payload["ok"] = True
+    return JsonResponse(payload)
+
+
+@require_POST
+def clear(request):
+    """Remove every line from the cart."""
+    cart = get_cart(request)
+    cart.clear()
+    payload = _cart_payload(cart)
+    return JsonResponse(payload)
 
 
 @require_POST
