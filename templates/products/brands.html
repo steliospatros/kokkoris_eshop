@@ -6,8 +6,8 @@
 {% block main_class %}w-full max-w-none min-h-[60vh]{% endblock %}
 
 {% block content %}
-<section class="brand-tile-grid max-w-[1140px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 pb-20 sm:pb-24 lg:pb-28">
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">
+<section class="brand-tile-grid max-w-[1000px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 pb-20 sm:pb-24 lg:pb-28">
+    <div class="brand-tile-grid__list grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
         {% for tile in brand_tiles %}
             <a href="{{ tile.url }}"
                aria-label="{{ tile.label }}"

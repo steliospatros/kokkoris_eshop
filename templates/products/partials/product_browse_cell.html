@@ -1,6 +1,6 @@
 {% load i18n static %}
-{# Horizontal-row product cell — same image/text morphology as catalog product_card. #}
-<article class="product-card product-browse-cell flex flex-col flex-none w-[min(280px,40vw)] sm:w-1/3 snap-start bg-white overflow-hidden"
+{# Horizontal-row product cell — compact so more items fit in related/favourites strips. #}
+<article class="product-card product-browse-cell flex flex-col flex-none w-[min(158px,46vw)] sm:w-1/4 lg:w-[20%] snap-start bg-white overflow-hidden"
          data-product-id="{{ card.product_id }}"
          data-variant-id="{{ card.variant_id }}"
          data-can-add="{{ card.can_add|yesno:'true,false' }}"
@@ -10,12 +10,12 @@
     {% include "products/partials/product_image_slot.html" with card=card %}
 
     <div class="product-card-body flex flex-col flex-1 min-h-0">
-        <div class="product-card-info product-card-info--browse px-3 pt-2 pb-2 text-center">
-            <p class="text-[10px] text-slate-400 tracking-wide truncate min-h-[1rem]">
+        <div class="product-card-info product-card-info--browse px-2 pt-1.5 pb-1.5 text-center">
+            <p class="text-[9px] text-slate-400 tracking-wide truncate min-h-[0.9rem]">
                 {% if card.sku %}{{ card.sku }}{% else %}&nbsp;{% endif %}
             </p>
 
-            <h2 class="product-card-title font-inter font-medium text-slate-800 text-xs sm:text-[13px] leading-snug mt-0.5">
+            <h2 class="product-card-title font-inter font-medium text-slate-800 text-[11px] sm:text-xs leading-snug mt-0.5">
                 {% if card.detail_url %}
                 <a href="{{ card.detail_url }}" class="hover:text-kokkoris-teal-dark transition-colors">{{ card.title }}</a>
                 {% else %}
@@ -23,16 +23,16 @@
                 {% endif %}
             </h2>
 
-            <div class="product-card-meta mt-1.5 flex flex-col items-center gap-0.5 text-[10px] uppercase tracking-wide">
+            <div class="product-card-meta mt-1 flex flex-col items-center gap-0.5 text-[9px] uppercase tracking-wide">
                 <span class="text-kokkoris-teal-dark font-medium">{{ card.sizes_label }}</span>
-                <span class="{{ card.availability_color_class }} text-[10px] normal-case font-medium">
+                <span class="{{ card.availability_color_class }} text-[9px] normal-case font-medium">
                     {{ card.availability_label }}
                 </span>
             </div>
 
-            <div class="product-card-price mt-2">
-                <p class="font-inter font-bold text-base text-slate-900">{{ card.price_display }} €</p>
-                <p class="text-[10px] text-slate-500 min-h-[1rem]">
+            <div class="product-card-price mt-1.5">
+                <p class="font-inter font-bold text-sm text-slate-900">{{ card.price_display }} €</p>
+                <p class="text-[9px] text-slate-500 min-h-[0.9rem]">
                     {% if card.unit_price_display %}
                         {{ card.unit_price_display }} € / {{ card.unit_label }}
                     {% else %}
@@ -42,29 +42,29 @@
             </div>
         </div>
 
-        <div class="product-card-footer mx-3 mb-3 rounded-full overflow-hidden text-white {% if card.is_on_order %}bg-kokkoris-blue{% elif card.can_add %}bg-kokkoris-teal-dark{% else %}bg-slate-400{% endif %}">
+        <div class="product-card-footer mx-2 mb-2 rounded-full overflow-hidden text-white {% if card.is_on_order %}bg-kokkoris-blue{% elif card.can_add %}bg-kokkoris-teal-dark{% else %}bg-slate-400{% endif %}">
         {% if card.cart_qty > 0 %}
-            <div class="cart-stepper flex items-center justify-between px-3 py-2"
+            <div class="cart-stepper flex items-center justify-between px-2 py-1.5"
                  data-variant-id="{{ card.variant_id }}">
                 <button type="button"
-                        class="qty-minus w-7 h-7 rounded-full border border-white/40 hover:bg-white/10 text-lg leading-none"
+                        class="qty-minus w-6 h-6 rounded-full border border-white/40 hover:bg-white/10 text-base leading-none"
                         aria-label="{% trans 'Μείωση ποσότητας' %}">−</button>
-                <span class="qty-value font-semibold text-base min-w-[1.5rem] text-center">{{ card.cart_qty }}</span>
+                <span class="qty-value font-semibold text-sm min-w-[1.25rem] text-center">{{ card.cart_qty }}</span>
                 <button type="button"
-                        class="qty-plus w-7 h-7 rounded-full border border-white/40 hover:bg-white/10 text-lg leading-none disabled:opacity-40 disabled:cursor-not-allowed"
+                        class="qty-plus w-6 h-6 rounded-full border border-white/40 hover:bg-white/10 text-base leading-none disabled:opacity-40 disabled:cursor-not-allowed"
                         aria-label="{% trans 'Αύξηση ποσότητας' %}"
                         {% if card.max_quantity != None and card.cart_qty >= card.max_quantity %}disabled{% endif %}>+</button>
             </div>
         {% elif card.can_add %}
             <button type="button"
-                    class="cart-add w-full py-2 text-sm font-poppins font-medium uppercase tracking-wider transition-colors {% if card.is_on_order %}hover:bg-blue-900{% else %}hover:bg-kokkoris-teal-mid{% endif %}"
+                    class="cart-add w-full py-1.5 text-[11px] font-poppins font-medium uppercase tracking-wider transition-colors {% if card.is_on_order %}hover:bg-blue-900{% else %}hover:bg-kokkoris-teal-mid{% endif %}"
                     data-variant-id="{{ card.variant_id }}">
                 {{ card.button_label }}
             </button>
         {% else %}
             <button type="button"
                     disabled
-                    class="cart-add w-full py-2 text-sm font-poppins font-medium uppercase tracking-wider cursor-not-allowed opacity-80"
+                    class="cart-add w-full py-1.5 text-[11px] font-poppins font-medium uppercase tracking-wider cursor-not-allowed opacity-80"
                     data-variant-id="{{ card.variant_id }}">
                 {% trans "Αγορά" %}
             </button>

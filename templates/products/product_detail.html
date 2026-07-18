@@ -13,21 +13,29 @@
          data-user-authenticated="{{ user_is_authenticated|yesno:'true,false' }}"
          data-variants="{{ variant_options|length }}">
 
-        <div class="grid lg:grid-cols-2 gap-8 lg:gap-12 items-start">
-            {# Image #}
-            <div class="product-detail__gallery bg-white rounded-xl border border-slate-200 p-6 lg:p-10 flex items-center justify-center min-h-[280px] lg:min-h-[420px]">
+        <div class="product-detail__stack">
+        <div class="product-detail__pair">
+            {# Image left — same height as info panel, joined edge #}
+            <div class="product-detail__gallery{% if image_url %} product-detail__gallery--zoom{% endif %}"
+                 {% if image_url %}id="pd-hover-zoom"{% endif %}>
                 {% if image_url %}
-                    <div class="product-detail__image-wrap"
-                         style="--img-display-scale: {{ image_display_scale|default:1 }};">
-                        <img src="{{ image_url }}" alt="{{ page_title }}" class="product-detail__image max-h-[360px] w-auto object-contain">
+                    <div class="product-detail__image-stage">
+                        <div class="product-detail__image-wrap"
+                             style="--img-display-scale: {{ image_display_scale|default:1 }};">
+                            <img src="{{ image_url }}"
+                                 alt="{{ page_title }}"
+                                 class="product-detail__image"
+                                 id="pd-main-image"
+                                 draggable="false">
+                        </div>
                     </div>
                 {% else %}
                     <span class="text-slate-300 text-sm">{% trans "Χωρίς εικόνα" %}</span>
                 {% endif %}
             </div>
 
-            {# Buy box #}
-            <div class="product-detail__buybox bg-white rounded-xl border border-slate-200 p-6 lg:p-8">
+            {# Product info / buy box — right #}
+            <div class="product-detail__buybox">
                 {% if company_url %}
                     <a href="{{ company_url }}" class="text-sm font-inter font-medium text-kokkoris-teal-dark hover:underline">{{ company_name }}</a>
                 {% else %}
@@ -137,28 +145,87 @@
             </div>
         </div>
 
-        {# Description sections #}
-        <div class="mt-10 lg:mt-14 space-y-8">
-            {% if description %}
-            <section class="product-detail__section bg-white rounded-xl border border-slate-200 p-6 lg:p-8">
-                <h2 class="font-poppins font-light text-lg text-kokkoris-teal-dark uppercase tracking-wide mb-4 text-center">{% trans "Περιγραφή" %}</h2>
-                <div class="prose prose-sm max-w-none text-slate-600 font-inter leading-relaxed whitespace-pre-line">{{ description }}</div>
-            </section>
-            {% endif %}
+        {# Description / ingredients tabs — contiguous with pair above #}
+        {% if description or components or bundle_contents %}
+        <section class="product-detail__tabs" id="pd-info-tabs">
+            <div class="product-detail__tablist" role="tablist" aria-label="{% trans 'Πληροφορίες προϊόντος' %}">
+                {% if description %}
+                <button type="button"
+                        class="product-detail__tab product-detail__tab--image-col is-active"
+                        role="tab"
+                        id="pd-tab-description"
+                        aria-selected="true"
+                        aria-controls="pd-panel-description"
+                        data-pd-tab="description">
+                    {% trans "Περιγραφή" %}
+                </button>
+                {% endif %}
 
-            {% if components %}
-            <section class="product-detail__section bg-white rounded-xl border border-slate-200 p-6 lg:p-8">
-                <h2 class="font-poppins font-light text-lg text-kokkoris-teal-dark uppercase tracking-wide mb-4 text-center">{% trans "Συστατικά" %}</h2>
-                <div class="prose prose-sm max-w-none text-slate-600 font-inter leading-relaxed whitespace-pre-line">{{ components }}</div>
-            </section>
-            {% endif %}
+                {% if components or bundle_contents %}
+                <div class="product-detail__tablist-secondary{% if not description %} product-detail__tablist-secondary--alone{% endif %}">
+                    {% if components %}
+                    <button type="button"
+                            class="product-detail__tab product-detail__tab--info-col{% if not description %} is-active{% endif %}"
+                            role="tab"
+                            id="pd-tab-components"
+                            aria-selected="{% if not description %}true{% else %}false{% endif %}"
+                            aria-controls="pd-panel-components"
+                            data-pd-tab="components"
+                            {% if description %}tabindex="-1"{% endif %}>
+                        {% trans "Συστατικά" %}
+                    </button>
+                    {% endif %}
+                    {% if bundle_contents %}
+                    <button type="button"
+                            class="product-detail__tab product-detail__tab--info-col{% if not description and not components %} is-active{% endif %}"
+                            role="tab"
+                            id="pd-tab-bundle"
+                            aria-selected="{% if not description and not components %}true{% else %}false{% endif %}"
+                            aria-controls="pd-panel-bundle"
+                            data-pd-tab="bundle"
+                            {% if description or components %}tabindex="-1"{% endif %}>
+                        {% trans "Περιεχόμενο πακέτου" %}
+                    </button>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
 
-            {% if bundle_contents %}
-            <section class="product-detail__section bg-white rounded-xl border border-slate-200 p-6 lg:p-8">
-                <h2 class="font-poppins font-light text-lg text-kokkoris-teal-dark uppercase tracking-wide mb-4 text-center">{% trans "Περιεχόμενο πακέτου" %}</h2>
-                <div class="prose prose-sm max-w-none text-slate-600 font-inter leading-relaxed whitespace-pre-line">{{ bundle_contents }}</div>
-            </section>
-            {% endif %}
+            <div class="product-detail__tabpanels">
+                {% if description %}
+                <div class="product-detail__tabpanel"
+                     role="tabpanel"
+                     id="pd-panel-description"
+                     aria-labelledby="pd-tab-description"
+                     data-pd-panel="description">
+                    <div class="prose prose-sm max-w-none text-slate-600 font-inter leading-relaxed whitespace-pre-line">{{ description }}</div>
+                </div>
+                {% endif %}
+
+                {% if components %}
+                <div class="product-detail__tabpanel{% if description %} is-hidden{% endif %}"
+                     role="tabpanel"
+                     id="pd-panel-components"
+                     aria-labelledby="pd-tab-components"
+                     data-pd-panel="components"
+                     {% if description %}hidden{% endif %}>
+                    <div class="prose prose-sm max-w-none text-slate-600 font-inter leading-relaxed whitespace-pre-line">{{ components }}</div>
+                </div>
+                {% endif %}
+
+                {% if bundle_contents %}
+                <div class="product-detail__tabpanel{% if description or components %} is-hidden{% endif %}"
+                     role="tabpanel"
+                     id="pd-panel-bundle"
+                     aria-labelledby="pd-tab-bundle"
+                     data-pd-panel="bundle"
+                     {% if description or components %}hidden{% endif %}>
+                    <div class="prose prose-sm max-w-none text-slate-600 font-inter leading-relaxed whitespace-pre-line">{{ bundle_contents }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
         </div>
 
         {% if related_cards %}
@@ -192,6 +259,8 @@
             </div>
         </section>
         {% endif %}
+
+        {% include "partials/favourites-browse-row.html" with favourite_cards=favourite_cards user_is_authenticated=user_is_authenticated section_class="mt-12 lg:mt-16" %}
     </div>
 </section>
 {% endblock %}
@@ -202,7 +271,7 @@
 <script src="{% static 'js/catalog.js' %}"></script>
 <script>
 (function () {
-    document.querySelectorAll(".product-detail-related").forEach(function (section) {
+    document.querySelectorAll(".product-detail-related, .favourites-browse-section").forEach(function (section) {
         var track = section.querySelector(".browse-products-track");
         var prev = section.querySelector(".browse-row-prev");
         var next = section.querySelector(".browse-row-next");
@@ -210,7 +279,9 @@
             return;
         }
         function scrollByPage(direction) {
-            track.scrollBy({ left: direction * track.clientWidth * 0.8, behavior: "smooth" });
+            var cell = track.querySelector(".product-browse-cell");
+            var step = cell ? cell.offsetWidth * 5 : track.clientWidth * 0.9;
+            track.scrollBy({ left: direction * step, behavior: "smooth" });
         }
         prev.addEventListener("click", function () { scrollByPage(-1); });
         next.addEventListener("click", function () { scrollByPage(1); });

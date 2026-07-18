@@ -55,7 +55,7 @@ def build_inventory_sections():
                 "variant_id": variant.pk,
                 "product_id": product.pk,
                 "product_name": product.name,
-                "size_label": f"{format_weight(variant.weight)} {variant.unit_label}",
+                "size_label": format_weight(variant.weight, variant.unit_label),
                 "stock": variant.stock,
                 "availability_label": AVAILABILITY_LABELS.get(
                     variant.availability,

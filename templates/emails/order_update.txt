@@ -14,7 +14,7 @@
 ΠΡΟΪΟΝΤΑ
 --------
 {% for row in item_rows %}
-- {{ row.quantity }}× {{ row.name }} ({{ row.weight }} kg) — {{ row.line_total_display }} €
+- {{ row.quantity }}× {{ row.name }} ({{ row.size_label }}) — {{ row.line_total_display }} €
 {% empty %}
 - (χωρίς προϊόντα)
 {% endfor %}

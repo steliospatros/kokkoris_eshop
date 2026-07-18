@@ -118,6 +118,35 @@
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
+.brand-tile-grid .animal-category-tile__img {
+  padding: 0.4rem;
+  max-height: 8.5rem;
+  width: auto;
+  max-width: 100%;
+  margin: 0 auto;
+  aspect-ratio: auto;
+}
+
+@media (min-width: 640px) {
+  .brand-tile-grid .animal-category-tile__img {
+    padding: 0.5rem;
+    max-height: 9.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .brand-tile-grid .animal-category-tile__img {
+    max-height: 10.5rem;
+  }
+}
+
+.brand-tile-grid .animal-category-tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
 .animal-category-grid .animal-category-tile:hover .animal-category-tile__img,
 .brand-tile-grid .animal-category-tile:hover .animal-category-tile__img {
   opacity: 0.88;
@@ -176,7 +205,7 @@
 }
 
 .product-card-info--browse {
-  min-height: 8.25rem;
+  min-height: 6.5rem;
 }
 
 .product-card-title {
@@ -187,21 +216,42 @@
   min-height: calc(1.375em * 3);
 }
 
+.product-card-info--browse .product-card-title {
+  -webkit-line-clamp: 2;
+  min-height: calc(1.25em * 2);
+}
+
 .product-card-meta {
   min-height: 1.75rem;
 }
 
 .product-card-info--browse .product-card-meta {
-  min-height: 2.25rem;
+  min-height: 1.75rem;
 }
 
 .product-card-price {
   min-height: 2.5rem;
 }
 
-/* Horizontal browse rows: keep cells equal height within the strip. */
+.product-card-info--browse .product-card-price {
+  min-height: 2rem;
+}
+
+/* Horizontal browse rows: compact cards, equal height within the strip. */
 .product-browse-cell {
   min-height: 100%;
+}
+
+.product-browse-cell .product-image-slot {
+  aspect-ratio: 1 / 1;
+  max-height: 9.5rem;
+  padding: 0.4rem;
+}
+
+@media (min-width: 640px) {
+  .product-browse-cell .product-image-slot {
+    max-height: 10.5rem;
+  }
 }
 
 .product-browse-cell .product-card-body {
@@ -213,6 +263,46 @@
 
 .product-browse-cell .product-card-footer {
   margin-top: auto;
+}
+
+/* Category browse — company headers: logo OR name (not both), centered */
+.browse-company-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.25rem;
+  text-align: center;
+}
+
+@media (min-width: 1024px) {
+  .browse-company-header {
+    min-height: 2.5rem;
+  }
+}
+
+.browse-company-header__logo {
+  display: block;
+  height: 1.75rem;
+  width: auto;
+  max-width: 8rem;
+  object-fit: contain;
+  object-position: center;
+}
+
+@media (min-width: 1024px) {
+  .browse-company-header__logo {
+    height: 2rem;
+    max-width: 9.5rem;
+  }
+}
+
+.browse-company-header__title {
+  margin: 0;
+  line-height: 1.2;
+}
+
+.browse-company-row {
+  min-height: 0;
 }
 
 /* Homepage welcome — page center; name line just above white cat head (hero PNG). */

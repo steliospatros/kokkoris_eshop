@@ -12,7 +12,7 @@ from accounts.profile_labels import (
     PAYMENT_METHOD_LABELS,
 )
 from orders.models import Order
-from products.catalog import format_decimal_greek
+from products.catalog import format_decimal_greek, format_weight
 
 
 def add_business_days(start_day: date, business_days: int) -> date:
@@ -67,11 +67,13 @@ def build_order_item_rows(order: Order):
     rows = []
     for item in order.items.select_related("product_variant__product"):
         product = item.product_variant.product
+        variant = item.product_variant
         rows.append(
             {
                 "quantity": item.quantity,
                 "name": product.name,
-                "weight": item.product_variant.weight,
+                "weight": variant.weight,
+                "size_label": format_weight(variant.weight, variant.unit_label),
                 "unit_price": item.price_at_purchase,
                 "unit_price_display": format_decimal_greek(item.price_at_purchase),
                 "line_total": item.line_total,

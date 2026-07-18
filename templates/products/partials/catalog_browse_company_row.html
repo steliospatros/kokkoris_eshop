@@ -1,18 +1,22 @@
 {% load i18n static %}
-{# One company block: title + horizontal product row (same layout as hero-brands). #}
-<section class="browse-company-section mb-10 lg:mb-14">
-    <header class="mb-4 lg:mb-6 flex items-center gap-4">
+{# One company block: logo (or name fallback) + horizontal product row. #}
+<section class="browse-company-section mb-10 lg:mb-14"
+         aria-labelledby="browse-company-{{ section.company.id }}">
+    <header class="browse-company-header mb-4 lg:mb-5">
         {% if section.company.logo_url %}
             <img src="{{ section.company.logo_url }}"
                  alt="{{ section.company.name }}"
-                 class="h-10 lg:h-12 w-auto object-contain shrink-0">
+                 class="browse-company-header__logo"
+                 id="browse-company-{{ section.company.id }}">
+        {% else %}
+            <h2 id="browse-company-{{ section.company.id }}"
+                class="browse-company-header__title font-poppins font-light text-xl lg:text-2xl text-kokkoris-teal-dark tracking-wide uppercase">
+                {{ section.company.name }}
+            </h2>
         {% endif %}
-        <h2 class="font-poppins font-light text-xl lg:text-2xl text-kokkoris-teal-dark tracking-wide uppercase">
-            {{ section.company.name }}
-        </h2>
     </header>
 
-    <div class="relative flex items-stretch shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white">
+    <div class="browse-company-row relative flex items-stretch shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white">
         <button type="button"
                 class="browse-row-prev hidden lg:flex w-10 shrink-0 items-center justify-center text-slate-300 hover:text-slate-500 transition-colors"
                 aria-label="{% trans 'Προηγούμενα προϊόντα' %}">

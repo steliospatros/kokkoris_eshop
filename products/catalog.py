@@ -129,16 +129,51 @@ def format_decimal_greek(value, places=2):
     return text.replace(".", ",")
 
 
-def format_weight(weight):
-    """Human-readable package size, e.g. 18 kg or 0,085 kg."""
+def _format_amount_greek(amount: Decimal, *, max_decimals: int | None = None) -> str:
+    """Format a Decimal without trailing zeros, without stripping whole tens (10 → 10)."""
+    if max_decimals is not None:
+        text = format(amount, f".{max_decimals}f")
+    else:
+        text = format(amount, "f")
+    if "." in text:
+        text = text.rstrip("0").rstrip(".")
+    return text.replace(".", ",")
+
+
+def format_weight(weight, unit_label="kg"):
+    """
+    Human-readable package size with unit.
+
+    Values under 1 kg are shown in grams (e.g. 85 g), not 0,085 kg.
+    Litter under 1 L uses ml. Larger amounts keep kg / L.
+    """
     if weight is None:
         return ""
-    weight = Decimal(weight)
-    if weight >= 1:
-        text = format(weight, "f").rstrip("0").rstrip(".")
-    else:
-        text = format(weight, ".3f").rstrip("0").rstrip(".")
-    return text.replace(".", ",")
+
+    amount = Decimal(weight)
+    unit = (unit_label or "kg").strip().lower()
+
+    if unit in {"kg", "κιλό", "κιλά"}:
+        if amount > 0 and amount < 1:
+            grams = amount * Decimal("1000")
+            if grams == grams.to_integral_value():
+                text = _format_amount_greek(grams.to_integral_value())
+            else:
+                text = _format_amount_greek(grams, max_decimals=1)
+            return f"{text} g"
+        return f"{_format_amount_greek(amount)} kg"
+
+    if unit in {"l", "lt", "λίτρο", "λίτρα"}:
+        if amount > 0 and amount < 1:
+            millilitres = amount * Decimal("1000")
+            if millilitres == millilitres.to_integral_value():
+                text = _format_amount_greek(millilitres.to_integral_value())
+            else:
+                text = _format_amount_greek(millilitres, max_decimals=1)
+            return f"{text} ml"
+        return f"{_format_amount_greek(amount)} L"
+
+    return f"{_format_amount_greek(amount)} {unit_label}"
 
 
 def get_default_variant(product):
@@ -220,8 +255,8 @@ def get_display_title(product, variant):
     if not variant:
         return product.name
     unit = variant.unit_label
-    weight_text = format_weight(variant.weight)
-    return f"{product.company.name} {product.name} {weight_text} {unit}"
+    weight_text = format_weight(variant.weight, unit)
+    return f"{product.company.name} {product.name} {weight_text}"
 
 
 def annotate_purchase_count(queryset):
@@ -573,12 +608,13 @@ def build_variant_option(variant, *, selected=False, cart_qty=0):
     """One package-size row for the product detail size picker."""
     stock_display = get_stock_display(variant)
     unit_price = variant.unit_price
+    size_label = format_weight(variant.weight, variant.unit_label)
     return {
         "id": variant.id,
         "weight": variant.weight,
-        "weight_display": format_weight(variant.weight),
+        "weight_display": size_label,
         "unit_label": variant.unit_label,
-        "size_label": f"{format_weight(variant.weight)} {variant.unit_label}",
+        "size_label": size_label,
         "sku": variant.sku or "",
         "price": variant.price,
         "price_display": format_decimal_greek(variant.price),

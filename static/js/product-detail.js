@@ -281,4 +281,115 @@
                 });
         }
     });
+
+    /* Description / ingredients tabs */
+    (function initInfoTabs() {
+        var root = document.getElementById("pd-info-tabs");
+        if (!root) {
+            return;
+        }
+
+        var tabs = Array.prototype.slice.call(root.querySelectorAll("[data-pd-tab]"));
+        var panels = Array.prototype.slice.call(root.querySelectorAll("[data-pd-panel]"));
+        if (!tabs.length) {
+            return;
+        }
+
+        function activate(name, focusTab) {
+            tabs.forEach(function (tab) {
+                var active = tab.getAttribute("data-pd-tab") === name;
+                tab.classList.toggle("is-active", active);
+                tab.setAttribute("aria-selected", active ? "true" : "false");
+                tab.tabIndex = active ? 0 : -1;
+                if (active && focusTab) {
+                    tab.focus();
+                }
+            });
+            panels.forEach(function (panel) {
+                var active = panel.getAttribute("data-pd-panel") === name;
+                panel.hidden = !active;
+                panel.classList.toggle("is-hidden", !active);
+            });
+        }
+
+        root.addEventListener("click", function (event) {
+            var tab = event.target.closest("[data-pd-tab]");
+            if (!tab || !root.contains(tab)) {
+                return;
+            }
+            activate(tab.getAttribute("data-pd-tab"), false);
+        });
+
+        root.addEventListener("keydown", function (event) {
+            var tab = event.target.closest("[data-pd-tab]");
+            if (!tab || !root.contains(tab)) {
+                return;
+            }
+            var index = tabs.indexOf(tab);
+            if (index < 0) {
+                return;
+            }
+            var next = -1;
+            if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+                next = (index + 1) % tabs.length;
+            } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+                next = (index - 1 + tabs.length) % tabs.length;
+            } else if (event.key === "Home") {
+                next = 0;
+            } else if (event.key === "End") {
+                next = tabs.length - 1;
+            }
+            if (next < 0) {
+                return;
+            }
+            event.preventDefault();
+            activate(tabs[next].getAttribute("data-pd-tab"), true);
+        });
+    })();
+
+    /* Hover zoom — magnify under cursor while mouse is over the image */
+    (function initHoverZoom() {
+        var gallery = document.getElementById("pd-hover-zoom");
+        var image = document.getElementById("pd-main-image");
+        if (!gallery || !image) {
+            return;
+        }
+
+        var finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
+        if (!finePointer.matches) {
+            return;
+        }
+
+        var ZOOM = 2.4;
+        gallery.style.setProperty("--pd-zoom-scale", String(ZOOM));
+
+        function setOrigin(event) {
+            var rect = gallery.getBoundingClientRect();
+            if (!rect.width || !rect.height) {
+                return;
+            }
+            var x = ((event.clientX - rect.left) / rect.width) * 100;
+            var y = ((event.clientY - rect.top) / rect.height) * 100;
+            x = Math.max(0, Math.min(100, x));
+            y = Math.max(0, Math.min(100, y));
+            image.style.transformOrigin = x + "% " + y + "%";
+        }
+
+        gallery.addEventListener("mouseenter", function (event) {
+            gallery.classList.add("is-zooming");
+            setOrigin(event);
+        });
+
+        gallery.addEventListener("mousemove", function (event) {
+            if (!gallery.classList.contains("is-zooming")) {
+                gallery.classList.add("is-zooming");
+            }
+            setOrigin(event);
+        });
+
+        gallery.addEventListener("mouseleave", function () {
+            gallery.classList.remove("is-zooming");
+            image.style.transformOrigin = "center center";
+        });
+    })();
 })();
