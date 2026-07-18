@@ -1,0 +1,165 @@
+{% load i18n %}
+<div class="mb-6 lg:flex lg:gap-6">
+    <aside class="mb-4 lg:mb-0 lg:w-44 xl:w-48 shrink-0">
+        <div class="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+            <p class="font-inter text-xs uppercase tracking-wide text-slate-400 mb-2 px-1">
+                {% trans "Τρόπος παράδοσης" %}
+            </p>
+            <ul class="space-y-1">
+                {% for value, label in delivery_filter_choices %}
+                    <li>
+                        <a href="?{% for key, param in filter_query_params.items %}{% if key != 'delivery' %}{{ key }}={{ param|urlencode }}&{% endif %}{% endfor %}delivery={{ value }}"
+                           class="block rounded-lg px-3 py-2 font-inter text-sm transition-colors {% if delivery_filter == value %}bg-kokkoris-teal-dark text-white{% else %}text-slate-700 hover:bg-slate-100{% endif %}">
+                            {{ label }}
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </aside>
+
+    <form method="get" class="flex-1 min-w-0 rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm space-y-4">
+        <div>
+            <p class="font-inter text-xs uppercase tracking-wide text-slate-400 mb-2">
+                {% trans "Κατηγορία παραγγελίας" %}
+            </p>
+            <div class="flex flex-wrap gap-2">
+                {% for value, label in status_filter_choices %}
+                    <a href="?{% for key, param in filter_query_params.items %}{% if key != 'status' %}{{ key }}={{ param|urlencode }}&{% endif %}{% endfor %}status={{ value }}"
+                       class="rounded-full px-4 py-2 text-sm font-inter transition-colors {% if status_filter == value %}bg-kokkoris-teal-dark text-white{% else %}bg-slate-100 text-slate-700 hover:bg-slate-200{% endif %}">
+                        {{ label }}
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <label class="flex items-center gap-2 font-inter text-sm text-slate-700">
+            <input type="checkbox"
+                   name="range"
+                   value="1"
+                   {% if use_period_filter %}checked{% endif %}
+                   class="rounded border-slate-300 text-kokkoris-teal-dark">
+            {% trans "Φιλτράρισμα ανά ημερολογιακή περίοδο" %}
+        </label>
+
+        <div id="orders-period-fields" class="space-y-4 {% if not use_period_filter %}opacity-50{% endif %}">
+            <div class="flex flex-wrap gap-2">
+                {% for value, label in period_choices %}
+                    <label class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-inter cursor-pointer {% if period == value %}bg-kokkoris-teal-dark text-white{% else %}bg-slate-100 text-slate-700{% endif %}">
+                        <input type="radio" name="period" value="{{ value }}" {% if period == value %}checked{% endif %} class="sr-only">
+                        {{ label }}
+                    </label>
+                {% endfor %}
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div id="period-day-field" class="{% if period != 'day' %}hidden{% endif %}">
+                    <label class="font-inter text-sm text-slate-700 block">
+                        {% trans "Ημερομηνία" %}
+                        <input type="date" name="date" value="{{ anchor_date }}"
+                               class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    </label>
+                </div>
+                <div id="period-week-field" class="{% if period != 'week' %}hidden{% endif %}">
+                    <label class="font-inter text-sm text-slate-700 block">
+                        {% trans "Εβδομάδα" %}
+                        <input type="week" name="week" value="{{ week_value }}"
+                               class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    </label>
+                </div>
+                <div id="period-month-field" class="{% if period != 'month' %}hidden{% endif %}">
+                    <label class="font-inter text-sm text-slate-700 block">
+                        {% trans "Μήνας" %}
+                        <input type="month" name="month" value="{{ month_value }}"
+                               class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    </label>
+                </div>
+                <label class="font-inter text-sm text-slate-700">
+                    {% trans "Χρήστης (email)" %}
+                    <input type="search" name="user" value="{{ user_email }}" placeholder="email@example.com"
+                           class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                </label>
+            </div>
+        </div>
+
+        <input type="hidden" name="status" value="{{ status_filter }}">
+        <input type="hidden" name="delivery" value="{{ delivery_filter }}">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <p class="font-inter text-sm text-slate-600">
+                {% trans "Κατάσταση" %}: <span class="font-medium text-slate-800">{{ status_filter_label }}</span>
+                · {% trans "Παράδοση" %}: <span class="font-medium text-slate-800">{{ delivery_filter_label }}</span>
+                {% if use_period_filter %}
+                    · {{ period_label }} · {{ range_label }}
+                {% else %}
+                    · {% trans "Όλες οι ημέρες" %}
+                {% endif %}
+            </p>
+            <button type="submit"
+                    class="rounded-lg bg-kokkoris-teal-dark px-4 py-2 text-sm font-inter text-white hover:opacity-90 transition-opacity">
+                {% trans "Εφαρμογή" %}
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+(function () {
+    var form = document.querySelector("form");
+    if (!form) return;
+    var rangeCheckbox = form.querySelector('input[name="range"]');
+    var radios = form.querySelectorAll('input[name="period"]');
+    var dayField = document.getElementById("period-day-field");
+    var weekField = document.getElementById("period-week-field");
+    var monthField = document.getElementById("period-month-field");
+    var periodFields = document.getElementById("orders-period-fields");
+
+    function syncPeriodFields() {
+        var selected = form.querySelector('input[name="period"]:checked');
+        var value = selected ? selected.value : "day";
+        if (dayField) dayField.classList.toggle("hidden", value !== "day");
+        if (weekField) weekField.classList.toggle("hidden", value !== "week");
+        if (monthField) monthField.classList.toggle("hidden", value !== "month");
+        radios.forEach(function (radio) {
+            var label = radio.closest("label");
+            if (!label) return;
+            label.classList.toggle("bg-kokkoris-teal-dark", radio.checked);
+            label.classList.toggle("text-white", radio.checked);
+            label.classList.toggle("bg-slate-100", !radio.checked);
+            label.classList.toggle("text-slate-700", !radio.checked);
+        });
+        if (periodFields && rangeCheckbox) {
+            periodFields.classList.toggle("opacity-50", !rangeCheckbox.checked);
+        }
+    }
+
+    function submitForm() {
+        if (rangeCheckbox && rangeCheckbox.checked) {
+            form.requestSubmit();
+        }
+    }
+
+    radios.forEach(function (radio) {
+        radio.addEventListener("change", function () {
+            syncPeriodFields();
+            if (rangeCheckbox && !rangeCheckbox.checked) {
+                rangeCheckbox.checked = true;
+                syncPeriodFields();
+            }
+            submitForm();
+        });
+    });
+
+    if (rangeCheckbox) {
+        rangeCheckbox.addEventListener("change", syncPeriodFields);
+    }
+
+    ["date", "week", "month"].forEach(function (name) {
+        var input = form.querySelector('[name="' + name + '"]');
+        if (input) {
+            input.addEventListener("change", submitForm);
+        }
+    });
+
+    syncPeriodFields();
+})();
+</script>

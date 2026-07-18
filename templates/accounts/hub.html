@@ -3,7 +3,7 @@
 
 {% block title %}{% trans "Ο λογαριασμός μου" %}{% endblock %}
 
-{% block main_class %}w-full max-w-none bg-slate-50 min-h-[60vh]{% endblock %}
+{% block main_class %}w-full max-w-none min-h-[60vh]{% endblock %}
 
 {% block content %}
 <section class="max-w-[720px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
@@ -28,6 +28,13 @@
             <span class="font-inter text-lg text-slate-800">{% trans "Το καλάθι μου" %}</span>
             <span class="text-kokkoris-teal-dark text-xl" aria-hidden="true">›</span>
         </a>
+        {% if is_administration_user %}
+            <a href="{% url 'administration:hub' %}"
+               class="flex items-center justify-between gap-4 rounded-xl border border-kokkoris-teal-dark/30 bg-kokkoris-teal-dark/5 px-5 py-4 shadow-sm hover:border-kokkoris-teal-dark hover:shadow-md transition-all">
+                <span class="font-inter text-lg text-kokkoris-teal-dark">{% trans "Διαχείριση" %}</span>
+                <span class="text-kokkoris-teal-dark text-xl" aria-hidden="true">›</span>
+            </a>
+        {% endif %}
     </nav>
 
     <form method="post"

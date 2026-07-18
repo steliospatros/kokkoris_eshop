@@ -1,0 +1,40 @@
+{{ site_name }}
+================================================================
+
+{{ status_intro }}
+
+Παραγγελία: {{ order_code_display }}
+Κατάσταση: {{ status_label }}
+Ημερομηνία καταχώρησης: {{ order_date_display }}
+
+ΕΝΗΜΕΡΩΣΗ ΠΑΡΑΔΟΣΗΣ
+-------------------
+{{ eta_message }}
+
+ΠΡΟΪΟΝΤΑ
+--------
+{% for row in item_rows %}
+- {{ row.quantity }}× {{ row.name }} ({{ row.weight }} kg) — {{ row.line_total_display }} €
+{% empty %}
+- (χωρίς προϊόντα)
+{% endfor %}
+
+ΚΟΣΤΟΣ
+------
+Τιμή προϊόντων: {{ cart_cost_display }} €
+Αποστολή: {% if courier_fee_is_free %}Δωρεάν{% else %}{{ courier_fee_display }} €{% endif %}
+Σύνολο πληρωμής: {{ total_cost_display }} €
+
+ΣΤΟΙΧΕΙΑ ΠΑΡΑΔΟΣΗΣ
+------------------
+Διεύθυνση: {{ delivery_address_display }}
+Τηλέφωνο: {{ order.delivery_phone_number }}
+Τρόπος πληρωμής: {{ payment_label }}
+Τρόπος παράδοσης: {{ delivery_label }}
+{% if order.delivery_notes %}Σημειώσεις: {{ order.delivery_notes }}{% endif %}
+
+Δες τις λεπτομέρειες της παραγγελίας:
+{{ detail_url }}
+
+---
+Kokkoris Pet Food — www.kokkorispetfood.gr

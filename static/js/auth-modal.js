@@ -186,6 +186,43 @@
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
     }
 
+    function phoneDigitsOnly(value) {
+        var digits = String(value || "").replace(/\D/g, "");
+        if (digits.indexOf("0030") === 0) {
+            digits = digits.slice(4);
+        } else if (digits.indexOf("30") === 0 && digits.length > 10) {
+            digits = digits.slice(2);
+        }
+        return digits;
+    }
+
+    function firstPhoneError(value) {
+        var text = String(value || "").trim();
+        if (!text) {
+            return "Συμπλήρωσε το κινητό.";
+        }
+        if (/[A-Za-zΑ-Ωα-ωίϊΐόύϋΰήώ]/.test(text)) {
+            return "Μόνο αριθμοί.";
+        }
+        if (!/^[\d\s+\-().]+$/.test(text)) {
+            return "Μόνο αριθμοί.";
+        }
+        var digits = phoneDigitsOnly(text);
+        if (!digits) {
+            return "Συμπλήρωσε το κινητό.";
+        }
+        if (digits.length !== 10) {
+            return "10 ψηφία · ξεκινά με 69.";
+        }
+        if (digits.slice(0, 2) !== "69") {
+            return "Ξεκινά με 69.";
+        }
+        if ("0123456789".indexOf(digits.charAt(2)) === -1) {
+            return "Μη έγκυρο κινητό.";
+        }
+        return null;
+    }
+
     function requestPasswordReset() {
         var email = loginEmailValue();
         clearErrors();
@@ -455,14 +492,29 @@
                     }
                 }
 
+                var phoneInput = document.getElementById("auth-signup-phone_number");
+                var phoneError = document.getElementById("auth-signup-phone_number-error");
+                if (phoneInput && phoneError) {
+                    var phoneValidationError = firstPhoneError(phoneInput.value);
+                    if (phoneValidationError) {
+                        phoneError.textContent = phoneValidationError;
+                        phoneError.classList.remove("hidden");
+                        phoneInput.classList.add("border-red-500");
+                        phoneInput.focus();
+                        return;
+                    }
+                }
+
                 if (signupSubmit) {
                     signupSubmit.disabled = true;
                 }
 
                 postJson("/accounts/api/signup/", {
                     email: document.getElementById("auth-signup-email").value.trim(),
+                    phone_number: phoneInput ? phoneInput.value.trim() : "",
                     password1: document.getElementById("auth-signup-password1").value,
                     password2: document.getElementById("auth-signup-password2").value,
+                    newsletter_subscribe: document.getElementById("auth-signup-newsletter").checked,
                     next: nextUrl,
                 })
                     .then(function (result) {

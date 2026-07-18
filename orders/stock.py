@@ -11,6 +11,10 @@ from cart.cart import compute_stock_issue
 from products.models import ProductVariant
 
 
+def _cart_item_variant_id(item):
+    return getattr(item, "product_variant_id", None) or item.product_variant.pk
+
+
 class InsufficientStockError(Exception):
     """Raised when cart lines cannot be fulfilled with current stock."""
 
@@ -30,7 +34,7 @@ def reserve_stock_for_cart(cart):
         return
 
     with transaction.atomic():
-        variant_ids = [item.product_variant_id for item in items]
+        variant_ids = [_cart_item_variant_id(item) for item in items]
         variants = {
             variant.pk: variant
             for variant in ProductVariant.objects.select_for_update().filter(
@@ -40,7 +44,8 @@ def reserve_stock_for_cart(cart):
 
         issues = {}
         for item in items:
-            variant = variants.get(item.product_variant_id)
+            variant_id = _cart_item_variant_id(item)
+            variant = variants.get(variant_id)
             if variant is None:
                 issues[item] = "Το προϊόν δεν είναι πλέον διαθέσιμο."
                 continue
@@ -52,7 +57,7 @@ def reserve_stock_for_cart(cart):
             raise InsufficientStockError(issues)
 
         for item in items:
-            variant = variants[item.product_variant_id]
+            variant = variants[_cart_item_variant_id(item)]
             if variant.availability != ProductVariant.AVAILABILITY_AVAILABLE_NOW:
                 continue
             variant.stock -= item.quantity

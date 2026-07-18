@@ -125,6 +125,14 @@ class CheckoutDeliveryViewTests(TestCase):
         data = self.client.session[SESSION_KEY]
         self.assertEqual(data["delivery_method"], Order.DELIVERY_METHOD_COMPANY)
 
+    def test_checkout_allowed_without_sms_verified_phone(self):
+        """Phone is a normal field — no SMS verification gate at checkout."""
+        self.user.phone_verified_at = None
+        self.user.save(update_fields=["phone_verified_at"])
+        response = self.client.get(reverse("checkout:address"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'name="phone_number"')
+
     def test_payment_page_renders_payment_options(self):
         session = self.client.session
         session[SESSION_KEY]["delivery_method"] = Order.DELIVERY_METHOD_COURIER

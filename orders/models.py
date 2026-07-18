@@ -4,6 +4,12 @@ from django.db import models
 from products.models import ProductVariant
 
 
+def _default_order_code():
+    from .codes import generate_order_code
+
+    return generate_order_code()
+
+
 class Order(models.Model):
     """
     A customer's order. Holds everything that stays the same for the whole
@@ -28,6 +34,7 @@ class Order(models.Model):
     STATUS_DELIVERED = "delivered"
     STATUS_CANCELLED = "cancelled"
     STATUS_FAILED = "failed"
+    STATUS_CANCELLATION_REQUESTED = "cancel_req"
     STATUS_CHOICES = [
         (STATUS_NEW, "New"),
         (STATUS_PENDING, "Pending"),
@@ -35,10 +42,12 @@ class Order(models.Model):
         (STATUS_DELIVERED, "Delivered"),
         (STATUS_CANCELLED, "Cancelled"),
         (STATUS_FAILED, "Failed"),
+        (STATUS_CANCELLATION_REQUESTED, "Cancellation requested"),
     ]
-    # Statuses from which a customer may still self-cancel (before staff
-    # have to get involved, e.g. for refunds on an already-paid order).
+    # Immediate self-service cancel (no refund workflow).
     CANCELLABLE_STATUSES = (STATUS_NEW, STATUS_PENDING)
+    # Paid card orders enter cancellation_requested for admin + Stripe refund.
+    REFUND_REQUEST_STATUSES = (STATUS_PAID,)
 
     DELIVERY_METHOD_COMPANY = "company_delivery"
     DELIVERY_METHOD_COURIER = "courier"
@@ -52,6 +61,12 @@ class Order(models.Model):
         on_delete=models.PROTECT,
         related_name="orders",
         help_text="The customer who placed this order."
+    )
+    order_code = models.CharField(
+        max_length=16,
+        unique=True,
+        default=_default_order_code,
+        help_text="Public order identifier shown to customers, e.g. KPK4F8A2B1C.",
     )
     order_date = models.DateTimeField(auto_now_add=True)
     special_notes = models.TextField(
@@ -103,6 +118,17 @@ class Order(models.Model):
         default="",
         help_text="Stripe PaymentIntent ID for card payments (pi_...). Empty for cash on delivery.",
     )
+    stripe_refund_id = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text="Stripe Refund ID (re_...) after admin processes a card refund.",
+    )
+    cancellation_requested_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the customer submitted a cancellation/refund request.",
+    )
     delivery_method = models.CharField(
         max_length=20,
         choices=DELIVERY_METHOD_CHOICES,
@@ -135,16 +161,37 @@ class Order(models.Model):
         ordering = ["-order_date"]
 
     def __str__(self):
-        return f"Order #{self.pk} - {self.user.email} ({self.get_status_display()})"
+        return f"Order #{self.order_code} - {self.user.email} ({self.get_status_display()})"
+
+    @property
+    def public_code_display(self):
+        """Customer-facing order code with hash prefix."""
+        return f"#{self.order_code}"
+
+    def save(self, *args, **kwargs):
+        if not self.order_code:
+            from .codes import assign_unique_order_code
+
+            self.order_code = assign_unique_order_code(type(self))
+        super().save(*args, **kwargs)
 
     def can_be_cancelled_by_customer(self):
-        """
-        Customers may only self-cancel while the order is still 'new' or
-        'pending' - i.e. before it has actually been paid/shipped. Once it
-        reaches 'paid' or beyond, cancellation must go through staff (e.g.
-        to handle a refund), not this self-service action.
-        """
+        """Immediate cancel for unpaid orders (e.g. cash on delivery / pending)."""
         return self.status in self.CANCELLABLE_STATUSES
+
+    def can_request_cancellation(self):
+        """Paid card orders: customer submits a refund request for admin review."""
+        return (
+            self.status in self.REFUND_REQUEST_STATUSES
+            and self.payment_method == self.PAYMENT_METHOD_CARD
+            and bool(self.stripe_payment_intent_id)
+        )
+
+    def can_customer_initiate_cancel(self):
+        return self.can_be_cancelled_by_customer() or self.can_request_cancellation()
+
+    def is_refund_pending(self):
+        return self.status == self.STATUS_CANCELLATION_REQUESTED
 
 
 class OrderItem(models.Model):
@@ -178,7 +225,7 @@ class OrderItem(models.Model):
         verbose_name_plural = "Order Items"
 
     def __str__(self):
-        return f"{self.quantity}x {self.product_variant} (Order #{self.order_id})"
+        return f"{self.quantity}x {self.product_variant} (Order #{self.order.order_code})"
 
     @property
     def line_total(self):

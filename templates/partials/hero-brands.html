@@ -3,7 +3,7 @@
 {# pill button with the company name below (PDF layout). Links are stubs    #}
 {# for now; dedicated brand pages come in a later pass.                   #}
 <div class="relative mx-auto mt-8 lg:mt-10 mb-10 lg:mb-14 max-w-[1680px]" id="hero-brands">
-    <div class="flex items-stretch shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-kokkoris-brand-cell">
+    <div class="flex items-stretch shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white">
         <button type="button"
                 id="hero-brands-prev"
                 aria-label="{% trans 'Προηγούμενες μάρκες' %}"
@@ -17,7 +17,7 @@
              class="flex flex-1 overflow-x-auto scroll-smooth snap-x snap-mandatory divide-x divide-slate-300 [&::-webkit-scrollbar]:hidden"
              style="scrollbar-width: none;">
             {% for company in companies %}
-                <div class="flex flex-col items-center justify-between flex-none w-[min(280px,40vw)] lg:w-[20%] min-h-[180px] lg:min-h-[237px] px-3 py-6 lg:py-8 snap-start bg-kokkoris-brand-cell">
+                <div class="flex flex-col items-center justify-between flex-none w-[min(280px,40vw)] lg:w-[20%] min-h-[180px] lg:min-h-[237px] px-3 py-6 lg:py-8 snap-start bg-white">
                     <div class="flex flex-1 items-center justify-center w-full px-2">
                         <img src="{{ company.logo.url }}"
                              alt="{{ company.name }}"

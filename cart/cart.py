@@ -175,6 +175,10 @@ class SessionCartItem:
         self.quantity = quantity
 
     @property
+    def product_variant_id(self):
+        return self.product_variant.pk
+
+    @property
     def subtotal(self):
         return self.quantity * self.product_variant.price
 

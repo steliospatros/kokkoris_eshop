@@ -104,6 +104,7 @@ def build_order_detail_context(order: Order, *, show_success_banner=False):
         "delivery_label": DELIVERY_METHOD_LABELS.get(
             order.delivery_method, order.get_delivery_method_display()
         ),
+        "order_code_display": order.public_code_display,
         "order_date_display": timezone.localtime(order.order_date).strftime(
             "%d/%m/%Y %H:%M"
         ),
@@ -117,4 +118,15 @@ def build_order_detail_context(order: Order, *, show_success_banner=False):
         "courier_fee_display": format_decimal_greek(order.courier_fee),
         "total_cost_display": format_decimal_greek(order.total_cost),
         "courier_fee_is_free": order.courier_fee == 0,
+        "cancel_button_label": (
+            "Αίτημα ακύρωσης & επιστροφής"
+            if order.can_request_cancellation()
+            else "Ακύρωση παραγγελίας"
+        ),
+        "cancel_confirm_message": (
+            "Η ακύρωση θα εξεταστεί από την ομάδα μας. Μετά την επιβεβαίωση, "
+            "θα επιστραφούν τα χρήματα στην κάρτα σου. Να συνεχίσω;"
+            if order.can_request_cancellation()
+            else "Είσαι σίγουρος/η ότι θέλεις να ακυρώσεις την παραγγελία;"
+        ),
     }

@@ -12,15 +12,7 @@
                 <label for="id_{{ row.name }}" class="block text-xs font-inter font-semibold uppercase tracking-wide text-slate-400 mb-1">
                     {{ row.label }}
                 </label>
-                {% if row.name == "phone_number" and phone_verified %}
-                    <p class="font-inter text-slate-800">{{ user.phone_number }}</p>
-                    <input type="hidden" name="phone_number" value="{{ user.phone_number }}">
-                    <button type="button"
-                            id="checkout-change-phone"
-                            class="mt-2 text-xs font-inter text-kokkoris-teal-dark hover:underline">
-                        {% trans "Αλλαγή κινητού (επανα-επιβεβαίωση SMS)" %}
-                    </button>
-                {% elif row.multiline %}
+                {% if row.multiline %}
                     <textarea name="{{ row.name }}"
                               id="id_{{ row.name }}"
                               rows="3"

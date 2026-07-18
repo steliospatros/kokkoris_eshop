@@ -1,5 +1,6 @@
 import json
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -14,6 +15,7 @@ from allauth.account.internal.flows.signup import complete_signup
 from allauth.core import ratelimit
 
 from accounts.phone_verification import effective_phone_verified, phone_verification_enabled
+from newsletter.services import subscribe_newsletter
 from orders.presentation import build_order_item_rows
 from products.catalog import format_decimal_greek
 
@@ -99,6 +101,7 @@ def api_signup(request):
     form = KokkorisSignupForm(
         data={
             "email": (payload.get("email") or "").strip(),
+            "phone_number": (payload.get("phone_number") or "").strip(),
             "password1": payload.get("password1") or "",
             "password2": payload.get("password2") or "",
         },
@@ -121,6 +124,12 @@ def api_signup(request):
             },
             status=400,
         )
+
+    newsletter_opt_in = payload.get("newsletter_subscribe", True)
+    if isinstance(newsletter_opt_in, str):
+        newsletter_opt_in = newsletter_opt_in.lower() in ("1", "true", "yes", "on")
+    if newsletter_opt_in:
+        subscribe_newsletter(email=request.user.email, user=request.user)
 
     return JsonResponse({
         "ok": True,
@@ -388,6 +397,7 @@ def account_orders_view(request):
                 "delivery_label": DELIVERY_METHOD_LABELS.get(
                     order.delivery_method, order.get_delivery_method_display()
                 ),
+                "order_code_display": order.public_code_display,
                 "order_date_display": timezone.localtime(order.order_date).strftime(
                     "%d/%m/%Y %H:%M"
                 ),

@@ -45,25 +45,35 @@
                         {% trans "Πολιτική Απορρήτου" %}
                     </a>
 
-                    {# Επικοινωνία — ίδια στήλη/στοίχιση με τα links παραπάνω #}
-                    <div class="font-inter pt-4 lg:pt-5">
-                        <p class="text-base lg:text-lg mb-2">
+                    {# Επικοινωνία — τηλέφωνα αριστερά, διεύθυνση δεξιά (συμμετρικά) #}
+                    <div class="font-inter pt-4 lg:pt-5 lg:max-w-none">
+                        <p class="text-base lg:text-lg mb-3">
                             {% trans "Επικοινωνία" %}
                         </p>
-                        <a href="tel:+306977927008"
-                           class="inline-flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-                            <img src="{% static 'images/phone-icon-white.png' %}"
-                                 alt=""
-                                 aria-hidden="true"
-                                 class="w-9 h-9 lg:w-10 lg:h-10 shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]">
-                            <span class="text-base lg:text-lg whitespace-nowrap">697 792 7008</span>
-                        </a>
+                        <div class="flex flex-col gap-2.5">
+                            <a href="tel:+306977927008"
+                               class="inline-flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+                                <img src="{% static 'images/phone-icon-white.png' %}"
+                                     alt=""
+                                     aria-hidden="true"
+                                     class="w-9 h-9 lg:w-10 lg:h-10 shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]">
+                                <span class="text-base lg:text-lg whitespace-nowrap">697 792 7008</span>
+                            </a>
+                            <a href="tel:+302106038727"
+                               class="inline-flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+                                <img src="{% static 'images/phone-icon-white.png' %}"
+                                     alt=""
+                                     aria-hidden="true"
+                                     class="w-9 h-9 lg:w-10 lg:h-10 shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]">
+                                <span class="text-base lg:text-lg whitespace-nowrap">210 603 8727</span>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {# RIGHT column: newsletter signup #}
-            <div class="lg:pt-1">
+            {# RIGHT column: newsletter + store location (symmetric to phones) #}
+            <div class="lg:pt-1 flex flex-col">
                 <h3 class="font-inter text-xl lg:text-2xl">
                     {% trans "Εγγραφείτε στο newsletter μας:" %}
                 </h3>
@@ -106,6 +116,27 @@
                     <script>window.RECAPTCHA_SITE_KEY = "{{ RECAPTCHA_SITE_KEY }}";</script>
                     <script src="{% static 'js/newsletter-recaptcha.js' %}"></script>
                 {% endif %}
+
+                <div class="font-inter mt-10 lg:mt-auto lg:pt-12">
+                    <p class="text-base lg:text-lg mb-3">
+                        {% trans "Τοποθεσία" %}
+                    </p>
+                    <a href="https://www.google.com/maps/search/?api=1&query=%CE%9A%CF%81%CE%AE%CF%84%CE%B7%CF%82+5%2C+%CE%A0%CE%B1%CE%BB%CE%BB%CE%AE%CE%BD%CE%B7+15351"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       class="inline-flex items-start gap-2.5 hover:opacity-80 transition-opacity lg:ml-auto lg:max-w-[320px]">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             viewBox="0 0 24 24"
+                             fill="currentColor"
+                             class="w-9 h-9 lg:w-10 lg:h-10 shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)] opacity-90"
+                             aria-hidden="true">
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
+                        </svg>
+                        <span class="text-base lg:text-lg leading-relaxed text-right">
+                            {% trans "Κρήτης 5, Παλλήνη, Τ.Κ. 15351" %}
+                        </span>
+                    </a>
+                </div>
             </div>
         </div>
 

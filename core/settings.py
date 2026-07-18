@@ -54,7 +54,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.facebook',
 
     # Local apps
-    'products',
+    'products.apps.ProductsConfig',
     'accounts',
     'orders',
     'cart',
@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'newsletter',
     'wishlist',
     'pages',
+    'administration',
 ]
 
 MIDDLEWARE = [
@@ -103,6 +104,7 @@ TEMPLATES = [
                 'accounts.context_processors.auth_helpers',
                 'wishlist.context_processors.wishlist_state',
                 'core.context_processors.breadcrumbs',
+                'administration.context_processors.administration_access',
             ],
         },
     },
@@ -236,11 +238,23 @@ LOGIN_URL = 'account_login'
 LOGIN_REDIRECT_URL = 'home'
 ACCOUNT_LOGOUT_REDIRECT_URL = 'home'
 
-# Development-only email backend: password reset / email confirmation
-# messages are printed to the console instead of actually being sent.
-# A real SMTP backend will be configured at deployment time (Part 6).
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'noreply@kokkoriseshop.local'
+# Transactional email (SMTP). Falls back to console when host/user are unset.
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "").strip()
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "").strip()
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "").strip()
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "true").lower() in ("true", "1", "yes")
+DEFAULT_FROM_EMAIL = os.environ.get(
+    "DEFAULT_FROM_EMAIL",
+    "Kokkoris Pet Food <noreply@kokkorispetfood.gr>",
+).strip()
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+SITE_BASE_URL = os.environ.get("SITE_BASE_URL", "http://127.0.0.1:8000").strip()
+
+if EMAIL_HOST and EMAIL_HOST_USER:
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # Google Maps (used by the Part 4 checkout address step: Places Autocomplete
 # + interactive map pin for precise delivery location). Maps JavaScript API
@@ -249,9 +263,11 @@ DEFAULT_FROM_EMAIL = 'noreply@kokkoriseshop.local'
 GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY', '').strip()
 
 # -----------------------------------------------------------------------------
-# Phone SMS verification (Twilio) — DISABLED until Twilio account upgrade
+# Phone SMS verification (Twilio) — OPTIONAL, disabled by default
 # -----------------------------------------------------------------------------
-# Set PHONE_VERIFICATION_ENABLED=true in .env after upgrading Twilio and configuring:
+# The shop collects phone as a normal text field (profile/checkout). SMS OTP is
+# not required for checkout. Set PHONE_VERIFICATION_ENABLED=true only if you
+# later enable Twilio and want login/signup SMS gates:
 #   TWILIO_ALPHANUMERIC_SENDER=Kokkoris   (required for Greece; US +1 cannot deliver to +30)
 #   TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN
 # Run: python manage.py check_twilio
@@ -259,7 +275,7 @@ PHONE_VERIFICATION_ENABLED = os.environ.get(
     "PHONE_VERIFICATION_ENABLED", "false"
 ).lower() in ("true", "1", "yes")
 
-# Twilio SMS (used when PHONE_VERIFICATION_ENABLED=true)
+# Twilio SMS (optional — only used when PHONE_VERIFICATION_ENABLED=true)
 TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "").strip()
 TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "").strip()
 TWILIO_PHONE_NUMBER = os.environ.get("TWILIO_PHONE_NUMBER", "").strip()

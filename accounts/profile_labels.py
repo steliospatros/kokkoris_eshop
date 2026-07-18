@@ -24,6 +24,7 @@ ORDER_STATUS_LABELS = {
     "delivered": _("Παραδόθηκε"),
     "cancelled": _("Ακυρωμένη"),
     "failed": _("Αποτυχία"),
+    "cancel_req": _("Αίτημα ακύρωσης"),
 }
 
 PAYMENT_METHOD_LABELS = {

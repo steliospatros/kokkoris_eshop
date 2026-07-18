@@ -1,0 +1,76 @@
+{% load i18n %}
+<div class="space-y-4 font-inter text-sm text-slate-700">
+    <div>
+        <h4 class="font-medium text-slate-800 mb-2">{% trans "Προϊόντα" %}</h4>
+        <ul class="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white overflow-hidden">
+            {% for item in order.item_rows %}
+                <li class="flex items-center justify-between gap-3 px-3 py-2.5">
+                    <div class="flex items-center gap-3 min-w-0">
+                        {% if item.image_url %}
+                            <img src="{{ item.image_url }}" alt="" class="w-10 h-10 rounded object-cover shrink-0">
+                        {% endif %}
+                        <div class="min-w-0">
+                            <p class="font-medium text-slate-800 truncate">{{ item.name }}</p>
+                            <p class="text-xs text-slate-500">
+                                {{ item.quantity }}× {{ item.weight }} kg · {{ item.unit_price_display }} €
+                            </p>
+                        </div>
+                    </div>
+                    <span class="shrink-0 font-medium text-slate-800">{{ item.line_total_display }} €</span>
+                </li>
+            {% empty %}
+                <li class="px-3 py-2.5 text-slate-500">{% trans "Χωρίς προϊόντα" %}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+            <h4 class="font-medium text-slate-800 mb-1">{% trans "Κόστος" %}</h4>
+            <p>{% trans "Προϊόντα" %}: {{ order.cart_display }} €</p>
+            <p>
+                {% trans "Αποστολή" %}:
+                {% if order.courier_is_free %}
+                    {% trans "Δωρεάν" %}
+                {% else %}
+                    {{ order.courier_display }} €
+                {% endif %}
+            </p>
+            <p class="font-medium text-slate-900">{% trans "Σύνολο" %}: {{ order.total_display }} €</p>
+        </div>
+        <div>
+            <h4 class="font-medium text-slate-800 mb-1">{% trans "Παράδοση" %}</h4>
+            <p>
+                <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-inter {% if order.is_courier %}bg-blue-100 text-blue-800{% else %}bg-emerald-100 text-emerald-800{% endif %}">
+                    {{ order.delivery_label }}
+                </span>
+            </p>
+            <p class="mt-2">{{ order.delivery_address_display }}</p>
+            {% if order.delivery_phone %}
+                <p class="mt-1">{% trans "Τηλέφωνο" %}: {{ order.delivery_phone }}</p>
+            {% endif %}
+            {% if order.delivery_notes %}
+                <p class="mt-1 text-slate-500">{% trans "Σημειώσεις" %}: {{ order.delivery_notes }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if show_payment_info and order.stripe_payment_intent_id %}
+        <div>
+            <h4 class="font-medium text-slate-800 mb-1">{% trans "Πληρωμή Stripe" %}</h4>
+            <p class="text-xs text-slate-500 break-all">PI: {{ order.stripe_payment_intent_id }}</p>
+            {% if order.stripe_refund_id %}
+                <p class="mt-1 text-xs text-emerald-700 break-all">
+                    {% trans "Επιστροφή" %}: {{ order.stripe_refund_id }}
+                </p>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <p>
+        <a href="{{ order.detail_url }}"
+           class="text-kokkoris-teal-dark hover:underline font-medium">
+            {% trans "Πλήρης σελίδα παραγγελίας" %} →
+        </a>
+    </p>
+</div>

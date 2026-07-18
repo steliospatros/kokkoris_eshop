@@ -1,0 +1,68 @@
+{% extends "page.html" %}
+{% load i18n %}
+
+{% block title %}{{ page_title }} — Kokkoris Eshop{% endblock %}
+
+{% block main_class %}w-full max-w-none min-h-[60vh]{% endblock %}
+
+{% block content %}
+<section class="max-w-[960px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 pb-20">
+    <p class="mb-6">
+        <a href="{% url 'administration:hub' %}" class="text-kokkoris-teal-dark hover:underline font-inter text-sm">
+            ← {% trans "Πίσω στη διαχείριση" %}
+        </a>
+    </p>
+
+    <h1 class="font-poppins font-light text-2xl sm:text-3xl text-kokkoris-teal-dark mb-6">
+        {% block panel_title %}{% endblock %}
+    </h1>
+
+    <form method="get" class="mb-8 rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm space-y-4">
+        <div class="flex flex-wrap gap-2">
+            {% for value, label in period_choices %}
+                <a href="?period={{ value }}&date={{ anchor_date }}{% if user_email %}&user={{ user_email|urlencode }}{% endif %}"
+                   class="rounded-full px-4 py-2 text-sm font-inter transition-colors {% if period == value %}bg-kokkoris-teal-dark text-white{% else %}bg-slate-100 text-slate-700 hover:bg-slate-200{% endif %}">
+                    {{ label }}
+                </a>
+            {% endfor %}
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <label class="font-inter text-sm text-slate-700">
+                {% if period == "week" %}
+                    {% trans "Εβδομάδα που περιέχει" %}
+                {% elif period == "month" %}
+                    {% trans "Μήνας" %}
+                {% else %}
+                    {% trans "Ημερομηνία" %}
+                {% endif %}
+                <input type="date"
+                       name="date"
+                       value="{{ anchor_date }}"
+                       class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+            </label>
+            <label class="font-inter text-sm text-slate-700">
+                {% trans "Χρήστης (email)" %}
+                <input type="search"
+                       name="user"
+                       value="{{ user_email }}"
+                       placeholder="email@example.com"
+                       class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+            </label>
+        </div>
+
+        <input type="hidden" name="period" value="{{ period }}">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <p class="font-inter text-sm text-slate-600">
+                {% trans "Περίοδος" %}: <span class="font-medium text-slate-800">{{ period_label }} · {{ range_label }}</span>
+            </p>
+            <button type="submit"
+                    class="rounded-lg bg-kokkoris-teal-dark px-4 py-2 text-sm font-inter text-white hover:opacity-90 transition-opacity">
+                {% trans "Εφαρμογή" %}
+            </button>
+        </div>
+    </form>
+
+    {% block panel_content %}{% endblock %}
+</section>
+{% endblock %}

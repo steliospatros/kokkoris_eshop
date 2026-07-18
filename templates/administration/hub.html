@@ -1,0 +1,38 @@
+{% extends "page.html" %}
+{% load i18n %}
+
+{% block title %}{{ page_title }} — Kokkoris Eshop{% endblock %}
+
+{% block main_class %}w-full max-w-none min-h-[60vh]{% endblock %}
+
+{% block content %}
+<section class="max-w-[720px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+    <p class="mb-6">
+        <a href="{% url 'accounts:hub' %}" class="text-kokkoris-teal-dark hover:underline font-inter text-sm">
+            ← {% trans "Πίσω στο προφίλ" %}
+        </a>
+    </p>
+
+    <h1 class="font-poppins font-light text-2xl sm:text-3xl text-kokkoris-teal-dark mb-6">
+        {% trans "Διαχείριση" %}
+    </h1>
+
+    <nav class="flex flex-col gap-3" aria-label="{% trans 'Ενέργειες διαχείρισης' %}">
+        <a href="{% url 'administration:products' %}"
+           class="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm hover:border-kokkoris-teal-dark hover:shadow-md transition-all">
+            <span class="font-inter text-lg text-slate-800">{% trans "Προϊόντα" %}</span>
+            <span class="text-kokkoris-teal-dark text-xl" aria-hidden="true">›</span>
+        </a>
+        <a href="{% url 'administration:orders' %}"
+           class="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm hover:border-kokkoris-teal-dark hover:shadow-md transition-all">
+            <span class="font-inter text-lg text-slate-800">{% trans "Διαχείριση παραγγελιών" %}</span>
+            <span class="text-kokkoris-teal-dark text-xl" aria-hidden="true">›</span>
+        </a>
+        <a href="{% url 'administration:payments' %}"
+           class="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm hover:border-kokkoris-teal-dark hover:shadow-md transition-all">
+            <span class="font-inter text-lg text-slate-800">{% trans "Ιστορικό πληρωμών" %}</span>
+            <span class="text-kokkoris-teal-dark text-xl" aria-hidden="true">›</span>
+        </a>
+    </nav>
+</section>
+{% endblock %}

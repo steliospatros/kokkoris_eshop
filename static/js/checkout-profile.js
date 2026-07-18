@@ -7,7 +7,6 @@
     }
 
     var floorRow = form.querySelector(".account-detail-row--floor");
-    var changePhoneBtn = document.getElementById("checkout-change-phone");
 
     function floorValueInput() {
         return floorRow ? floorRow.querySelector(".account-floor-value") : null;
@@ -62,26 +61,5 @@
         if (initial) {
             selectFloor(initial);
         }
-    }
-
-    if (changePhoneBtn) {
-        changePhoneBtn.addEventListener("click", function () {
-            if (!window.confirm("Θα χρειαστεί νέα επιβεβαίωση SMS για το νέο κινητό. Συνέχεια;")) {
-                return;
-            }
-            fetch("/accounts/api/phone/reset/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": document.cookie.match(/csrftoken=([^;]+)/)
-                        ? decodeURIComponent(document.cookie.match(/csrftoken=([^;]+)/)[1])
-                        : "",
-                },
-                credentials: "same-origin",
-                body: "{}",
-            }).then(function () {
-                window.location.reload();
-            });
-        });
     }
 })();

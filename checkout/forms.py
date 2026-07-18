@@ -7,9 +7,8 @@ from orders.models import Order
 class CheckoutProfileForm(ProfileForm):
     """Profile delivery fields — all required at checkout."""
 
-    def __init__(self, *args, phone_locked=False, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.phone_locked = phone_locked
         required = (
             "first_name",
             "last_name",
@@ -23,13 +22,6 @@ class CheckoutProfileForm(ProfileForm):
         for name in required:
             if name in self.fields:
                 self.fields[name].required = True
-        if phone_locked and self.instance.phone_verified_at:
-            self.fields["phone_number"].disabled = True
-
-    def clean_phone_number(self):
-        if self.phone_locked and self.instance.phone_verified_at:
-            return self.instance.phone_number
-        return super().clean_phone_number()
 
 
 class PaymentMethodForm(forms.Form):

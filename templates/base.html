@@ -57,7 +57,7 @@
     {# Homepage χρησιμοποιεί {% block hero %} + κενό main.               #}
     {# Όλες οι άλλες σελίδες: {% extends "page.html" %} ή base + content. #}
     {% block hero %}{% endblock %}
-    <main class="{% block main_class %}max-w-5xl mx-auto px-4 py-8{% endblock %} flex-1 w-full">
+    <main class="{% block main_class %}max-w-5xl mx-auto px-4 py-8{% endblock %} flex-1 w-full{% if page_background %} site-main-bg-{{ page_background }}{% endif %}">
         {% include "partials/breadcrumbs.html" %}
         {% block content %}{% endblock %}
     </main>

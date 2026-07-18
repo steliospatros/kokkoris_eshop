@@ -27,9 +27,29 @@ class ResetPasswordKeyForm(AllauthResetPasswordKeyForm):
 
 
 class KokkorisSignupForm(SignupForm):
-    """Email + password signup; phone is verified via SMS in the auth modal."""
+    """Email, password and Greek mobile signup."""
 
-    field_order = ["email", "password1", "password2"]
+    phone_number = forms.CharField(
+        label=_("Κινητό"),
+        max_length=20,
+        required=True,
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "69XXXXXXXX",
+                "autocomplete": "tel",
+                "inputmode": "numeric",
+            }
+        ),
+    )
+
+    field_order = ["email", "phone_number", "password1", "password2"]
+
+    def clean_phone_number(self):
+        return validate_greek_mobile(self.cleaned_data.get("phone_number"))
+
+    def signup(self, request, user):
+        user.phone_number = self.cleaned_data["phone_number"]
+        user.save(update_fields=["phone_number"])
 
 
 class ProfileForm(forms.ModelForm):

@@ -1,7 +1,7 @@
 {% extends "page.html" %}
 {% load i18n static %}
 
-{% block title %}{% trans "Λεπτομέρειες παραγγελίας" %} #{{ order.id }}{% endblock %}
+{% block title %}{% trans "Λεπτομέρειες παραγγελίας" %} {{ order_code_display }}{% endblock %}
 
 {% block main_class %}w-full max-w-none bg-slate-50 min-h-[60vh]{% endblock %}
 
@@ -13,24 +13,32 @@
             ← {% trans "Ιστορικό παραγγελιών" %}
         </a>
         <h1 class="font-poppins text-2xl font-semibold text-slate-800 mt-3">
-            {% trans "Λεπτομέρειες παραγγελίας" %} #{{ order.id }}
+            {% trans "Λεπτομέρειες παραγγελίας" %} {{ order_code_display }}
         </h1>
     </div>
 
     {% include "orders/_order_detail_body.html" %}
+
+    {% if order.is_refund_pending %}
+    <div class="order-detail-card order-detail-card--notice mt-4">
+        <p class="order-detail-notice">
+            {% trans "Το αίτημα ακύρωσης βρίσκεται σε εξέλιξη. Θα ενημερωθείς μόλις ολοκληρωθεί η επεξεργασία και η επιστροφή χρημάτων." %}
+        </p>
+    </div>
+    {% endif %}
 
     <div class="flex flex-wrap gap-3 mt-6">
         <a href="{% url 'home' %}"
            class="inline-block rounded-full bg-kokkoris-teal-dark px-8 py-3 text-white font-inter font-medium hover:opacity-90 transition-opacity">
             {% trans "Συνέχεια αγορών" %}
         </a>
-        {% if order.can_be_cancelled_by_customer %}
+        {% if order.can_customer_initiate_cancel %}
         <form method="post" action="{% url 'orders:cancel_order' order.id %}"
-              onsubmit="return confirm('{% trans "Είσαι σίγουρος/η ότι θέλεις να ακυρώσεις την παραγγελία;" %}');">
+              onsubmit="return confirm('{{ cancel_confirm_message|escapejs }}');">
             {% csrf_token %}
             <button type="submit"
                     class="inline-block rounded-full border border-red-300 px-8 py-3 text-red-600 font-inter font-medium hover:bg-red-50 transition-colors">
-                {% trans "Ακύρωση παραγγελίας" %}
+                {{ cancel_button_label }}
             </button>
         </form>
         {% endif %}

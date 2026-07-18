@@ -1,0 +1,53 @@
+{% load i18n %}
+<li class="{% if highlight %}bg-amber-50/40{% elif order.is_cancellation_request %}bg-amber-50/20{% endif %}">
+    <details class="group order-row-details">
+        <summary class="px-4 sm:px-5 py-4 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-start gap-2">
+                        <span class="mt-1 shrink-0 text-slate-400 transition-transform group-open:rotate-90" aria-hidden="true">▸</span>
+                        <div>
+                            <p class="font-inter text-base text-slate-800">
+                                {{ order.public_code }}
+                                · {{ order.total_display }} €
+                                · {{ order.payment_label }}
+                            </p>
+                            <p class="mt-1 font-inter text-sm text-slate-600">
+                                {{ order.order_date|date:"d/m/Y H:i" }}
+                                · {{ order.user_email }}
+                                {% if order.user_name and order.user_name != order.user_email %}
+                                    ({{ order.user_name }})
+                                {% endif %}
+                            </p>
+                            <p class="mt-1.5 flex flex-wrap gap-1.5">
+                                <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-inter {% if order.is_courier %}bg-blue-100 text-blue-800{% else %}bg-emerald-100 text-emerald-800{% endif %}">
+                                    {{ order.delivery_label }}
+                                </span>
+                                {% if show_payment_info and order.is_refunded %}
+                                    <span class="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-inter text-emerald-800">
+                                        {% trans "Επιστράφηκε" %}
+                                    </span>
+                                {% endif %}
+                            </p>
+                            {% if order.cancellation_requested_at %}
+                                <p class="mt-1 font-inter text-xs text-amber-800">
+                                    {% trans "Αίτημα ακύρωσης" %}: {{ order.cancellation_requested_at|date:"d/m/Y H:i" }}
+                                </p>
+                            {% endif %}
+                            <p class="mt-1 font-inter text-xs text-kokkoris-teal-dark">
+                                {% trans "Πάτησε για πλήρη λεπτομέρειες" %} · {{ order.item_count }} {% trans "τεμ." %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <span class="shrink-0 rounded-full px-3 py-1 text-xs font-inter {% if order.is_cancellation_request %}bg-amber-100 text-amber-900{% else %}bg-slate-100 text-slate-700{% endif %}">
+                    {{ order.status_label }}
+                </span>
+            </div>
+        </summary>
+
+        <div class="border-t border-slate-100 bg-slate-50/80 px-4 sm:px-5 py-4">
+            {% include "administration/partials/order_row_expanded.html" with order=order show_payment_info=show_payment_info %}
+        </div>
+    </details>
+</li>

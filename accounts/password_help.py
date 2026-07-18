@@ -37,12 +37,14 @@ def first_password_error(password):
 
 def translate_form_error(error):
     code = getattr(error, "code", None)
+    if code and str(code).startswith("phone_"):
+        return str(error)
     if code and code in _ERROR_CODE_MESSAGES:
         return _ERROR_CODE_MESSAGES[code]
     message = str(error)
     if "too short" in message.lower():
         return _ERROR_CODE_MESSAGES["password_too_short"]
-    if "digit" in message.lower() or "αριθμ" in message.lower():
+    if "password" in message.lower() and "digit" in message.lower():
         return _ERROR_CODE_MESSAGES["password_no_digit"]
     if "must type the same password" in message.lower():
         return "Οι δύο κωδικοί δεν ταιριάζουν."

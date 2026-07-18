@@ -10,6 +10,8 @@ from accounts.phone_verification import send_otp, verify_otp
 
 
 class PhoneVerificationTests(TestCase):
+    """SMS OTP helpers — only active when PHONE_VERIFICATION_ENABLED=true."""
+
     def setUp(self):
         cache.clear()
         self.user = get_user_model().objects.create_user(
@@ -98,3 +100,35 @@ class PhoneVerificationTests(TestCase):
         )
         self.assertEqual(response.status_code, 400)
         self.assertIn("Λάθος", response.json()["error"])
+
+
+class PhoneVerificationDisabledTests(TestCase):
+    """With SMS verification off, phone is a normal field — no OTP gate."""
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            email="nophone@example.com",
+            password="pass12345",
+        )
+        self.client = Client()
+        self.client.force_login(self.user)
+
+    def test_login_api_skips_phone_gate(self):
+        self.client.logout()
+        response = self.client.post(
+            reverse("accounts:api_login"),
+            data='{"email": "nophone@example.com", "password": "pass12345"}',
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["ok"])
+        self.assertTrue(data["phone_verified"])
+
+    def test_send_otp_api_unavailable_when_disabled(self):
+        response = self.client.post(
+            reverse("accounts:api_phone_send_otp"),
+            data='{"phone_number": "6912345678"}',
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 503)

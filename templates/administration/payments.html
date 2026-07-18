@@ -1,0 +1,50 @@
+{% extends "page.html" %}
+{% load i18n %}
+
+{% block title %}{{ page_title }} — Kokkoris Eshop{% endblock %}
+
+{% block main_class %}w-full max-w-none min-h-[60vh]{% endblock %}
+
+{% block content %}
+<section class="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 pb-20">
+    <p class="mb-6">
+        <a href="{% url 'administration:hub' %}" class="text-kokkoris-teal-dark hover:underline font-inter text-sm">
+            ← {% trans "Πίσω στη διαχείριση" %}
+        </a>
+    </p>
+
+    <h1 class="font-poppins font-light text-2xl sm:text-3xl text-kokkoris-teal-dark mb-6">
+        {% trans "Ιστορικό πληρωμών" %}
+    </h1>
+
+    {% include "administration/partials/admin_panel_filters.html" %}
+
+    <section aria-labelledby="payments-heading">
+        <h2 id="payments-heading" class="font-poppins text-xl text-kokkoris-teal-dark mb-4">
+            {% trans "Πληρωμές" %}
+            <span class="text-sm font-inter text-slate-500">({{ payments_count }})</span>
+        </h2>
+
+        {% if grouped_payments %}
+            <div class="space-y-8">
+                {% for day_group in grouped_payments %}
+                    <div>
+                        <h3 class="font-inter font-medium text-slate-700 mb-3 border-b border-slate-200 pb-2">
+                            {{ day_group.date_label }}
+                        </h3>
+                        <ul class="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+                            {% for order in day_group.orders %}
+                                {% include "administration/partials/order_row.html" with order=order highlight=False show_payment_info=True %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-slate-500 font-inter py-8 text-center">
+                {% trans "Δεν βρέθηκαν πληρωμές για τα κριτήρια που επέλεξες." %}
+            </p>
+        {% endif %}
+    </section>
+</section>
+{% endblock %}

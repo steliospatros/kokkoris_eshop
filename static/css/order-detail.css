@@ -87,6 +87,24 @@
     color: #b91c1c;
 }
 
+.order-detail-status--cancel_req {
+    background: #ffedd5;
+    color: #c2410c;
+}
+
+.order-detail-card--notice {
+    border-color: #fed7aa;
+    background: #fff7ed;
+}
+
+.order-detail-notice {
+    margin: 0;
+    font-family: Inter, sans-serif;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: #9a3412;
+}
+
 .order-detail-items {
     display: flex;
     flex-direction: column;

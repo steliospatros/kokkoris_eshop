@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="utf-8">
+    <title>Καλώς ήρθατε στο {{ site_name }}</title>
+</head>
+<body style="margin:0;padding:0;background:#f8fafc;font-family:Inter,Arial,sans-serif;color:#1e293b;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f8fafc;padding:24px 12px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+                    <tr>
+                        <td style="background:#42746c;color:#ffffff;padding:20px 24px;">
+                            <p style="margin:0;font-size:13px;opacity:0.9;">{{ site_name }}</p>
+                            <h1 style="margin:8px 0 0;font-size:20px;font-weight:600;">Καλώς ήρθατε!</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:24px;">
+                            <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">
+                                Αγαπητέ/ή <strong>{{ display_name }}</strong>,
+                            </p>
+                            <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">
+                                Σας καλωσορίζουμε στο ηλεκτρονικό κατάστημα του Kokkoris Pet Food! Χαιρόμαστε πολύ που γίνατε μέλος της παρέας μας.
+                            </p>
+                            <p style="margin:0 0 20px;font-size:15px;line-height:1.6;">
+                                Η φιλοσοφία μας είναι απλή: αγαπάμε τα ζώα όσο κι εσείς. Γι' αυτό, φροντίζουμε να επιλέγουμε και να σας προσφέρουμε καθημερινά προϊόντα κορυφαίας ποιότητας, που καλύπτουν απόλυτα τις διατροφικές και καθημερινές ανάγκες των αγαπημένων σας κατοικίδιων.
+                            </p>
+
+                            <h2 style="margin:0 0 12px;font-size:16px;color:#42746c;">Μέσα από τον νέο σας λογαριασμό μπορείτε πλέον να:</h2>
+                            <ul style="margin:0 0 24px;padding-left:20px;font-size:15px;line-height:1.65;">
+                                <li style="margin-bottom:10px;">
+                                    <strong>Ολοκληρώνετε τις αγορές σας ταχύτερα:</strong>
+                                    Τα στοιχεία αποστολής σας είναι αποθηκευμένα με ασφάλεια για το επόμενο checkout.
+                                </li>
+                                <li style="margin-bottom:10px;">
+                                    <strong>Παρακολουθείτε τις παραγγελίες σας:</strong>
+                                    Δείτε το ιστορικό των αγορών σας και την εξέλιξη της τρέχουσας παραγγελίας σας ανά πάσα στιγμή.
+                                </li>
+                                <li>
+                                    <strong>Ενημερώνεστε πρώτοι:</strong>
+                                    Λαμβάνετε ειδοποιήσεις για νέες παραλαβές, αποκλειστικές προσφορές και εκπτώσεις.
+                                </li>
+                            </ul>
+
+                            <p style="margin:0 0 24px;text-align:center;">
+                                <a href="{{ shop_url }}"
+                                   style="display:inline-block;background:#42746c;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:999px;font-weight:600;font-size:15px;">
+                                    Περιηγηθείτε στο Κατάστημα
+                                </a>
+                            </p>
+
+                            <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">
+                                Είμαστε πάντα δίπλα σας για οποιαδήποτε απορία ή συμβουλή χρειαστείτε σχετικά με τα προϊόντα μας. Μπορείτε να επικοινωνήσετε μαζί μας στα τηλέφωνα
+                                <a href="tel:+302106038727" style="color:#42746c;">210 6038727</a> και
+                                <a href="tel:+306977927008" style="color:#42746c;">697 7927008</a>,
+                                ή να μας επισκεφθείτε στο φυσικό μας κατάστημα στην Κρήτης 5, στην Παλλήνη.
+                            </p>
+                            <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">
+                                Σας ευχαριστούμε για την εμπιστοσύνη!
+                            </p>
+                            <p style="margin:0;font-size:15px;line-height:1.6;">
+                                Με φιλικούς χαιρετισμούς,<br>
+                                <strong>Η ομάδα του Kokkoris Pet Food</strong><br>
+                                <a href="{{ site_url }}" style="color:#42746c;text-decoration:none;">{{ site_url }}</a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
