@@ -9,12 +9,12 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from accounts.phone_verification import phone_verification_enabled
 from accounts.profile_context import build_profile_form_context
 from cart.cart import get_cart
 from orders.models import Order, OrderItem
 from orders.presentation import build_order_detail_context
 from orders.stock import InsufficientStockError, reserve_stock_for_cart
+from products.favourites import increment_favourite_counts
 
 from .delivery import build_delivery_options, calculate_courier_fee
 from .forms import CheckoutProfileForm, PaymentMethodForm
@@ -142,19 +142,11 @@ def _create_order_from_checkout(
                 quantity=item.quantity,
                 price_at_purchase=item.product_variant.price,
             )
+        increment_favourite_counts(cart.items)
         cart.clear()
 
     del request.session[SESSION_KEY]
     return order
-
-
-def _require_phone_verified(request):
-    if not phone_verification_enabled():
-        return None
-    if not request.user.phone_verified_at:
-        messages.error(request, "Επιβεβαίωσε πρώτα το κινητό σου με SMS.")
-        return redirect("accounts:cart")
-    return None
 
 
 @login_required
@@ -163,10 +155,6 @@ def checkout_index_view(request):
     empty_cart_redirect = _redirect_if_cart_empty(request)
     if empty_cart_redirect:
         return empty_cart_redirect
-
-    phone_redirect = _require_phone_verified(request)
-    if phone_redirect:
-        return phone_redirect
 
     cart = get_cart(request)
     stock_redirect = _redirect_if_stock_issues(request, cart)
@@ -178,17 +166,10 @@ def checkout_index_view(request):
 
 @login_required
 def checkout_address_view(request):
-    """
-    Step 1: delivery profile (same fields as «Τα στοιχεία μου») with locked
-    cart sidebar. Phone must already be SMS-verified at signup/login.
-    """
+    """Step 1: delivery profile (same fields as «Τα στοιχεία μου») with locked cart sidebar."""
     empty_cart_redirect = _redirect_if_cart_empty(request)
     if empty_cart_redirect:
         return empty_cart_redirect
-
-    phone_redirect = _require_phone_verified(request)
-    if phone_redirect:
-        return phone_redirect
 
     cart = get_cart(request)
     stock_redirect = _redirect_if_stock_issues(request, cart)
@@ -198,18 +179,14 @@ def checkout_address_view(request):
     sidebar = _checkout_sidebar_context(request)
 
     if request.method == "POST":
-        form = CheckoutProfileForm(
-            request.POST,
-            instance=request.user,
-            phone_locked=True,
-        )
+        form = CheckoutProfileForm(request.POST, instance=request.user)
         if form.is_valid():
             form.save()
             stash_checkout_address(request, request.user)
             return redirect("checkout:delivery")
         messages.error(request, "Διόρθωσε τα σφάλματα και δοκίμασε ξανά.")
     else:
-        form = CheckoutProfileForm(instance=request.user, phone_locked=True)
+        form = CheckoutProfileForm(instance=request.user)
 
     checkout_data = request.session.get(SESSION_KEY, {})
     context = {
@@ -231,10 +208,6 @@ def checkout_delivery_view(request):
     empty_cart_redirect = _redirect_if_cart_empty(request)
     if empty_cart_redirect:
         return empty_cart_redirect
-
-    phone_redirect = _require_phone_verified(request)
-    if phone_redirect:
-        return phone_redirect
 
     checkout_data = request.session.get(SESSION_KEY)
     if not checkout_data:
@@ -361,10 +334,6 @@ def checkout_payment_view(request):
     empty_cart_redirect = _redirect_if_cart_empty(request)
     if empty_cart_redirect:
         return empty_cart_redirect
-
-    phone_redirect = _require_phone_verified(request)
-    if phone_redirect:
-        return phone_redirect
 
     checkout_data = request.session.get(SESSION_KEY)
     if not checkout_data:

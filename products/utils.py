@@ -16,6 +16,10 @@ COD_FEE = Decimal("1.50")
 VOLUMETRIC_DIVISOR = Decimal("5000")
 
 # Orders at or above this cart subtotal qualify for free courier shipping
+# in Attica (see calculate_shipping_cost).
+FREE_SHIPPING_ATTICA_MINIMUM = Decimal("20.00")
+
+# Orders at or above this cart subtotal qualify for free courier shipping
 # outside Attica only (see calculate_shipping_cost).
 FREE_SHIPPING_CART_MINIMUM = Decimal("50.00")
 
@@ -55,6 +59,13 @@ def calculate_shipping_cost(
         Decimal: Final shipping cost in euros.
     """
     cart_total = Decimal(cart_total)
+
+    # Free shipping in Attica for orders of €20+ (products subtotal).
+    if cart_total >= FREE_SHIPPING_ATTICA_MINIMUM and region == REGION_ATTICA:
+        shipping_cost = Decimal("0.00")
+        if is_cash_on_delivery:
+            shipping_cost += COD_FEE
+        return shipping_cost
 
     # Free-shipping promotion: orders of €50+ delivered outside Attica ship free.
     # Cash-on-delivery handling fee still applies when selected.

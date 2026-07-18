@@ -1,25 +1,41 @@
 {% extends "page.html" %}
-{% load i18n %}
+{% load i18n static %}
 
 {% block title %}{{ page_title }} — Kokkoris Eshop{% endblock %}
 
-{% block main_class %}w-full max-w-none bg-slate-50 min-h-[60vh]{% endblock %}
+{% block main_class %}w-full max-w-none min-h-[60vh]{% endblock %}
 
 {% block content %}
-<section class="max-w-[960px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
-    <div class="grid grid-cols-1 sm:grid-cols-2 {% if category_tiles|length > 3 %}lg:grid-cols-2{% else %}lg:grid-cols-3{% endif %} gap-5 lg:gap-8">
-        {% for tile in category_tiles %}
-            <a href="{{ tile.url }}"
-               class="group flex items-center justify-center min-h-[180px] sm:min-h-[220px] lg:min-h-[260px] rounded-2xl border-2 border-slate-200 bg-white hover:border-kokkoris-teal-dark hover:shadow-lg transition-all duration-200 p-8 text-center">
-                <span class="font-poppins font-light text-xl sm:text-2xl lg:text-[1.75rem] text-kokkoris-teal-dark group-hover:text-kokkoris-teal-mid transition-colors leading-snug">
-                    {{ tile.label }}
-                </span>
-            </a>
-        {% empty %}
-            <p class="col-span-full text-center text-slate-500 font-inter py-16">
-                {% trans "Δεν βρέθηκαν κατηγορίες." %}
-            </p>
-        {% endfor %}
-    </div>
+<section class="animal-category-grid max-w-[960px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 pb-20 sm:pb-24 lg:pb-28">
+    {% if category_tile_rows %}
+        <div class="space-y-5 lg:space-y-8">
+            {% for row in category_tile_rows %}
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 lg:gap-8">
+                    {% for tile in row %}
+                        <a href="{{ tile.url }}"
+                           aria-label="{{ tile.label }}"
+                           class="animal-category-tile animal-category-tile--{{ tile.slug }} group {{ tile.col_class }}">
+                            {% if tile.image %}
+                                <img src="{% static tile.image %}"
+                                     alt="{{ tile.label }}"
+                                     class="animal-category-tile__img"
+                                     width="1024"
+                                     height="1024"
+                                     loading="lazy"
+                                     decoding="async">
+                            {% endif %}
+                            <span class="animal-category-tile__label font-poppins font-light text-2xl sm:text-3xl lg:text-4xl leading-snug">
+                                {{ tile.label }}
+                            </span>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-center text-slate-500 font-inter py-16">
+            {% trans "Δεν βρέθηκαν κατηγορίες." %}
+        </p>
+    {% endif %}
 </section>
 {% endblock %}

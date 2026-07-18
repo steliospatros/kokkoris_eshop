@@ -403,14 +403,24 @@ class Command(BaseCommand):
                 skipped_no_variant += 1
                 continue
 
-            name = build_name(block)
-            if not name:
+            name_en = build_name(block)
+            if not name_en:
                 skipped_no_variant += 1
                 continue
 
             category_name = classify_category_name(block)
             category = Category.objects.get(name=category_name)
             animal_type = AnimalType.objects.get(name=block["animal"])
+
+            from products.models import generate_ascii_slug
+            from products.name_i18n import translate_product_name_to_greek
+
+            name = translate_product_name_to_greek(
+                name_en,
+                animal_slug=animal_type.slug,
+                slug=generate_ascii_slug(name_en),
+                category_slug=category.slug,
+            )
 
             is_bundle = block.get("is_bundle", False)
             bundle_contents = ""

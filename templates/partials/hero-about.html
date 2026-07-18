@@ -33,5 +33,9 @@
                 Με χρόνια εμπειρίας στον χώρο της λιανικής, χονδρικής και εισαγωγών, διασφαλίζουμε την επιλογή των καλύτερων προϊόντων για τους τετράποδους φίλους σας. Επισκεφθείτε τώρα το e-shop μας για να βρείτε τις ιδανικές ξηρές τροφές για τον σκύλο και τη γάτα σας!
             </p>
         </div>
+
+        <div class="mx-auto max-w-[1680px] px-4 lg:px-8">
+            {% include "partials/favourites-browse-row.html" with favourite_cards=favourite_cards user_is_authenticated=user_is_authenticated section_class="mt-10 lg:mt-14" %}
+        </div>
     </div>
 </section>

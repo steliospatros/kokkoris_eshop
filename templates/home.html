@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n static %}
 
 {% block title %}Kokkoris Eshop - Αρχική{% endblock %}
 
@@ -13,3 +13,26 @@
 {% block main_class %}hidden{% endblock %}
 
 {% block content %}{% endblock %}
+
+{% block extra_body %}
+<script src="{% static 'js/catalog.js' %}"></script>
+<script>
+(function () {
+    document.querySelectorAll(".favourites-browse-section").forEach(function (section) {
+        var track = section.querySelector(".favourites-browse-track");
+        var prev = section.querySelector(".browse-row-prev");
+        var next = section.querySelector(".browse-row-next");
+        if (!track || !prev || !next) {
+            return;
+        }
+        function scrollByPage(direction) {
+            var cell = track.querySelector(".product-browse-cell");
+            var step = cell ? cell.offsetWidth * 3 : track.clientWidth * 0.9;
+            track.scrollBy({ left: direction * step, behavior: "smooth" });
+        }
+        prev.addEventListener("click", function () { scrollByPage(-1); });
+        next.addEventListener("click", function () { scrollByPage(1); });
+    });
+})();
+</script>
+{% endblock %}

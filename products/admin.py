@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AnimalType, Category, Company, Product, ProductVariant
+from .models import AnimalType, Category, Company, Favourite, Product, ProductVariant
 
 
 @admin.register(Company)
@@ -106,3 +106,11 @@ class ProductVariantAdmin(admin.ModelAdmin):
     search_fields = ("product__name", "sku")
     list_per_page = 200
     ordering = ("product__name", "weight")
+
+
+@admin.register(Favourite)
+class FavouriteAdmin(admin.ModelAdmin):
+    list_display = ("product", "purchase_count", "updated_at")
+    search_fields = ("product__name", "product__company__name")
+    ordering = ("-purchase_count", "product__name")
+    readonly_fields = ("updated_at",)

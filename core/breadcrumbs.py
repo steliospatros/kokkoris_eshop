@@ -44,6 +44,13 @@ PRODUCT_LABELS = {
     "brands": "Μάρκες",
 }
 
+ADMINISTRATION_LABELS = {
+    "hub": "Διαχείριση",
+    "inventory": "Απόθεμα προϊόντων",
+    "orders": "Διαχείριση παραγγελιών",
+    "payments": "Ιστορικό πληρωμών",
+}
+
 
 def _crumb(label: str, url: str) -> dict[str, str]:
     return {"label": label, "url": url}
@@ -125,6 +132,19 @@ def _accounts_trail(url_name: str, request: HttpRequest | None = None) -> list[d
     crumbs.append(_crumb(hub_label, reverse("accounts:hub")))
     if url_name in ACCOUNT_LABELS:
         crumbs.append(_crumb(ACCOUNT_LABELS[url_name], reverse(f"accounts:{url_name}")))
+    return crumbs
+
+
+def _administration_trail(url_name: str) -> list[dict[str, str]]:
+    crumbs = [
+        _home_crumb(),
+        _crumb(ACCOUNT_LABELS["hub"], reverse("accounts:hub")),
+        _crumb(ADMINISTRATION_LABELS["hub"], reverse("administration:hub")),
+    ]
+    if url_name != "hub" and url_name in ADMINISTRATION_LABELS:
+        crumbs.append(
+            _crumb(ADMINISTRATION_LABELS[url_name], reverse(f"administration:{url_name}"))
+        )
     return crumbs
 
 
@@ -221,6 +241,9 @@ def build_breadcrumbs(request: HttpRequest) -> list[dict[str, str]]:
 
     app_name = match.app_name
     url_name = match.url_name
+
+    if app_name == "administration" and url_name in ADMINISTRATION_LABELS:
+        return _administration_trail(url_name)
 
     if app_name == "products":
         return _products_trail(request) or []

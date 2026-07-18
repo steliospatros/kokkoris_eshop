@@ -221,6 +221,33 @@ class Product(models.Model):
         return f"{self.company.name} - {self.name}"
 
 
+class Favourite(models.Model):
+    """
+    Popularity tracker for administration — one row per product.
+    ``purchase_count`` starts at 0 and increments on each completed purchase.
+    """
+
+    product = models.OneToOneField(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="favourite",
+    )
+    purchase_count = models.PositiveIntegerField(
+        default=0,
+        help_text="Total units sold across all variants; higher = more popular.",
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "favourites"
+        verbose_name = "Favourite"
+        verbose_name_plural = "Favourites"
+        ordering = ["-purchase_count", "product__name"]
+
+    def __str__(self):
+        return f"{self.product.name} ({self.purchase_count})"
+
+
 class ProductVariant(models.Model):
     """
     A specific purchasable version of a Product for a given package size

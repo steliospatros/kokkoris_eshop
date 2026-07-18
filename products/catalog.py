@@ -6,7 +6,8 @@ from functools import lru_cache
 from urllib.parse import urlencode
 
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from django.db.models import Count, DecimalField, ExpressionWrapper, F, Max, Min, OuterRef, Prefetch, Q, Subquery
+from django.db.models import Count, DecimalField, ExpressionWrapper, F, Max, Min, OuterRef, Prefetch, Q, Subquery, Value
+from django.db.models.functions import Coalesce
 from django.urls import reverse
 
 from .models import Category, Company, Product, ProductVariant
@@ -63,8 +64,8 @@ ANIMAL_SLUG_LABELS = {
 
 # Category tiles shown on /products/dogs/ and /products/cats/ landing pages.
 ANIMAL_CATEGORY_SLUGS = {
-    "dog": ["dry-food", "canned-food", "sachets"],
-    "cat": ["dry-food", "canned-food", "sachets", "litter"],
+    "dog": ["dry-food", "canned-food", "sachets", "bundle"],
+    "cat": ["dry-food", "canned-food", "sachets", "litter", "bundle"],
 }
 
 CATEGORY_SLUG_LABELS = {
@@ -72,6 +73,15 @@ CATEGORY_SLUG_LABELS = {
     "canned-food": "Κονσέρβες",
     "sachets": "Φακελάκια",
     "litter": "Άμμος",
+    "bundle": "Πακέτα",
+}
+
+CATEGORY_TILE_IMAGES = {
+    "dry-food": "images/category-tiles/dry-food.png",
+    "canned-food": "images/category-tiles/canned-food.png",
+    "sachets": "images/category-tiles/sachets.png",
+    "litter": "images/category-tiles/litter.png",
+    "bundle": "images/category-tiles/bundles.png",
 }
 
 # Reference sachet photo: CLUB4PAWS Adult - Rabbit in Jelly 0,08 kg (830×1083).
@@ -214,9 +224,16 @@ def get_display_title(product, variant):
     return f"{product.company.name} {product.name} {weight_text} {unit}"
 
 
+def annotate_purchase_count(queryset):
+    """Attach ``purchase_count`` from the favourites table (0 when missing)."""
+    return queryset.annotate(
+        purchase_count=Coalesce(F("favourite__purchase_count"), Value(0)),
+    )
+
+
 def get_catalog_queryset():
     """Active products with variants prefetched for grid rendering."""
-    return (
+    return annotate_purchase_count(
         Product.objects.filter(is_active=True)
         .select_related("company", "animal_type", "category")
         .prefetch_related(
@@ -253,12 +270,14 @@ def _annotate_default_variant_sort_fields(queryset):
     )
 
 
-def apply_catalog_sort(queryset, sort_key):
+def apply_catalog_sort(queryset, sort_key, *, browse_mode=False):
     if sort_key == SORT_DEFAULT:
-        return queryset.order_by("company__name", "name")
+        if browse_mode:
+            return queryset.order_by("company__name", "-purchase_count", "name")
+        return queryset.order_by("-purchase_count", "company__name", "name")
 
     queryset = _annotate_default_variant_sort_fields(queryset)
-    tie_breaker = ("company__name", "name")
+    tie_breaker = ("-purchase_count", "company__name", "name")
 
     sort_map = {
         SORT_PRICE_ASC: ("sort_price", *tie_breaker),
@@ -602,10 +621,12 @@ def get_related_products_for_detail(product, *, limit=24):
         else:
             continue
 
-        candidates.append((tier, candidate.company.name.lower(), candidate.name.lower(), candidate))
+        candidates.append(
+            (tier, -candidate.purchase_count, candidate.company.name.lower(), candidate.name.lower(), candidate)
+        )
 
-    candidates.sort(key=lambda row: (row[0], row[1], row[2]))
-    return [row[3] for row in candidates[:limit]]
+    candidates.sort(key=lambda row: (row[0], row[1], row[2], row[3]))
+    return [row[4] for row in candidates[:limit]]
 
 
 def build_product_filter_links(product):
@@ -677,6 +698,14 @@ def build_product_detail_context(request, product, *, selected_variant_id=None):
         wishlisted_ids=wishlisted_ids,
     )
 
+    from products.favourites import build_favourites_browse_cards
+
+    favourite_cards = build_favourites_browse_cards(
+        request,
+        limit=12,
+        exclude_product_ids=[product.pk],
+    )
+
     company_url = None
     if product.company_id:
         from products.company_pages import has_brand_page
@@ -701,6 +730,7 @@ def build_product_detail_context(request, product, *, selected_variant_id=None):
         "selected_variant": selected_option,
         "is_wishlisted": product.id in wishlisted_ids,
         "related_cards": related_cards,
+        "favourite_cards": favourite_cards,
         "user_is_authenticated": request.user.is_authenticated,
     }
 
@@ -920,9 +950,58 @@ def build_animal_category_tiles(animal_slug):
             {
                 "slug": slug,
                 "label": CATEGORY_SLUG_LABELS.get(slug, slug),
+                "image": CATEGORY_TILE_IMAGES.get(slug),
                 "url": f"{reverse('products:browse')}?{query}",
             }
         )
+    return tiles
+
+
+def chunk_animal_category_rows(tiles, columns=3):
+    """
+    Group tiles into rows of ``columns``.
+
+    Incomplete last rows are laid out symmetrically:
+    1 tile → center column, 2 tiles → left + right columns.
+    """
+    rows = []
+    for start in range(0, len(tiles), columns):
+        row_tiles = tiles[start : start + columns]
+        count = len(row_tiles)
+        placed = []
+        for index, tile in enumerate(row_tiles):
+            if count == 1:
+                col_class = "sm:col-start-2"
+            elif count == 2:
+                col_class = "sm:col-start-1" if index == 0 else "sm:col-start-3"
+            else:
+                col_class = ""
+            placed.append({**tile, "col_class": col_class})
+        rows.append(placed)
+    return rows
+
+
+def build_brand_tiles():
+    """Large brand squares for /products/brands/ landing page."""
+    from products.company_pages import has_brand_page
+
+    tiles = []
+    for company in Company.objects.order_by("name"):
+        if has_brand_page(company.code):
+            url = reverse("products:company", args=[company.code])
+        else:
+            url = f"{reverse('products:all')}?{urlencode([('brand', company.code)])}"
+
+        tile = {
+            "slug": company.code.lower(),
+            "label": company.name,
+            "url": url,
+        }
+        if company.logo:
+            tile["image_url"] = company.logo.url
+        else:
+            tile["image"] = "images/companies/car_placeholder.png"
+        tiles.append(tile)
     return tiles
 
 

@@ -50,25 +50,117 @@
   background-color: #000000;
 }
 
-/* Product card images — fixed 120px area, centered, fills slot above text. */
+/* Part 2 (main panel) — decorative hill backgrounds from back1/back2 PDFs.
+   Applied only on <main>, between header and footer — not on homepage. */
+.site-main-bg-back1,
+.site-main-bg-back2 {
+  background-color: #ffffff;
+  background-repeat: no-repeat;
+  background-size: 100% auto;
+  /* Full-width art, bottom-anchored; slight downward offset so hill sits above footer */
+  background-position: center calc(100% + 400px);
+  min-height: calc(100dvh - 10.5rem);
+}
+
+.site-main-bg-back1 {
+  background-image: url("../images/backgrounds/back1.png");
+}
+
+.site-main-bg-back2 {
+  background-image: url("../images/backgrounds/back2.png");
+}
+
+/* Animal category landing tiles (σκυλιά/γάτες) — tile matches image bounds;
+   white in product photos is knocked out so main-panel back1/back2 shows through. */
+.animal-category-tile {
+  position: relative;
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  text-decoration: none;
+  line-height: 0;
+}
+
+.animal-category-tile__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+
+.animal-category-tile__label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  text-align: center;
+  pointer-events: none;
+}
+
+.animal-category-grid .animal-category-tile__label {
+  color: rgba(255, 255, 255, 0.72);
+  font-weight: 300;
+  text-shadow:
+    0 1px 6px rgba(0, 0, 0, 0.25),
+    0 0 12px rgba(0, 0, 0, 0.15);
+}
+
+.animal-category-grid .animal-category-tile__img,
+.brand-tile-grid .animal-category-tile__img {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.animal-category-grid .animal-category-tile:hover .animal-category-tile__img,
+.brand-tile-grid .animal-category-tile:hover .animal-category-tile__img {
+  opacity: 0.88;
+  transform: scale(1.02);
+}
+
+/* Bundle category tile — same multiply + white label overlay as other tiles. */
+.animal-category-tile--bundle .animal-category-tile__img {
+  mix-blend-mode: multiply;
+}
+
+.animal-category-grid .animal-category-tile--bundle .animal-category-tile__label {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* Product card images — full card width, shared aspect box so every icon aligns. */
 .product-image-slot {
   box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 120px;
+  aspect-ratio: 1 / 1;
+  height: auto;
   flex-shrink: 0;
-  padding: 0.5rem 0.75rem;
+  padding: 0.75rem;
   overflow: hidden;
+}
+
+.product-image-slot__link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 
 .product-image-slot img {
   display: block;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
   max-width: 100%;
-  width: auto;
-  height: auto;
+  max-height: 100%;
   margin: 0 auto;
   object-fit: contain;
   object-position: center;
@@ -76,10 +168,51 @@
   transform-origin: center center;
 }
 
-.product-image-slot--browse {
-  flex: 0 0 120px;
-  min-height: 120px;
-  height: 120px;
+/* Catalog + browse card text — fixed slots so short/long titles look uniform. */
+.product-card-info {
+  display: flex;
+  flex-direction: column;
+  min-height: 7.5rem;
+}
+
+.product-card-info--browse {
+  min-height: 8.25rem;
+}
+
+.product-card-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  min-height: calc(1.375em * 3);
+}
+
+.product-card-meta {
+  min-height: 1.75rem;
+}
+
+.product-card-info--browse .product-card-meta {
+  min-height: 2.25rem;
+}
+
+.product-card-price {
+  min-height: 2.5rem;
+}
+
+/* Horizontal browse rows: keep cells equal height within the strip. */
+.product-browse-cell {
+  min-height: 100%;
+}
+
+.product-browse-cell .product-card-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.product-browse-cell .product-card-footer {
+  margin-top: auto;
 }
 
 /* Homepage welcome — page center; name line just above white cat head (hero PNG). */

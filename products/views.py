@@ -1,4 +1,3 @@
-from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -9,6 +8,8 @@ from products.catalog import (
     apply_catalog_filters,
     apply_catalog_sort,
     build_animal_category_tiles,
+    chunk_animal_category_rows,
+    build_brand_tiles,
     build_browse_company_sections,
     build_catalog_cards,
     build_catalog_filter_context,
@@ -32,11 +33,9 @@ from products.catalog import (
     SORT_DEFAULT,
 )
 from products.company_pages import build_company_page_context, has_brand_page
+from products.favourites import build_favourites_browse_cards
 from products.models import Company, Product
-
-# How many matches the search dropdown shows at once - kept small since this
-# is a live-as-you-type suggestion list, not a full search results page.
-SEARCH_SUGGESTION_LIMIT = 8
+from products.search import SEARCH_SUGGESTION_LIMIT, search_products
 
 
 def _catalog_filter_hidden_fields(sort, per_page):
@@ -66,6 +65,8 @@ def home(request):
         "home.html",
         {
             "companies": companies,
+            "favourite_cards": build_favourites_browse_cards(request, limit=12),
+            "user_is_authenticated": request.user.is_authenticated,
         },
     )
 
@@ -156,7 +157,7 @@ def _catalog_browse_page(request, animal_slug, category_slug):
     )
 
     sort = parse_sort(request.GET.get("sort"))
-    products = apply_catalog_sort(products, sort)
+    products = apply_catalog_sort(products, sort, browse_mode=True)
 
     total_count = products.count()
     company_sections = build_browse_company_sections(
@@ -184,10 +185,11 @@ def _catalog_browse_page(request, animal_slug, category_slug):
 
 
 def _animal_categories_page(animal_slug):
+    tiles = build_animal_category_tiles(animal_slug)
     return {
         "page_title": ANIMAL_SLUG_LABELS.get(animal_slug, ""),
         "animal_slug": animal_slug,
-        "category_tiles": build_animal_category_tiles(animal_slug),
+        "category_tile_rows": chunk_animal_category_rows(tiles),
     }
 
 
@@ -271,13 +273,16 @@ def company_page(request, company_code):
                     products = products.filter(category__name=section["category"])
                 section["product_cards"] = _build_brand_page_product_cards(
                     request,
-                    products.order_by("name"),
+                    apply_catalog_sort(products, SORT_DEFAULT),
                 )
             sections.append(section)
         context["page_sections"] = sections
         context["user_is_authenticated"] = request.user.is_authenticated
     elif context.get("show_products_row"):
-        products = get_catalog_queryset().filter(company=company).order_by("name")
+        products = apply_catalog_sort(
+            get_catalog_queryset().filter(company=company),
+            SORT_DEFAULT,
+        )
         context["product_cards"] = _build_brand_page_product_cards(request, products)
         context["user_is_authenticated"] = request.user.is_authenticated
 
@@ -289,13 +294,12 @@ def company_page(request, company_code):
 
 
 def catalog_brands(request):
-    companies = Company.objects.order_by("name")
     return render(
         request,
         "products/brands.html",
         {
             "page_title": "Brands",
-            "companies": companies,
+            "brand_tiles": build_brand_tiles(),
         },
     )
 
@@ -327,22 +331,11 @@ def search_suggestions(request):
     """
     JSON endpoint backing the nav's live search dropdown.
 
-    Matches on product name / company name / category name, case-insensitive.
+    Uses smart search (synonyms, Greeklish, popular terms) across product
+    fields; results are ordered by favourites (purchase_count).
     """
     query = request.GET.get("q", "").strip()
-    if len(query) < 2:
-        return JsonResponse({"results": []})
-
-    products = (
-        Product.objects.filter(is_active=True)
-        .filter(
-            Q(name__icontains=query)
-            | Q(company__name__icontains=query)
-            | Q(category__name__icontains=query)
-        )
-        .select_related("company")
-        .order_by("name")[:SEARCH_SUGGESTION_LIMIT]
-    )
+    products = search_products(query, limit=SEARCH_SUGGESTION_LIMIT)
 
     results = [
         {

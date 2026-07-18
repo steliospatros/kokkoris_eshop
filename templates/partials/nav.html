@@ -85,7 +85,7 @@
                        placeholder="{% trans 'Αναζήτηση…' %}"
                        class="nav-toolbar__search-input rounded-full border-2 border-white/85 bg-transparent text-white placeholder-white/70 text-sm px-4 py-1.5 lg:py-2 transition-colors focus:outline-none focus:bg-white focus:text-slate-800 focus:placeholder-slate-400 focus:border-white">
                 <ul id="nav-search-results"
-                    class="hidden absolute left-0 right-0 top-full mt-2 z-30 max-h-80 overflow-y-auto bg-white text-slate-800 rounded-xl shadow-xl divide-y divide-slate-100"></ul>
+                    class="hidden absolute left-0 right-0 top-full mt-2 z-30 max-h-96 overflow-y-auto bg-white text-slate-800 rounded-xl shadow-xl divide-y divide-slate-100"></ul>
             </div>
         </div>
 
@@ -234,9 +234,7 @@
             return;
         }
 
-        // Alphabetical order already comes from the backend; this view is
-        // intentionally plain (name + thumbnail) since the real product
-        // card/detail design is a later pass, once the catalog UI exists.
+        // Order comes from the backend (favourites / purchase_count).
         resultsList.innerHTML = results
             .map(function (product) {
                 var thumb = product.image_url

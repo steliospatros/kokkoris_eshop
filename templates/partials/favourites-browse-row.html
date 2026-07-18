@@ -1,17 +1,10 @@
 {% load i18n static %}
-{# One company block: title + horizontal product row (same layout as hero-brands). #}
-<section class="browse-company-section mb-10 lg:mb-14">
-    <header class="mb-4 lg:mb-6 flex items-center gap-4">
-        {% if section.company.logo_url %}
-            <img src="{{ section.company.logo_url }}"
-                 alt="{{ section.company.name }}"
-                 class="h-10 lg:h-12 w-auto object-contain shrink-0">
-        {% endif %}
-        <h2 class="font-poppins font-light text-xl lg:text-2xl text-kokkoris-teal-dark tracking-wide uppercase">
-            {{ section.company.name }}
-        </h2>
-    </header>
-
+{# Horizontal favourites row — home page and product detail. #}
+{% if favourite_cards %}
+<section class="favourites-browse-section {% if section_class %}{{ section_class }}{% else %}mt-10 lg:mt-14{% endif %}">
+    <h2 class="font-poppins font-light text-xl lg:text-2xl text-kokkoris-teal-dark tracking-wide mb-6 text-center">
+        {% trans "Οι πελάτες προτιμούν συνήθως" %}
+    </h2>
     <div class="relative flex items-stretch shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-white">
         <button type="button"
                 class="browse-row-prev hidden lg:flex w-10 shrink-0 items-center justify-center text-slate-300 hover:text-slate-500 transition-colors"
@@ -21,9 +14,10 @@
             </svg>
         </button>
 
-        <div class="browse-products-track flex flex-1 overflow-x-auto scroll-smooth snap-x snap-mandatory divide-x divide-slate-300 [&::-webkit-scrollbar]:hidden"
-             style="scrollbar-width: none;">
-            {% for card in section.products %}
+        <div class="favourites-browse-track browse-products-track flex flex-1 overflow-x-auto scroll-smooth snap-x snap-mandatory divide-x divide-slate-300 [&::-webkit-scrollbar]:hidden"
+             style="scrollbar-width: none;"
+             {% if user_is_authenticated != None %}data-user-authenticated="{{ user_is_authenticated|yesno:'true,false' }}"{% endif %}>
+            {% for card in favourite_cards %}
                 {% include "products/partials/product_browse_cell.html" with card=card %}
             {% endfor %}
         </div>
@@ -37,3 +31,4 @@
         </button>
     </div>
 </section>
+{% endif %}

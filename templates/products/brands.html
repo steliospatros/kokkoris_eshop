@@ -3,35 +3,36 @@
 
 {% block title %}{{ page_title }} — Kokkoris Eshop{% endblock %}
 
+{% block main_class %}w-full max-w-none min-h-[60vh]{% endblock %}
+
 {% block content %}
-<section class="max-w-[960px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
-    <ul class="rounded-2xl border border-slate-200 bg-white divide-y divide-slate-200 overflow-hidden shadow-sm">
-        {% for company in companies %}
-            <li>
-                <a href="{% if company.code == 'PUR' or company.code == 'CAR' or company.code == 'WLD' %}{% url 'products:company' company.code %}{% else %}{% url 'products:all' %}?brand={{ company.code }}{% endif %}"
-                   class="group flex items-center gap-4 px-5 py-4 sm:px-6 sm:py-5 hover:bg-kokkoris-teal-dark/5 transition-colors">
-                    {% if company.logo %}
-                        <img src="{{ company.logo.url }}"
-                             alt="{{ company.name }}"
-                             class="h-10 w-16 shrink-0 object-contain">
-                    {% else %}
-                        <span class="flex h-10 w-16 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-xs font-poppins font-semibold uppercase tracking-wide text-kokkoris-teal-dark">
-                            {{ company.code }}
-                        </span>
-                    {% endif %}
-                    <span class="flex-1 font-poppins font-light text-lg sm:text-xl text-kokkoris-teal-dark group-hover:text-kokkoris-teal-mid transition-colors">
-                        {{ company.name }}
-                    </span>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5 shrink-0 text-slate-300 group-hover:text-kokkoris-teal-dark transition-colors" aria-hidden="true">
-                        <path d="M9 6l6 6-6 6"/>
-                    </svg>
-                </a>
-            </li>
+<section class="brand-tile-grid max-w-[1140px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 pb-20 sm:pb-24 lg:pb-28">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">
+        {% for tile in brand_tiles %}
+            <a href="{{ tile.url }}"
+               aria-label="{{ tile.label }}"
+               class="animal-category-tile animal-category-tile--{{ tile.slug }} group">
+                {% if tile.image_url %}
+                    <img src="{{ tile.image_url }}"
+                         alt="{{ tile.label }}"
+                         class="animal-category-tile__img"
+                         loading="lazy"
+                         decoding="async">
+                {% elif tile.image %}
+                    <img src="{% static tile.image %}"
+                         alt="{{ tile.label }}"
+                         class="animal-category-tile__img"
+                         width="1024"
+                         height="1024"
+                         loading="lazy"
+                         decoding="async">
+                {% endif %}
+            </a>
         {% empty %}
-            <li class="px-6 py-12 text-center text-slate-500 font-inter">
+            <p class="col-span-full text-center text-slate-500 font-inter py-16">
                 {% trans "Δεν βρέθηκαν brands." %}
-            </li>
+            </p>
         {% endfor %}
-    </ul>
+    </div>
 </section>
 {% endblock %}

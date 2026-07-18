@@ -1,27 +1,3 @@
 {% load i18n %}
-<div class="product-image-slot product-image-slot--browse relative shrink-0 bg-kokkoris-brand-cell"
-     style="--img-display-scale: {{ card.image_display_scale|default:1 }};">
-    {% if card.detail_url %}
-    <a href="{{ card.detail_url }}" class="product-image-slot__link flex items-center justify-center w-full h-full">
-    {% endif %}
-        {% if card.image_url %}
-            <img src="{{ card.image_url }}" alt="">
-        {% else %}
-            <span class="text-slate-400 text-xs">{% trans "Χωρίς εικόνα" %}</span>
-        {% endif %}
-    {% if card.detail_url %}
-    </a>
-    {% endif %}
-
-    <button type="button"
-            class="wishlist-toggle absolute top-0 right-0 w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center hover:border-kokkoris-teal-dark transition-colors shadow-sm z-10"
-            data-product-id="{{ card.product_id }}"
-            aria-label="{% trans 'Αγαπημένα' %}"
-            aria-pressed="{{ card.is_wishlisted|yesno:'true,false' }}">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-             class="w-4 h-4 {% if card.is_wishlisted %}fill-kokkoris-dot-pink stroke-kokkoris-dot-pink{% else %}fill-none stroke-kokkoris-teal-dark{% endif %}"
-             stroke-width="2">
-            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-        </svg>
-    </button>
-</div>
+{# Deprecated alias — browse rows now use the shared square slot. #}
+{% include "products/partials/product_image_slot.html" with card=card %}
