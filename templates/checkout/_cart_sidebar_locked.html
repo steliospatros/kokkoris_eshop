@@ -9,6 +9,9 @@
         {% endfor %}
     </ul>
     <div class="px-4 py-3 border-t border-slate-100 bg-slate-50 space-y-2 font-inter text-sm text-slate-700">
+        {% if free_shipping_promo %}
+        {% include "partials/free-shipping-promo.html" with promo=free_shipping_promo extra_class="mb-2" %}
+        {% endif %}
         <div class="flex justify-between">
             <span>{% trans "Τιμή προϊόντων" %}</span>
             <span>{{ cart_total_display }} €</span>

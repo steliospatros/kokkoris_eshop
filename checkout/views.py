@@ -16,6 +16,7 @@ from orders.presentation import build_order_detail_context
 from orders.stock import InsufficientStockError, reserve_stock_for_cart
 from products.favourites import increment_favourite_counts
 
+from .boxnow_service import schedule_boxnow_delivery
 from .delivery import build_delivery_options, calculate_courier_fee
 from .forms import CheckoutProfileForm, PaymentMethodForm
 from .payment_options import build_payment_options
@@ -59,7 +60,10 @@ def _checkout_sidebar_context(request, *, courier_fee=None, show_shipping_breakd
 
 def _delivery_sidebar_fee(postal_code, delivery_method, cart, cart_total):
     """Shipping fee for the sidebar based on the selected delivery method."""
-    if delivery_method == Order.DELIVERY_METHOD_COURIER:
+    if delivery_method in (
+        Order.DELIVERY_METHOD_COURIER,
+        Order.DELIVERY_METHOD_BOX_NOW,
+    ):
         return calculate_courier_fee(
             postal_code,
             delivery_method,
@@ -134,6 +138,10 @@ def _create_order_from_checkout(
             delivery_latitude=Decimal(checkout_data["latitude"]),
             delivery_longitude=Decimal(checkout_data["longitude"]),
             delivery_notes=checkout_data.get("delivery_notes", ""),
+            boxnow_locker_id=checkout_data.get("boxnow_locker_id", ""),
+            boxnow_locker_name=checkout_data.get("boxnow_locker_name", ""),
+            boxnow_locker_address=checkout_data.get("boxnow_locker_address", ""),
+            boxnow_locker_postal_code=checkout_data.get("boxnow_locker_postal_code", ""),
         )
         for item in list(cart.items):
             OrderItem.objects.create(
@@ -144,6 +152,9 @@ def _create_order_from_checkout(
             )
         increment_favourite_counts(cart.items)
         cart.clear()
+
+    if order.delivery_method == Order.DELIVERY_METHOD_BOX_NOW:
+        schedule_boxnow_delivery(order)
 
     del request.session[SESSION_KEY]
     return order
@@ -226,12 +237,21 @@ def checkout_delivery_view(request):
         postal_code=postal_code,
         cart=cart,
     )
-    valid_values = {option["value"] for option in options}
+    valid_values = {
+        option["value"] for option in options if not option.get("disabled")
+    }
 
     if request.method == "POST":
         delivery_method = request.POST.get("delivery_method")
         if delivery_method not in valid_values:
             messages.error(request, "Επίλεξε έναν έγκυρο τρόπο παράδοσης.")
+        elif delivery_method == Order.DELIVERY_METHOD_BOX_NOW and not request.POST.get(
+            "boxnow_locker_id", ""
+        ).strip():
+            messages.error(
+                request,
+                "Επίλεξε σημείο παραλαβής BOX NOW από τον χάρτη πριν συνεχίσεις.",
+            )
         else:
             fee = _delivery_sidebar_fee(
                 postal_code,
@@ -242,6 +262,25 @@ def checkout_delivery_view(request):
             data = dict(checkout_data)
             data["delivery_method"] = delivery_method
             data["courier_fee"] = str(fee)
+            if delivery_method == Order.DELIVERY_METHOD_BOX_NOW:
+                data["boxnow_locker_id"] = request.POST.get("boxnow_locker_id", "").strip()
+                data["boxnow_locker_name"] = request.POST.get(
+                    "boxnow_locker_name", ""
+                ).strip()
+                data["boxnow_locker_address"] = request.POST.get(
+                    "boxnow_locker_address", ""
+                ).strip()
+                data["boxnow_locker_postal_code"] = request.POST.get(
+                    "boxnow_locker_postal_code", ""
+                ).strip()
+            else:
+                for key in (
+                    "boxnow_locker_id",
+                    "boxnow_locker_name",
+                    "boxnow_locker_address",
+                    "boxnow_locker_postal_code",
+                ):
+                    data.pop(key, None)
             request.session[SESSION_KEY] = data
             return redirect("checkout:payment")
 
@@ -251,7 +290,7 @@ def checkout_delivery_view(request):
         if within_urban_area
         else Order.DELIVERY_METHOD_COURIER
     )
-    if not selected_method or (
+    if not selected_method or selected_method not in valid_values or (
         not within_urban_area
         and selected_method == Order.DELIVERY_METHOD_COMPANY
     ):
@@ -278,6 +317,9 @@ def checkout_delivery_view(request):
         "checkout_steps": build_checkout_steps(CHECKOUT_STEP_DELIVERY, checkout_data),
         "checkout_data": checkout_data,
         "selected_method": selected_method,
+        "boxnow_widget_enabled": settings.BOXNOW_WIDGET_ENABLED,
+        "boxnow_partner_id": settings.BOXNOW_PARTNER_ID,
+        "checkout_postal_code": postal_code,
     })
 
 
@@ -365,6 +407,7 @@ def checkout_payment_view(request):
         base_courier_fee=base_courier_fee,
         cod_courier_fee=cod_courier_fee,
         cart_total=cart_total,
+        delivery_method=checkout_data["delivery_method"],
     )
     selected_payment_method = Order.PAYMENT_METHOD_CARD
     total_cost = cart_total + base_courier_fee
@@ -406,6 +449,15 @@ def checkout_payment_view(request):
                 messages.error(request, f"{item.product_variant}: {issue}")
         elif form.is_valid():
             payment_method = form.cleaned_data["payment_method"]
+            if (
+                checkout_data["delivery_method"] == Order.DELIVERY_METHOD_BOX_NOW
+                and payment_method == Order.PAYMENT_METHOD_COD
+            ):
+                messages.error(
+                    request,
+                    "Η παράδοση σε BOX NOW locker δεν υποστηρίζει αντικαταβολή.",
+                )
+                return redirect("checkout:payment")
             is_cod = payment_method == Order.PAYMENT_METHOD_COD
             courier_fee = cod_courier_fee if is_cod else base_courier_fee
             total_cost = cart_total + courier_fee

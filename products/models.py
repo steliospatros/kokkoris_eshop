@@ -15,6 +15,29 @@ def generate_ascii_slug(text):
     return slugify(unidecode(text))
 
 
+def unique_ascii_slug(instance, text, *, field="slug"):
+    """
+    Like generate_ascii_slug, but guaranteed not to clash with an existing row.
+
+    Catalogue names are edited after import — the English names shipped in the
+    supplier documents are later translated to Greek while the slug keeps its
+    original value — so a fresh import can produce a name that transliterates
+    onto a slug another row already owns. Appending a counter keeps the save
+    from raising IntegrityError.
+    """
+    base = generate_ascii_slug(text) or "item"
+    queryset = instance.__class__.objects.all()
+    if instance.pk:
+        queryset = queryset.exclude(pk=instance.pk)
+
+    candidate = base
+    counter = 2
+    while queryset.filter(**{field: candidate}).exists():
+        candidate = f"{base}-{counter}"
+        counter += 1
+    return candidate
+
+
 class Company(models.Model):
     """
     Represents a pet food brand/manufacturer (e.g. OWNAT, PROFINE, EVERCLEAN).
@@ -74,7 +97,7 @@ class AnimalType(models.Model):
     def save(self, *args, **kwargs):
         # Auto-generate the slug from the name if it has not been set manually.
         if not self.slug:
-            self.slug = generate_ascii_slug(self.name)
+            self.slug = unique_ascii_slug(self, self.name)
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -113,7 +136,7 @@ class Category(models.Model):
     def save(self, *args, **kwargs):
         # Auto-generate the slug from the name if it has not been set manually.
         if not self.slug:
-            self.slug = generate_ascii_slug(self.name)
+            self.slug = unique_ascii_slug(self, self.name)
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -176,9 +199,9 @@ class Product(models.Model):
         default=True,
         help_text="Whether this product is currently available for sale."
     )
-    # Physical shipping attributes used by the ELTA Courier cost algorithm.
-    # These describe the packaged product as shipped (not the variant's
-    # catalogue "weight" field on ProductVariant, which is package size).
+    # Physical shipping attributes used for Box Now locker sizing
+    # (chargeable weight = max of real vs volumetric). Courier door
+    # delivery is a flat fee and no longer uses these dimensions.
     weight = models.DecimalField(
         max_digits=6,
         decimal_places=2,
@@ -214,7 +237,7 @@ class Product(models.Model):
     def save(self, *args, **kwargs):
         # Auto-generate the slug from the name if it has not been set manually.
         if not self.slug:
-            self.slug = generate_ascii_slug(self.name)
+            self.slug = unique_ascii_slug(self, self.name)
         super().save(*args, **kwargs)
 
     def __str__(self):

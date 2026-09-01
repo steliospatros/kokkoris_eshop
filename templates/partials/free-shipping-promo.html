@@ -1,0 +1,19 @@
+{% load i18n %}
+{% if promo %}
+<div class="free-shipping-promo{% if promo.qualified %} free-shipping-promo--qualified{% endif %}{% if extra_class %} {{ extra_class }}{% endif %}">
+    <p class="free-shipping-promo__headline">{{ promo.headline }}</p>
+    <p class="free-shipping-promo__message">{{ promo.message }}</p>
+    {% if promo.detail %}
+    <p class="free-shipping-promo__detail">{{ promo.detail }}</p>
+    {% endif %}
+    {% if not promo.qualified %}
+    <div class="free-shipping-promo__bar" role="progressbar"
+         aria-valuenow="{{ promo.progress_percent }}"
+         aria-valuemin="0"
+         aria-valuemax="100"
+         aria-label="{% trans 'Πρόοδος προς δωρεάν μεταφορικά' %}">
+        <span class="free-shipping-promo__bar-fill" style="width: {{ promo.progress_percent }}%;"></span>
+    </div>
+    {% endif %}
+</div>
+{% endif %}

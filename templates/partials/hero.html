@@ -6,20 +6,14 @@
 {# artwork (not something to be redrawn with CSS/SVG), cropped pixel-exact #}
 {# from the PDF (starts right where the nav strip ends, stops right before #}
 {# the "about us" heading, which belongs to the next content section).     #}
+{# The signed-in greeting is NOT overlaid on this artwork: the PNG already   #}
+{# carries its own "Καλώς ήρθατε στη σελίδα μας" lockup, and an absolutely  #}
+{# positioned overlay bled up into the teal nav bar on shorter viewports.   #}
+{# It now renders in normal flow above the image (hero-welcome-band.html).  #}
 <div class="relative w-full bg-white">
     <img src="{% static 'images/hero-section.png' %}"
          alt=""
          class="relative z-0 w-full h-auto block">
-    {% if user.is_authenticated %}
-        <div class="hero-welcome pointer-events-none absolute z-20 px-4">
-            <p class="hero-welcome__greeting">{% trans "Καλωσήρθατε στην σελίδα μας," %}</p>
-            {% if user.first_name or user.last_name %}
-                <p class="hero-welcome__name">
-                    {{ user.first_name }}{% if user.first_name and user.last_name %} {% endif %}{{ user.last_name }}
-                </p>
-            {% endif %}
-        </div>
-    {% endif %}
 </div>
 {# The rest of the white "part 2" body (the "about us" heading + copy and #}
 {# the brand carousel) is deliberately NOT part of this pass — it's built #}

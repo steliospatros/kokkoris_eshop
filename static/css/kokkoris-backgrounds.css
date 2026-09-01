@@ -305,41 +305,6 @@
   min-height: 0;
 }
 
-/* Homepage welcome — page center; name line just above white cat head (hero PNG). */
-.hero-welcome {
-  left: 50%;
-  top: 15.3%;
-  transform: translate(-50%, calc(-100% - 75px));
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.2rem;
-  margin: 0;
-  width: max-content;
-  max-width: min(92vw, 32rem);
-  color: #ffffff;
-  font-family: Poppins, sans-serif;
-  font-weight: 300;
-  font-size: clamp(1.05rem, 1.75vw, 1.875rem);
-  line-height: 1.2;
-  letter-spacing: 0.04em;
-  text-align: center;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.55);
-}
-
-.hero-welcome__greeting,
-.hero-welcome__name {
-  margin: 0;
-}
-
-.hero-welcome__name {
-  font-weight: 400;
-  letter-spacing: 0.02em;
-}
-
-@media (max-width: 1023px) {
-  .hero-welcome {
-    top: 15.3%;
-    font-size: clamp(0.95rem, 4vw, 1.3rem);
-  }
-}
+/* Homepage welcome greeting — see .hero-welcome-band in free-shipping-promo.css.
+   The old absolutely-positioned .hero-welcome overlay was removed: its
+   translate(-100% - 75px) pushed it out of the hero box and over the nav bar. */

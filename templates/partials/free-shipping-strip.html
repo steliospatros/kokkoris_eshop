@@ -1,0 +1,34 @@
+{% load i18n %}
+{% if promo %}
+<aside class="freeship-strip{% if promo.qualified %} freeship-strip--qualified{% endif %}"
+       aria-label="{% trans 'Προσφορά δωρεάν μεταφορικών' %}">
+    <div class="freeship-strip__inner">
+        <span class="freeship-strip__icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1.5 6.5h11.5v9.5H1.5z"/>
+                <path d="M13 9.5h4.4l3.1 3.1v3.4H13z"/>
+                <circle cx="6" cy="18.5" r="2"/>
+                <circle cx="17" cy="18.5" r="2"/>
+            </svg>
+        </span>
+
+        <span class="freeship-strip__headline">{{ promo.strip_headline }}</span>
+
+        <span class="freeship-strip__sep" aria-hidden="true"></span>
+
+        <span class="freeship-strip__message">{{ promo.message }}</span>
+
+        {% if not promo.qualified and promo.progress_percent %}
+        <span class="freeship-strip__bar"
+              role="progressbar"
+              aria-valuenow="{{ promo.progress_percent }}"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-label="{% trans 'Πρόοδος προς δωρεάν μεταφορικά' %}">
+            <span class="freeship-strip__bar-fill" style="width: {{ promo.progress_percent }}%;"></span>
+        </span>
+        {% endif %}
+    </div>
+</aside>
+{% endif %}

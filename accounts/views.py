@@ -420,6 +420,8 @@ def account_cart_view(request):
     from cart.presentation import build_cart_summary
 
     summary = build_cart_summary(get_cart(request))
+    from products.shipping_promo import build_free_shipping_promo
+
     return render(
         request,
         "accounts/cart.html",
@@ -428,6 +430,7 @@ def account_cart_view(request):
             "cart_total": summary["total"],
             "cart_total_display": summary["total_display"],
             "cart_total_items": summary["total_items"],
+            "free_shipping_promo": build_free_shipping_promo(summary["total"]),
         },
     )
 

@@ -194,14 +194,18 @@
     color: #dc2626;
 }
 
+/* Unavailable shipping method (e.g. cart too heavy for a BOX NOW locker):
+   faded out and not clickable. Opacity lives only on this wrapper so it does
+   not compound with the inner card. */
 .checkout-delivery-option--disabled {
     cursor: not-allowed;
+    opacity: 0.42;
+    pointer-events: none;
 }
 
 .checkout-delivery-option--disabled .checkout-delivery-option__card {
-    background: #f1f5f9;
+    background: #f8fafc;
     border-color: #e2e8f0;
-    opacity: 0.85;
 }
 
 .checkout-delivery-option--disabled .checkout-delivery-option__card:hover {
@@ -314,5 +318,79 @@
 }
 
 .checkout-stripe-error.hidden {
+    display: none;
+}
+
+/* Box Now locker picker (checkout step 2) */
+.checkout-boxnow-panel {
+    margin: 0.75rem 0 0 2rem;
+    padding: 1rem 1.25rem;
+    border: 1px dashed #cbd5e1;
+    border-radius: 0.75rem;
+    background: #f8fafc;
+}
+
+.checkout-boxnow-panel__hint {
+    margin: 0 0 0.75rem;
+    font-family: Inter, sans-serif;
+    font-size: 0.8125rem;
+    color: #64748b;
+    line-height: 1.45;
+}
+
+.checkout-boxnow-panel__button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #42746c;
+    border-radius: 9999px;
+    background: #fff;
+    color: #42746c;
+    font-family: Inter, sans-serif;
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 0.625rem 1.25rem;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.checkout-boxnow-panel__button:hover {
+    background: #42746c;
+    color: #fff;
+}
+
+.checkout-boxnow-panel__summary {
+    margin-top: 0.875rem;
+    padding-top: 0.875rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.checkout-boxnow-panel__summary-title {
+    margin: 0;
+    font-family: Inter, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+}
+
+.checkout-boxnow-panel__summary-name {
+    margin: 0.35rem 0 0;
+    font-family: Poppins, sans-serif;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: #1e293b;
+}
+
+.checkout-boxnow-panel__summary-address {
+    margin: 0.2rem 0 0;
+    font-family: Inter, sans-serif;
+    font-size: 0.8125rem;
+    color: #475569;
+    line-height: 1.4;
+}
+
+.checkout-boxnow-map {
     display: none;
 }

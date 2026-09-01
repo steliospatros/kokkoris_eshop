@@ -32,6 +32,7 @@ CHECKOUT_STEP_URLS = {
 DELIVERY_METHOD_LABELS = {
     Order.DELIVERY_METHOD_COMPANY: "Δωρεάν παράδοση από υπάλληλο",
     Order.DELIVERY_METHOD_COURIER: "Αποστολή με courier",
+    Order.DELIVERY_METHOD_BOX_NOW: "BOX NOW locker",
 }
 
 
@@ -66,6 +67,12 @@ def build_checkout_steps(current_step, checkout_data=None):
     delivery_method = checkout_data.get("delivery_method")
     if delivery_method:
         delivery_summary = DELIVERY_METHOD_LABELS.get(delivery_method, delivery_method)
+        if delivery_method == Order.DELIVERY_METHOD_BOX_NOW and checkout_data.get(
+            "boxnow_locker_name"
+        ):
+            delivery_summary = (
+                f"{delivery_summary} — {checkout_data['boxnow_locker_name']}"
+            )
 
     summaries = {
         CHECKOUT_STEP_ADDRESS: address_summary,

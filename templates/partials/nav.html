@@ -24,14 +24,14 @@
          aria-hidden="true"
          class="hidden lg:block absolute left-0 top-[6px] w-[39px] h-auto pointer-events-none select-none z-10">
 
-    {# Inner pages only: swallowtail sits low in the header bar — its top    #}
-    {# edge aligned so the image rests on the nav's bottom (116px mockup).    #}
-    {% if not is_homepage %}
+    {# Swallowtail sits low in the header bar — its top edge aligned so the   #}
+    {# image rests on the nav's bottom (116px mockup). It used to straddle    #}
+    {# the nav/hero seam on the homepage, but the free-shipping strip now     #}
+    {# occupies that seam, so it stays inside the bar on every page.          #}
     <img src="{% static 'images/butterfly-flying.png' %}"
          alt=""
          aria-hidden="true"
          class="hidden lg:block absolute left-[500px] lg:top-[43px] w-[68px] h-auto pointer-events-none select-none z-10">
-    {% endif %}
 
     <div class="nav-toolbar max-w-[1920px] mx-auto h-16 lg:h-[116px] pl-6 pr-2 lg:pl-[129px] lg:pr-3 font-inter relative">
         {# Company logo lockup: paw-print icon + "KOKKORIS / PET FOOD" wordmark. #}
@@ -48,14 +48,6 @@
                 </span>
             </span>
         </a>
-
-        {# Homepage only: swallowtail straddling the nav/hero seam (mockup). #}
-        {% if is_homepage %}
-        <img src="{% static 'images/butterfly-flying.png' %}"
-             alt=""
-             aria-hidden="true"
-             class="hidden lg:block absolute left-[500px] top-[68px] w-[68px] h-auto pointer-events-none select-none z-10">
-        {% endif %}
 
         {# Smart search — a magnifying glass next to an always-visible,     #}
         {# white-*framed* pill (border, not a filled block, per feedback), #}
@@ -175,10 +167,12 @@
     </div>
 </nav>
 {% if messages %}
-    <div class="max-w-3xl mx-auto mt-4 px-4">
-        {% for message in messages %}
-            <div class="bg-emerald-100 text-emerald-800 px-4 py-2 rounded mb-2">{{ message }}</div>
-        {% endfor %}
+    <div class="site-messages">
+        <div class="site-messages__inner">
+            {% for message in messages %}
+                <div class="site-message site-message--{{ message.level_tag|default:'info' }}">{{ message }}</div>
+            {% endfor %}
+        </div>
     </div>
 {% endif %}
 

@@ -40,9 +40,17 @@ def build_delivery_eta_message(order: Order) -> str:
             f"θα παραδοθεί εκτιμώμενες {eta_range} (3–4 εργάσιμες ημέρες)."
         )
 
+    if order.delivery_method == Order.DELIVERY_METHOD_BOX_NOW:
+        locker = order.boxnow_locker_name or "το επιλεγμένο locker"
+        return (
+            f"Δεδομένης της καταχώρησης στις {registered_label}, η παραγγελία σας "
+            f"θα παραδοθεί στο BOX NOW locker «{locker}». Εκτιμώμενη παράδοση: "
+            f"{eta_range} (2–4 εργάσιμες ημέρες)."
+        )
+
     return (
         f"Δεδομένης της καταχώρησης στις {registered_label}, μπορείτε να "
-        f"παρακολουθήσετε την αποστολή μέσω courier ELTA. Εκτιμώμενη παράδοση: "
+        f"παρακολουθήσετε την αποστολή μέσω courier. Εκτιμώμενη παράδοση: "
         f"{eta_range} (3–4 εργάσιμες ημέρες)."
     )
 
@@ -94,6 +102,15 @@ def build_order_detail_context(order: Order, *, show_success_banner=False):
     if order.delivery_floor:
         delivery_address_parts.insert(1, order.delivery_floor)
 
+    boxnow_locker_display = ""
+    if order.delivery_method == Order.DELIVERY_METHOD_BOX_NOW and order.boxnow_locker_id:
+        locker_parts = [
+            order.boxnow_locker_name,
+            order.boxnow_locker_address,
+            order.boxnow_locker_postal_code,
+        ]
+        boxnow_locker_display = ", ".join(part for part in locker_parts if part)
+
     return {
         "order": order,
         "show_success_banner": show_success_banner,
@@ -115,6 +132,8 @@ def build_order_detail_context(order: Order, *, show_success_banner=False):
         "delivery_address_display": ", ".join(
             part for part in delivery_address_parts if part
         ),
+        "boxnow_locker_display": boxnow_locker_display,
+        "is_boxnow_delivery": order.delivery_method == Order.DELIVERY_METHOD_BOX_NOW,
         "item_rows": build_order_item_rows(order),
         "cart_cost_display": format_decimal_greek(order.cart_cost),
         "courier_fee_display": format_decimal_greek(order.courier_fee),

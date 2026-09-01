@@ -73,11 +73,12 @@ class ProductAdmin(admin.ModelAdmin):
             },
         ),
         (
-            "Shipping dimensions (ELTA Courier)",
+            "Shipping dimensions (BOX NOW)",
             {
                 "description": (
-                    "Physical package measurements used to calculate courier "
-                    "shipping cost (real weight vs volumetric weight)."
+                    "Physical package measurements used to size BOX NOW lockers "
+                    "(real weight vs volumetric weight). Courier door delivery "
+                    "uses a flat fee and does not depend on these fields."
                 ),
                 "fields": ("weight", "length", "width", "height"),
             },

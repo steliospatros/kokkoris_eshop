@@ -40,10 +40,12 @@ STATUS_FILTER_CHOICES = (
 DELIVERY_ALL = "all"
 DELIVERY_COURIER = "courier"
 DELIVERY_COMPANY = "company"
+DELIVERY_BOX_NOW = "box_now"
 
 DELIVERY_FILTER_CHOICES = (
     (DELIVERY_ALL, "Όλες"),
-    (DELIVERY_COURIER, "Courier (ELTA)"),
+    (DELIVERY_COURIER, "Courier"),
+    (DELIVERY_BOX_NOW, "BOX NOW"),
     (DELIVERY_COMPANY, "Υπάλληλος"),
 )
 
@@ -143,6 +145,8 @@ def apply_status_filter(queryset, status_filter):
 def apply_delivery_filter(queryset, delivery_filter):
     if delivery_filter == DELIVERY_COURIER:
         return queryset.filter(delivery_method=Order.DELIVERY_METHOD_COURIER)
+    if delivery_filter == DELIVERY_BOX_NOW:
+        return queryset.filter(delivery_method=Order.DELIVERY_METHOD_BOX_NOW)
     if delivery_filter == DELIVERY_COMPANY:
         return queryset.filter(delivery_method=Order.DELIVERY_METHOD_COMPANY)
     return queryset
@@ -199,7 +203,10 @@ def build_order_row(order):
             order.get_payment_method_display(),
         ),
         "delivery_method": order.delivery_method,
-        "is_courier": order.delivery_method == Order.DELIVERY_METHOD_COURIER,
+        "is_courier": order.delivery_method in (
+            Order.DELIVERY_METHOD_COURIER,
+            Order.DELIVERY_METHOD_BOX_NOW,
+        ),
         "delivery_label": DELIVERY_METHOD_LABELS.get(
             order.delivery_method,
             order.get_delivery_method_display(),

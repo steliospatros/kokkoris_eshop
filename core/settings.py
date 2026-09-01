@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from decimal import Decimal
 
 import os
 
@@ -298,3 +299,37 @@ STRIPE_PUBLISHABLE_KEY = os.environ.get("STRIPE_PUBLISHABLE_KEY", "").strip()
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "").strip()
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "").strip()
 STRIPE_CURRENCY = "eur"
+
+# -----------------------------------------------------------------------------
+# Box Now locker delivery (Partner API + Map Widget)
+# Docs: https://boxnow.gr/en/partner-api
+# -----------------------------------------------------------------------------
+BOXNOW_PARTNER_ID = os.environ.get("BOXNOW_PARTNER_ID", "").strip()
+BOXNOW_OAUTH_CLIENT_ID = os.environ.get("BOXNOW_OAUTH_CLIENT_ID", "").strip()
+BOXNOW_OAUTH_CLIENT_SECRET = os.environ.get("BOXNOW_OAUTH_CLIENT_SECRET", "").strip()
+BOXNOW_API_URL = os.environ.get(
+    "BOXNOW_API_URL", "https://api-stage.boxnow.gr"
+).strip().rstrip("/")
+BOXNOW_LOCATION_API_URL = os.environ.get(
+    "BOXNOW_LOCATION_API_URL", "https://locationapi-stage.boxnow.gr"
+).strip().rstrip("/")
+BOXNOW_ORIGIN_LOCATION_ID = os.environ.get("BOXNOW_ORIGIN_LOCATION_ID", "").strip()
+BOXNOW_NOTIFY_EMAIL = os.environ.get("BOXNOW_NOTIFY_EMAIL", "").strip()
+BOXNOW_ORIGIN_CONTACT_NAME = os.environ.get("BOXNOW_ORIGIN_CONTACT_NAME", "").strip()
+BOXNOW_ORIGIN_CONTACT_PHONE = os.environ.get("BOXNOW_ORIGIN_CONTACT_PHONE", "").strip()
+BOXNOW_ORIGIN_CONTACT_EMAIL = os.environ.get("BOXNOW_ORIGIN_CONTACT_EMAIL", "").strip()
+BOXNOW_FEE_SMALL = Decimal(os.environ.get("BOXNOW_FEE_SMALL", "1.80"))
+BOXNOW_FEE_MEDIUM = Decimal(os.environ.get("BOXNOW_FEE_MEDIUM", "2.50"))
+BOXNOW_FEE_LARGE = Decimal(os.environ.get("BOXNOW_FEE_LARGE", "3.50"))
+BOXNOW_SMALL_MAX_KG = os.environ.get("BOXNOW_SMALL_MAX_KG", "4.0")
+BOXNOW_MEDIUM_MAX_KG = os.environ.get("BOXNOW_MEDIUM_MAX_KG", "10.0")
+BOXNOW_MAX_WEIGHT_KG = os.environ.get("BOXNOW_MAX_WEIGHT_KG", BOXNOW_MEDIUM_MAX_KG)
+BOXNOW_WIDGET_ENABLED = bool(BOXNOW_PARTNER_ID)
+
+# -----------------------------------------------------------------------------
+# Free shipping promotion (courier + BOX NOW)
+# -----------------------------------------------------------------------------
+FREE_SHIPPING_ORDER_MINIMUM = Decimal(os.environ.get("FREE_SHIPPING_ORDER_MINIMUM", "60.00"))
+# Door-delivery courier fee below the free-shipping threshold (not Box Now).
+# Temporary flat rate until a carrier (ACS / Γενική / ΕΛΤΑ, etc.) is chosen.
+COURIER_FLAT_FEE = Decimal(os.environ.get("COURIER_FLAT_FEE", "5.00"))

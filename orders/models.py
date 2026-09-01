@@ -51,9 +51,11 @@ class Order(models.Model):
 
     DELIVERY_METHOD_COMPANY = "company_delivery"
     DELIVERY_METHOD_COURIER = "courier"
+    DELIVERY_METHOD_BOX_NOW = "box_now"
     DELIVERY_METHOD_CHOICES = [
         (DELIVERY_METHOD_COMPANY, "Free delivery by company staff"),
         (DELIVERY_METHOD_COURIER, "Courier"),
+        (DELIVERY_METHOD_BOX_NOW, "Box Now locker"),
     ]
 
     user = models.ForeignKey(
@@ -86,8 +88,9 @@ class Order(models.Model):
     )
 
     # --- Cost breakdown. cart_cost is just the products; courier_fee is the
-    # (currently always 0, see checkout.delivery.calculate_courier_fee)
-    # shipping surcharge; total_cost is what the customer actually pays. ---
+    # shipping surcharge from checkout.delivery.calculate_courier_fee
+    # (flat courier fee or Box Now locker pricing); total_cost is what the
+    # customer actually pays. ---
     cart_cost = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -101,11 +104,9 @@ class Order(models.Model):
         default=0,
         help_text="Courier delivery fee, computed via checkout.delivery."
                    "calculate_courier_fee() at checkout time and snapshotted "
-                   "here. 0 if delivered for free by company staff. "
-                   "Currently always 0 (placeholder) - real per-courier "
-                   "pricing (ACS / ELTA Courier / Geniki Taxydromiki) will be "
-                   "plugged into that single function in a later step, with "
-                   "no changes needed elsewhere."
+                   "here. 0 if delivered for free by company staff or when "
+                   "the cart qualifies for free shipping. Door courier uses "
+                   "a flat fee (COURIER_FLAT_FEE) until a carrier is chosen."
     )
     total_cost = models.DecimalField(
         max_digits=10,
@@ -147,6 +148,42 @@ class Order(models.Model):
     delivery_latitude = models.DecimalField(max_digits=9, decimal_places=6)
     delivery_longitude = models.DecimalField(max_digits=9, decimal_places=6)
     delivery_notes = models.TextField(blank=True, default="")
+    boxnow_locker_id = models.CharField(
+        max_length=64,
+        blank=True,
+        default="",
+        help_text="Box Now APM locationId selected at checkout.",
+    )
+    boxnow_locker_name = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text="Display name of the selected Box Now locker.",
+    )
+    boxnow_locker_address = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text="Street address of the selected Box Now locker.",
+    )
+    boxnow_locker_postal_code = models.CharField(
+        max_length=10,
+        blank=True,
+        default="",
+        help_text="Postal code of the selected Box Now locker.",
+    )
+    boxnow_delivery_request_id = models.CharField(
+        max_length=64,
+        blank=True,
+        default="",
+        help_text="Box Now delivery-request id returned by the Partner API.",
+    )
+    boxnow_parcel_id = models.CharField(
+        max_length=64,
+        blank=True,
+        default="",
+        help_text="Box Now parcel/voucher id for label printing.",
+    )
     preferred_delivery_time = models.CharField(
         max_length=100,
         blank=True,

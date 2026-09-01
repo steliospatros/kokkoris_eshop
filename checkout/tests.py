@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from checkout.delivery import build_delivery_options
+from checkout.delivery import build_delivery_options, calculate_courier_fee
 from checkout.helpers import (
     CHECKOUT_STEP_ADDRESS,
     CHECKOUT_STEP_DELIVERY,
@@ -115,6 +115,10 @@ class CheckoutDeliveryViewTests(TestCase):
         self.assertContains(response, "Τρόπος αποστολής")
         self.assertContains(response, "Τρόπος πληρωμής")
         self.assertContains(response, "Παράδοση από υπάλληλο")
+        self.assertContains(response, "Αποστολή με courier")
+        self.assertContains(response, "+5,00 €")
+        self.assertNotContains(response, "ELTA")
+        self.assertNotContains(response, "ΕΛΤΑ")
 
     def test_delivery_post_advances_to_payment(self):
         response = self.client.post(
@@ -170,7 +174,79 @@ class DeliveryOptionsTests(TestCase):
         self.assertIn("υπάλληλο", options[0]["unavailable_message"])
         self.assertFalse(options[1]["disabled"])
         self.assertEqual(options[1]["value"], Order.DELIVERY_METHOD_COURIER)
-        self.assertEqual(options[1]["label"], "Αποστολή μέσω ELTA")
+        self.assertEqual(options[1]["label"], "Αποστολή με courier")
+        self.assertEqual(options[1]["fee"], Decimal("5.00"))
+        self.assertNotIn("ELTA", options[1]["label"])
+        self.assertNotIn("ELTA", options[1]["description"])
+
+
+@override_settings(
+    COURIER_FLAT_FEE=Decimal("5.00"),
+    FREE_SHIPPING_ORDER_MINIMUM=Decimal("60.00"),
+)
+class CourierFlatFeeTests(TestCase):
+    def test_courier_charges_flat_fee_below_threshold(self):
+        fee = calculate_courier_fee(
+            "10563",
+            Order.DELIVERY_METHOD_COURIER,
+            cart=[],
+            cart_total=Decimal("25.00"),
+        )
+        self.assertEqual(fee, Decimal("5.00"))
+
+    def test_courier_is_free_at_or_above_threshold(self):
+        fee = calculate_courier_fee(
+            "10563",
+            Order.DELIVERY_METHOD_COURIER,
+            cart=[],
+            cart_total=Decimal("60.00"),
+        )
+        self.assertEqual(fee, Decimal("0.00"))
+
+    def test_courier_flat_fee_ignores_weight(self):
+        from types import SimpleNamespace
+
+        heavy = SimpleNamespace(
+            product=SimpleNamespace(
+                weight=Decimal("20"),
+                length=Decimal("50"),
+                width=Decimal("40"),
+                height=Decimal("30"),
+            ),
+            quantity=1,
+        )
+        fee = calculate_courier_fee(
+            "71201",
+            Order.DELIVERY_METHOD_COURIER,
+            cart=[heavy],
+            cart_total=Decimal("15.00"),
+        )
+        self.assertEqual(fee, Decimal("5.00"))
+
+    def test_cod_surcharge_still_applies_on_top_of_flat_fee(self):
+        from products.utils import COD_FEE
+
+        fee = calculate_courier_fee(
+            "10563",
+            Order.DELIVERY_METHOD_COURIER,
+            cart=[],
+            cart_total=Decimal("25.00"),
+            is_cash_on_delivery=True,
+        )
+        self.assertEqual(fee, Decimal("5.00") + COD_FEE)
+
+    def test_delivery_options_show_free_when_qualified(self):
+        options, _within = build_delivery_options(
+            cart_total=Decimal("60.00"),
+            postal_code="10563",
+            cart=[],
+        )
+        courier = next(
+            option for option in options
+            if option["value"] == Order.DELIVERY_METHOD_COURIER
+        )
+        self.assertEqual(courier["fee"], Decimal("0.00"))
+        self.assertEqual(courier["fee_display"], "Δωρεάν")
 
 
 class StripeServiceTests(TestCase):

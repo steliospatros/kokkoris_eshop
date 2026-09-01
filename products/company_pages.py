@@ -8,8 +8,12 @@ no dedicated page yet.
 PURO_INSTINTO_CODE = "PUR"
 CARNIS_CODE = "CAR"
 WILD_SIDE_CODE = "WLD"
+CORE_CODE = "COR"
+OWNAT_CODE = "OWN"
 
-BRAND_PAGE_CODES = frozenset({PURO_INSTINTO_CODE, CARNIS_CODE, WILD_SIDE_CODE})
+BRAND_PAGE_CODES = frozenset(
+    {PURO_INSTINTO_CODE, CARNIS_CODE, WILD_SIDE_CODE, CORE_CODE, OWNAT_CODE}
+)
 
 # Sampled from PDF page 2.
 PURO_BRAND_ACCENT = "#F58220"
@@ -104,6 +108,12 @@ CARNIS_BRAND_ACCENT = "#28C4B0"
 # Wild Side — PDF page 4, orange hero / teal cat detail.
 WILD_SIDE_BRAND_ACCENT = "#FF931E"
 
+# Core — CORE_SELIDA1.pdf, teal hero over white dog row, orange cat half.
+CORE_BRAND_ACCENT = "#FF931E"
+
+# Ownat — SEL1_OWNAT.pdf, same two-half layout as Core.
+OWNAT_BRAND_ACCENT = "#FF931E"
+
 
 def _build_puro_context(company):
     return {
@@ -191,10 +201,75 @@ def _build_wild_side_context(company):
     }
 
 
+def _build_core_context(company):
+    """CORE_SELIDA1.pdf — teal dog hero, white dog row, orange cat half."""
+    return {
+        "company": company,
+        "page_title": "Core",
+        "hero_band_static": "images/brand-page/core/hero-dogs.png",
+        "hero_section_class": "brand-hero-teal",
+        "page_sections": (
+            {
+                "type": "products",
+                "animal_type": "Dog",
+                "products_row_class": "brand-products--white brand-products--panel",
+            },
+            {
+                "type": "story",
+                "static": "images/brand-page/core/story-cats-intro.png",
+                "section_class": "brand-story-band--white brand-story-band--full",
+            },
+            {
+                "type": "products",
+                "animal_type": "Cat",
+                "products_row_class": "brand-products--core-cats brand-products--panel",
+            },
+            {
+                "type": "story",
+                "static": "images/brand-page/core/story-cats-outro.png",
+                "section_class": "brand-story-band--orange brand-story-band--full",
+            },
+        ),
+        "brand_accent": CORE_BRAND_ACCENT,
+        "show_product_detail": False,
+    }
+
+
+def _build_ownat_context(company):
+    """SEL1_OWNAT.pdf — teal dog hero, white dog row, orange cat half."""
+    return {
+        "company": company,
+        "page_title": "Ownat",
+        "hero_band_static": "images/brand-page/ownat/hero-dogs.png",
+        "hero_section_class": "brand-hero-teal",
+        "page_sections": (
+            {
+                "type": "products",
+                "animal_type": "Dog",
+                "products_row_class": "brand-products--white brand-products--panel",
+            },
+            {
+                "type": "story",
+                "static": "images/brand-page/ownat/story-cats-intro.png",
+                "section_class": "brand-story-band--white brand-story-band--full",
+            },
+            {
+                "type": "products",
+                "animal_type": "Cat",
+                "products_row_class": "brand-products--ownat-cats brand-products--panel",
+            },
+        ),
+        "brand_accent": OWNAT_BRAND_ACCENT,
+        "show_product_detail": False,
+    }
+
+
 _BUILDERS = {
     PURO_INSTINTO_CODE: _build_puro_context,
     CARNIS_CODE: _build_carnis_context,
     WILD_SIDE_CODE: _build_wild_side_context,
+    CORE_CODE: _build_core_context,
+    OWNAT_CODE: _build_ownat_context,
 }
 
 

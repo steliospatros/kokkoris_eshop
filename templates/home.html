@@ -4,6 +4,11 @@
 {% block title %}Kokkoris Eshop - Αρχική{% endblock %}
 
 {% block hero %}
+    {# Marketing strip sits flush under the nav links, then the signed-in    #}
+    {# greeting, then the hero artwork — all in normal flow so nothing       #}
+    {# overlaps the teal header panel.                                       #}
+    {% include "partials/free-shipping-strip.html" with promo=homepage_free_shipping_promo %}
+    {% include "partials/hero-welcome-band.html" %}
     {% include "partials/hero.html" %}
     {% include "partials/hero-about.html" %}
 {% endblock %}

@@ -34,5 +34,6 @@ PAYMENT_METHOD_LABELS = {
 
 DELIVERY_METHOD_LABELS = {
     "company_delivery": _("Παράδοση από υπάλληλο"),
-    "courier": _("Αποστολή μέσω ELTA"),
+    "courier": _("Αποστολή με courier"),
+    "box_now": _("BOX NOW locker"),
 }

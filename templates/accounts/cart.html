@@ -8,6 +8,8 @@
 {% block content %}
 <section id="cart-page" class="max-w-[900px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
     {% if cart_lines %}
+        {% include "partials/free-shipping-promo.html" with promo=free_shipping_promo extra_class="mb-5" %}
+
         <div class="flex justify-end mb-3">
             <button type="button"
                     id="cart-clear-all"

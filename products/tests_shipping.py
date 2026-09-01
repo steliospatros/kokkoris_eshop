@@ -1,4 +1,4 @@
-"""Tests for ELTA Courier shipping cost calculation."""
+"""Tests for the former weight-based courier tariff (not used at checkout)."""
 from decimal import Decimal
 from types import SimpleNamespace
 
@@ -51,26 +51,26 @@ class ShippingCostTests(TestCase):
         expected = Decimal("2.00") + Decimal(extra_kg) * Decimal("0.80")
         self.assertEqual(cost, expected)
 
-    def test_free_shipping_in_attica_for_orders_over_20(self):
+    def test_free_shipping_for_orders_over_minimum(self):
         items = [_line(5, 30, 20, 15)]
-        cost = calculate_shipping_cost(items, Decimal("20.00"), REGION_ATTICA)
+        cost = calculate_shipping_cost(items, Decimal("60.00"), REGION_ATTICA)
         self.assertEqual(cost, Decimal("0.00"))
 
-    def test_attica_under_20_charges_courier_fee(self):
+    def test_under_minimum_charges_courier_fee(self):
         items = [_line(1.5, 20, 15, 10)]
-        cost = calculate_shipping_cost(items, Decimal("19.99"), REGION_ATTICA)
+        cost = calculate_shipping_cost(items, Decimal("59.99"), REGION_ATTICA)
         self.assertEqual(cost, Decimal("2.00"))
 
     def test_free_shipping_outside_attica_for_large_cart(self):
         items = [_line(5, 30, 20, 15)]
-        cost = calculate_shipping_cost(items, Decimal("50.00"), "Other")
+        cost = calculate_shipping_cost(items, Decimal("60.00"), "Other")
         self.assertEqual(cost, Decimal("0.00"))
 
     def test_cod_fee_applies_even_when_attica_shipping_is_free(self):
         items = [_line(5, 30, 20, 15)]
         cost = calculate_shipping_cost(
             items,
-            Decimal("25.00"),
+            Decimal("75.00"),
             REGION_ATTICA,
             is_cash_on_delivery=True,
         )
@@ -80,7 +80,7 @@ class ShippingCostTests(TestCase):
         items = [_line(5, 30, 20, 15)]
         cost = calculate_shipping_cost(
             items,
-            Decimal("60.00"),
+            Decimal("75.00"),
             "Other",
             is_cash_on_delivery=True,
         )

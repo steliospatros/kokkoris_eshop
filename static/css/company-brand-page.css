@@ -20,6 +20,15 @@
   background: #ff931e;
 }
 
+/* Core / Ownat — the artwork's own teal starts at the very top edge, so the
+   band sits flush under the (teal) site header instead of on a padded strip. */
+.brand-hero-teal {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: #4aa190;
+}
+
 .brand-hero-white__band {
   display: block;
   width: 100%;
@@ -55,6 +64,17 @@
   background: #fff;
 }
 
+.brand-story-band--orange {
+  background: #ff931e;
+}
+
+/* Core / Ownat bands carry a horizontal glow, so letterboxing them past
+   1920px would expose flat side bars that miss it — they stay full-bleed. */
+.brand-hero-teal .brand-hero-white__band,
+.brand-story-band--full .brand-story-band__slice {
+  max-width: none;
+}
+
 .brand-story-band__slice {
   display: block;
   width: 100%;
@@ -74,6 +94,33 @@
 
 .brand-products--orange {
   background: #ff931e;
+}
+
+.brand-products--white {
+  background: #fff;
+}
+
+/* Closes a brand page whose last section is a product row (no trailing band). */
+.brand-products--pad-bottom {
+  padding-bottom: clamp(2.5rem, 5vw, 4.5rem);
+}
+
+/* Core / Ownat cat rows sit inside the orange half of the artwork, which is a
+   glow rather than a flat fill. Each background is a two-pixel strip lifted
+   from the neighbouring bands' touching edges and stretched over the row, so
+   both seams line up exactly however tall the row grows. */
+.brand-products--core-cats,
+.brand-products--ownat-cats {
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+.brand-products--core-cats {
+  background-image: url("../images/brand-page/core/cats-row-bg.png");
+}
+
+.brand-products--ownat-cats {
+  background-image: url("../images/brand-page/ownat/cats-row-bg.png");
 }
 
 /* Wild Side — breathing room between product row and cat intro (PDF mock carousel removed). */
@@ -143,6 +190,180 @@
   font-size: clamp(0.875rem, 1vw, 1rem);
   font-weight: 400;
   color: rgba(255, 255, 255, 0.85);
+}
+
+/* ── Core / Ownat card panel ───────────────────────────────────────────────
+   CORE_SELIDA1.pdf and SEL1_OWNAT.pdf draw both product rows as one square
+   white sheet inset to ~84.7% of the page, floating on a soft drop shadow,
+   holding four cards separated by hairlines, with the carousel chevrons
+   overlaid on the sheet's own edges. Every measurement below is that artwork
+   divided by the 2667px render width, so the sheet keeps its proportions at
+   any viewport — the neighbouring bands are full-bleed images that do the
+   same. Live cards keep stock / unit-price lines (SKU is hidden), so the
+   sheet ends up marginally taller than the mock-up's simplified cards. */
+.brand-products--panel {
+  overflow: visible;
+}
+
+.brand-products--panel .brand-products__row {
+  position: relative;
+  width: 84.75%;
+  max-width: none;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+
+/* White sheet stops short of the row bottom so the buy pills can hang
+   off the panel onto the band behind it, as in the mock-up. */
+.brand-products--panel .brand-products__row::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 1.55rem 0;
+  background: #fff;
+  box-shadow: 0 1.35vw 3.4vw rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.brand-products--panel .brand-products__track {
+  position: relative;
+  z-index: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.brand-products--panel .brand-products__track > .product-browse-cell {
+  position: relative;
+  overflow: visible;
+  background: transparent;
+  border-right: none;
+}
+
+.brand-products--panel .brand-products__track > .product-browse-cell::after {
+  content: "";
+  position: absolute;
+  top: 8%;
+  bottom: 22%;
+  right: 0;
+  width: 1px;
+  background: #cfd0d2;
+}
+
+.brand-products--panel .brand-products__track > .product-browse-cell:last-child::after {
+  display: none;
+}
+
+.brand-products--panel .product-browse-cell .product-image-slot {
+  max-height: 14.5rem;
+  padding-top: 1.15rem;
+}
+
+.brand-products--panel .wishlist-toggle {
+  display: none;
+}
+
+.brand-products--panel .product-card-info {
+  min-height: 0;
+}
+
+.brand-products--panel .product-card-info > p:first-child {
+  display: none;
+}
+
+.brand-products--panel .product-card-title {
+  font-size: 0.9rem;
+  line-height: 1.2;
+  min-height: 0;
+}
+
+.brand-products--panel .product-card-price p:first-child {
+  font-size: 1.3rem;
+  line-height: 1.15;
+}
+
+/* The mock-up's buy pill is a little over half the card wide, centred,
+   and straddles the sheet's bottom edge. */
+.brand-products--panel .product-card-footer {
+  width: 56%;
+  margin-inline: auto;
+  margin-bottom: 0.15rem;
+}
+
+.brand-products--panel .product-card-footer .cart-add {
+  padding-block: 0.72rem;
+  font-size: 1.35rem;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+/* Alternating teal / orange pills, but only where the pill already means
+   "in stock" — the blue on-order and grey sold-out states must still read. */
+.brand-products--panel
+  .brand-products__track
+  > .product-browse-cell:nth-child(even)
+  .product-card-footer.bg-kokkoris-teal-dark {
+  background-color: #f4780d;
+}
+
+.brand-products--panel
+  .brand-products__track
+  > .product-browse-cell:nth-child(even)
+  .product-card-footer.bg-kokkoris-teal-dark
+  .cart-add:hover {
+  background-color: #d9690a;
+}
+
+.brand-products--panel .brand-products__nav {
+  position: absolute;
+  top: 0;
+  bottom: 1.55rem;
+  z-index: 2;
+  width: 3rem;
+  color: #d3d4d5;
+}
+
+.brand-products--panel .brand-products__nav:hover {
+  color: #a9abae;
+}
+
+.brand-products--panel .brand-products__nav svg {
+  width: 2.4rem;
+  height: 2.4rem;
+  stroke-width: 3;
+  transform: scaleY(2.4);
+}
+
+.brand-products--panel .brand-products__nav--prev {
+  left: 0.9rem;
+}
+
+.brand-products--panel .brand-products__nav--next {
+  right: 0.9rem;
+}
+
+@media (min-width: 1024px) {
+  .brand-products--panel .brand-products__track > .product-browse-cell {
+    width: 25%;
+  }
+}
+
+/* Sheet-to-band spacing, straight off the artwork: the dog sheet floats in
+   the white half, the cat sheet butts against the wave band above it. These
+   are percentages, not vw, so they track the section width the same way the
+   band images do — vw would additionally pick up the site's 0.9 zoom. */
+.brand-products--panel.brand-products--white {
+  padding: 2.2% 0 4.6%;
+}
+
+.brand-products--panel.brand-products--core-cats {
+  padding: 0 0 4.4%;
+}
+
+/* Ownat has no outro band — the mock-up's orange glow continues under
+   the hanging pills and then the site footer, so this row keeps a tail. */
+.brand-products--panel.brand-products--ownat-cats {
+  padding: 0 0 11.2%;
 }
 
 .brand-detail-white {

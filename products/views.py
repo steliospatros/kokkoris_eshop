@@ -36,6 +36,7 @@ from products.company_pages import build_company_page_context, has_brand_page
 from products.favourites import build_favourites_browse_cards
 from products.models import Company, Product
 from products.search import SEARCH_SUGGESTION_LIMIT, search_products
+from products.shipping_promo import build_free_shipping_promo, build_static_free_shipping_promo
 
 
 def _catalog_filter_hidden_fields(sort, per_page):
@@ -60,6 +61,13 @@ def home(request):
         .order_by("name")
     )
 
+    cart = get_cart(request)
+    cart_promo = (
+        build_free_shipping_promo(cart.total)
+        if cart.total_items
+        else build_static_free_shipping_promo()
+    )
+
     return render(
         request,
         "home.html",
@@ -67,6 +75,7 @@ def home(request):
             "companies": companies,
             "favourite_cards": build_favourites_browse_cards(request, limit=12),
             "user_is_authenticated": request.user.is_authenticated,
+            "homepage_free_shipping_promo": cart_promo,
         },
     )
 

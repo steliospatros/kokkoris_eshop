@@ -12,8 +12,13 @@
             {% include "checkout/_steps.html" %}
 
             <div class="checkout-step-panel">
-                <form method="post" class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-5">
+                <form method="post" id="checkout-delivery-form" class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-5">
                     {% csrf_token %}
+
+                    <input type="hidden" name="boxnow_locker_id" id="boxnow-locker-id" value="{{ checkout_data.boxnow_locker_id|default:'' }}">
+                    <input type="hidden" name="boxnow_locker_name" id="boxnow-locker-name" value="{{ checkout_data.boxnow_locker_name|default:'' }}">
+                    <input type="hidden" name="boxnow_locker_address" id="boxnow-locker-address" value="{{ checkout_data.boxnow_locker_address|default:'' }}">
+                    <input type="hidden" name="boxnow_locker_postal_code" id="boxnow-locker-postal" value="{{ checkout_data.boxnow_locker_postal_code|default:'' }}">
 
                     <p class="text-sm text-slate-600 font-inter">
                         {% trans "Επίλεξε πώς θέλεις να παραλάβεις την παραγγελία σου." %}
@@ -32,6 +37,7 @@
                                        data-total="{{ option.total_display }}"
                                        data-shipping-fee="{{ option.fee }}"
                                        data-shipping-label="{{ option.fee_display }}"
+                                       data-requires-locker="{% if option.requires_locker %}true{% else %}false{% endif %}"
                                        class="delivery-option"
                                        {% if option.disabled %}disabled{% endif %}
                                        {% if option.value == selected_method and not option.disabled %}checked{% endif %}
@@ -44,6 +50,32 @@
                                     <span class="checkout-delivery-option__fee">{{ option.fee_display }}</span>
                                 </span>
                             </label>
+
+                            {% if option.requires_locker and not option.disabled %}
+                            <div id="boxnow-locker-panel"
+                                 class="checkout-boxnow-panel{% if selected_method != option.value %} hidden{% endif %}"
+                                 data-delivery-value="{{ option.value }}">
+                                <p class="checkout-boxnow-panel__hint">
+                                    {% trans "Πάτησε το κουμπί για να ανοίξει ο χάρτης BOX NOW και να επιλέξεις locker." %}
+                                </p>
+                                <button type="button" class="boxnow-widget-button checkout-boxnow-panel__button">
+                                    {% trans "Επιλογή locker BOX NOW" %}
+                                </button>
+                                <div id="boxnow-locker-summary"
+                                     class="checkout-boxnow-panel__summary{% if not checkout_data.boxnow_locker_id %} hidden{% endif %}">
+                                    <p class="checkout-boxnow-panel__summary-title">{% trans "Επιλεγμένο σημείο" %}</p>
+                                    <p id="boxnow-locker-summary-name" class="checkout-boxnow-panel__summary-name">
+                                        {{ checkout_data.boxnow_locker_name|default:"" }}
+                                    </p>
+                                    <p id="boxnow-locker-summary-address" class="checkout-boxnow-panel__summary-address">
+                                        {% if checkout_data.boxnow_locker_address %}
+                                            {{ checkout_data.boxnow_locker_address }}{% if checkout_data.boxnow_locker_postal_code %}, {{ checkout_data.boxnow_locker_postal_code }}{% endif %}
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div id="boxnowmap" class="checkout-boxnow-map hidden" aria-hidden="true"></div>
+                            </div>
+                            {% endif %}
                         </div>
                         {% endfor %}
                     </div>
@@ -59,6 +91,7 @@
                             {% trans "Πίσω" %}
                         </a>
                         <button type="submit"
+                                id="checkout-delivery-submit"
                                 class="inline-block rounded-full bg-kokkoris-teal-dark px-8 py-3 text-white font-inter font-medium hover:opacity-90 transition-opacity">
                             {% trans "Συνέχεια στον τρόπο πληρωμής" %}
                         </button>
@@ -78,6 +111,9 @@
     var totalEl = document.getElementById("delivery-total");
     var sidebarShippingEl = document.getElementById("checkout-sidebar-shipping");
     var sidebarGrandTotalEl = document.getElementById("checkout-sidebar-grand-total");
+    var lockerPanel = document.getElementById("boxnow-locker-panel");
+    var deliveryForm = document.getElementById("checkout-delivery-form");
+    var lockerIdInput = document.getElementById("boxnow-locker-id");
 
     function updateTotalsFromInput(input) {
         if (!input) {
@@ -93,6 +129,10 @@
         if (sidebarGrandTotalEl) {
             sidebarGrandTotalEl.textContent = input.dataset.total + " €";
         }
+        if (lockerPanel) {
+            var showLocker = input.dataset.requiresLocker === "true";
+            lockerPanel.classList.toggle("hidden", !showLocker);
+        }
     }
 
     document.querySelectorAll(".delivery-option:not(:disabled)").forEach(function (input) {
@@ -101,6 +141,61 @@
         });
     });
     updateTotalsFromInput(document.querySelector(".delivery-option:checked"));
+
+    if (deliveryForm) {
+        deliveryForm.addEventListener("submit", function (event) {
+            var selected = document.querySelector(".delivery-option:checked");
+            if (selected && selected.dataset.requiresLocker === "true" && !lockerIdInput.value) {
+                event.preventDefault();
+                alert("{% trans 'Επίλεξε σημείο παραλαβής BOX NOW από τον χάρτη.' %}");
+            }
+        });
+    }
 })();
 </script>
+{% if boxnow_widget_enabled %}
+<script>
+(function () {
+    var lockerIdInput = document.getElementById("boxnow-locker-id");
+    var lockerNameInput = document.getElementById("boxnow-locker-name");
+    var lockerAddressInput = document.getElementById("boxnow-locker-address");
+    var lockerPostalInput = document.getElementById("boxnow-locker-postal");
+    var summaryEl = document.getElementById("boxnow-locker-summary");
+    var summaryNameEl = document.getElementById("boxnow-locker-summary-name");
+    var summaryAddressEl = document.getElementById("boxnow-locker-summary-address");
+
+    window._bn_map_widget_config = {
+        partnerId: {{ boxnow_partner_id }},
+        parentElement: "#boxnowmap",
+        type: "popup",
+        buttonSelector: ".boxnow-widget-button",
+        zip: "{{ checkout_postal_code|escapejs }}",
+        gps: "yes",
+        afterSelect: function (selected) {
+            var lockerId = selected.boxnowLockerId || "";
+            var lockerName = selected.boxnowLockerTitle || selected.boxnowLockerName || "";
+            var lockerAddress = selected.boxnowLockerAddressLine1 || "";
+            var lockerPostal = selected.boxnowLockerPostalCode || "";
+
+            lockerIdInput.value = lockerId;
+            lockerNameInput.value = lockerName;
+            lockerAddressInput.value = lockerAddress;
+            lockerPostalInput.value = lockerPostal;
+
+            summaryNameEl.textContent = lockerName;
+            summaryAddressEl.textContent = lockerAddress + (lockerPostal ? ", " + lockerPostal : "");
+            summaryEl.classList.remove("hidden");
+        }
+    };
+
+    (function (d) {
+        var script = d.createElement("script");
+        script.src = "https://widget-cdn.boxnow.gr/map-widget/client/v5.js";
+        script.async = true;
+        script.defer = true;
+        d.getElementsByTagName("head")[0].appendChild(script);
+    })(document);
+})();
+</script>
+{% endif %}
 {% endblock %}

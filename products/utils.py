@@ -1,27 +1,33 @@
 """
-Product catalogue utilities, including ELTA Courier shipping cost calculation.
+Product catalogue utilities, including volumetric-weight helpers.
+
+The former weight-based (ELTA-style) courier tariff in calculate_shipping_cost
+is no longer used at checkout; door courier is a flat fee in
+checkout.delivery.calculate_courier_fee. These helpers remain for BOX NOW
+locker sizing and the cash-on-delivery surcharge.
 """
 import math
 from decimal import Decimal
+
+from django.conf import settings
 
 # Region label used by the free-shipping rule below. Attica postal codes in
 # Greece typically start with 10–19; anything else is treated as non-Attica.
 REGION_ATTICA = "Attica"
 
-# ELTA Courier tariff constants (business rules supplied by the store).
+# Former ELTA Courier tariff constants. Checkout no longer uses the
+# weight-based table; COD_FEE and VOLUMETRIC_DIVISOR are still used
+# (payment surcharge and BOX NOW locker sizing).
 BASE_FEE = Decimal("2.00")
 BASE_WEIGHT_LIMIT = Decimal("2.0")
 EXTRA_KG_FEE = Decimal("0.80")
 COD_FEE = Decimal("1.50")
 VOLUMETRIC_DIVISOR = Decimal("5000")
 
-# Orders at or above this cart subtotal qualify for free courier shipping
-# in Attica (see calculate_shipping_cost).
-FREE_SHIPPING_ATTICA_MINIMUM = Decimal("20.00")
-
-# Orders at or above this cart subtotal qualify for free courier shipping
-# outside Attica only (see calculate_shipping_cost).
-FREE_SHIPPING_CART_MINIMUM = Decimal("50.00")
+# Legacy aliases — prefer settings.FREE_SHIPPING_ORDER_MINIMUM in new code.
+FREE_SHIPPING_ORDER_MINIMUM = Decimal("60.00")
+FREE_SHIPPING_ATTICA_MINIMUM = FREE_SHIPPING_ORDER_MINIMUM
+FREE_SHIPPING_CART_MINIMUM = FREE_SHIPPING_ORDER_MINIMUM
 
 
 def postal_code_to_region(postal_code):
@@ -44,7 +50,10 @@ def calculate_shipping_cost(
     is_cash_on_delivery=False,
 ):
     """
-    Compute ELTA Courier shipping cost for a cart.
+    Compute the former weight-based courier shipping cost for a cart.
+
+    Checkout no longer uses this for the customer-facing courier option
+    (replaced by a flat fee). Kept for tests and as a reference tariff.
 
     Args:
         cart_items: Iterable of cart line objects. Each item must expose
@@ -60,16 +69,8 @@ def calculate_shipping_cost(
     """
     cart_total = Decimal(cart_total)
 
-    # Free shipping in Attica for orders of €20+ (products subtotal).
-    if cart_total >= FREE_SHIPPING_ATTICA_MINIMUM and region == REGION_ATTICA:
-        shipping_cost = Decimal("0.00")
-        if is_cash_on_delivery:
-            shipping_cost += COD_FEE
-        return shipping_cost
-
-    # Free-shipping promotion: orders of €50+ delivered outside Attica ship free.
-    # Cash-on-delivery handling fee still applies when selected.
-    if cart_total >= FREE_SHIPPING_CART_MINIMUM and region != REGION_ATTICA:
+    # Free shipping for orders of €70+ (products subtotal, all regions).
+    if cart_total >= Decimal(str(settings.FREE_SHIPPING_ORDER_MINIMUM)):
         shipping_cost = Decimal("0.00")
         if is_cash_on_delivery:
             shipping_cost += COD_FEE
@@ -85,7 +86,7 @@ def calculate_shipping_cost(
         # Billable real weight accumulates per unit in the cart.
         total_real_weight += Decimal(product.weight) * quantity
 
-        # ELTA volumetric weight: (L × W × H cm) / 5000 → kg equivalent.
+        # Volumetric weight: (L × W × H cm) / 5000 → kg equivalent.
         item_volumetric_weight = (
             Decimal(product.length)
             * Decimal(product.width)

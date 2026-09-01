@@ -77,8 +77,18 @@
 </div>
 
 <div class="order-detail-card">
-    <h2 class="order-detail-card__title">{% trans "Διεύθυνση παράδοσης" %}</h2>
+    <h2 class="order-detail-card__title">
+        {% if is_boxnow_delivery %}
+            {% trans "Σημείο παραλαβής BOX NOW" %}
+        {% else %}
+            {% trans "Διεύθυνση παράδοσης" %}
+        {% endif %}
+    </h2>
+    {% if is_boxnow_delivery and boxnow_locker_display %}
+    <p class="text-sm text-slate-600 font-inter mb-3">{{ boxnow_locker_display }}</p>
+  {% else %}
     <p class="text-sm text-slate-600 font-inter mb-3">{{ delivery_address_display }}</p>
+    {% endif %}
     {% if order.delivery_phone_number %}
     <p class="text-sm text-slate-500 font-inter mb-3">
         {% trans "Τηλέφωνο" %}: {{ order.delivery_phone_number }}
