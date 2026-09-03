@@ -6,12 +6,9 @@
 {# artwork (not something to be redrawn with CSS/SVG), cropped pixel-exact #}
 {# from the PDF (starts right where the nav strip ends, stops right before #}
 {# the "about us" heading, which belongs to the next content section).     #}
-{# The signed-in greeting is NOT overlaid on this artwork: the PNG already   #}
-{# carries its own "Καλώς ήρθατε στη σελίδα μας" lockup, and an absolutely  #}
-{# positioned overlay bled up into the teal nav bar on shorter viewports.   #}
-{# It now renders in normal flow above the image (hero-welcome-band.html).  #}
+{# The signed-in greeting is printed on this artwork from home.html. #}
 <div class="relative w-full bg-white">
-    <img src="{% static 'images/hero-section.png' %}"
+    <img src="{% static 'images/hero-section.png' %}?v=2"
          alt=""
          class="relative z-0 w-full h-auto block">
 </div>

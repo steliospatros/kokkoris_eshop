@@ -1,23 +1,89 @@
 /* ==========================================================================
    Free-shipping promotion
-   - .freeship-strip      full-bleed marketing band (homepage, under the nav)
-   - .free-shipping-promo inline card (cart, checkout steps, sidebar)
-   - .hero-welcome-band   signed-in greeting, in normal flow above the hero
+   - .home-hero-chrome                     discreet frost on the homepage hero
+   - .home-hero-welcome                    printed greeting (no label)
+   - .freeship-strip                       promo row
+   - .free-shipping-promo                  inline card (cart, checkout, sidebar)
    ========================================================================== */
+
+/* --- Homepage: faint frost on the hero + printed welcome ----------------- */
+.home-hero-stage {
+    position: relative;
+    width: 100%;
+}
+
+.home-hero-chrome {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    background: none;
+    pointer-events: none;
+}
+
+.home-hero-chrome .freeship-strip {
+    pointer-events: auto;
+    overflow: hidden;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.home-hero-chrome .freeship-strip::after {
+    display: none;
+}
+
+.home-hero-chrome .freeship-strip__headline {
+    font-weight: 500;
+}
+
+.home-hero-chrome .freeship-strip__message {
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.home-hero-chrome .freeship-strip__sep {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.home-hero-welcome {
+    margin: 0.65rem 1.25rem 0;
+    padding: 0;
+    background: none;
+    border: none;
+    box-shadow: none;
+    text-align: center;
+    font-family: Poppins, sans-serif;
+    font-weight: 300;
+    font-size: clamp(1rem, 1.65vw, 1.375rem);
+    letter-spacing: 0.08em;
+    line-height: 1.35;
+    color: #ffffff;
+    text-shadow:
+        0 1px 0 rgba(18, 48, 44, 0.28),
+        0 2px 12px rgba(18, 48, 44, 0.38);
+}
+
+.home-hero-welcome__name {
+    font-weight: 500;
+    letter-spacing: 0.06em;
+}
 
 /* --- Full-bleed marketing strip ------------------------------------------ */
 .freeship-strip {
     position: relative;
     width: 100%;
     overflow: hidden;
-    background: linear-gradient(90deg, #42746c 0%, #4aa190 55%, #53b8af 100%);
+    background: rgba(255, 255, 255, 0.1);
     color: #fff;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18),
-                0 1px 3px rgba(0, 0, 0, 0.12);
+    box-shadow: none;
 }
 
 .freeship-strip--qualified {
-    background: linear-gradient(90deg, #2f6b4f 0%, #3f9a6b 55%, #55b981 100%);
+    background: rgba(255, 255, 255, 0.14);
 }
 
 /* Slow shimmer sweep so the band catches the eye without being noisy. */
@@ -77,7 +143,7 @@
 
 .freeship-strip__headline {
     font-family: Poppins, sans-serif;
-    font-weight: 600;
+    font-weight: 700;
     font-size: clamp(0.875rem, 1.15vw, 1.0625rem);
     letter-spacing: 0.03em;
     line-height: 1.25;
@@ -87,14 +153,14 @@
     width: 5px;
     height: 5px;
     border-radius: 9999px;
-    background: rgba(255, 255, 255, 0.65);
+    background: rgba(255, 255, 255, 0.7);
     flex-shrink: 0;
 }
 
 .freeship-strip__message {
     font-family: Inter, sans-serif;
     font-size: clamp(0.8125rem, 0.95vw, 0.9375rem);
-    color: rgba(255, 255, 255, 0.92);
+    color: rgba(255, 255, 255, 0.94);
     line-height: 1.35;
 }
 
@@ -103,7 +169,7 @@
     width: 8rem;
     height: 0.3125rem;
     border-radius: 9999px;
-    background: rgba(255, 255, 255, 0.28);
+    background: rgba(255, 255, 255, 0.32);
     overflow: hidden;
     flex-shrink: 0;
 }
@@ -125,31 +191,12 @@
         flex-direction: column;
         gap: 0.25rem;
     }
-}
 
-/* --- Signed-in greeting, above the hero artwork -------------------------- */
-.hero-welcome-band {
-    width: 100%;
-    background: #fff;
-    border-bottom: 1px solid #eef2f1;
-}
-
-.hero-welcome-band__text {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0.55rem 1rem;
-    text-align: center;
-    font-family: Poppins, sans-serif;
-    font-weight: 300;
-    font-size: clamp(0.9375rem, 1.3vw, 1.25rem);
-    letter-spacing: 0.03em;
-    line-height: 1.3;
-    color: #42746c;
-}
-
-.hero-welcome-band__name {
-    font-weight: 500;
-    color: #2f5751;
+    .home-hero-welcome {
+        margin-top: 0.55rem;
+        font-size: 0.9375rem;
+        letter-spacing: 0.05em;
+    }
 }
 
 /* --- Inline promo card (cart / checkout) --------------------------------- */

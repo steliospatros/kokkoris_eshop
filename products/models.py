@@ -1,6 +1,9 @@
 from django.db import models
+from django.db.models import Count
 from django.utils.text import slugify
 from unidecode import unidecode
+
+from products.pricing import ceil_to_tenth
 
 
 def generate_ascii_slug(text):
@@ -38,12 +41,22 @@ def unique_ascii_slug(instance, text, *, field="slug"):
     return candidate
 
 
+class CompanyQuerySet(models.QuerySet):
+    def public(self):
+        """Companies that have at least one product. Empty brands stay frozen."""
+        return self.annotate(_product_count=Count("products")).filter(
+            _product_count__gt=0
+        )
+
+
 class Company(models.Model):
     """
     Represents a pet food brand/manufacturer (e.g. OWNAT, PROFINE, EVERCLEAN).
     Stored as a lookup table so new brands can be added via the admin
     panel without requiring any code changes.
     """
+    objects = CompanyQuerySet.as_manager()
+
     name = models.CharField(
         max_length=100,
         unique=True,
@@ -246,8 +259,10 @@ class Product(models.Model):
 
 class Favourite(models.Model):
     """
-    Popularity tracker for administration — one row per product.
-    ``purchase_count`` starts at 0 and increments on each completed purchase.
+    Popularity tracker — one row per product.
+
+    ``score`` is the ranking weight used on the storefront:
+    +5 per unit sold, +3 when added to a wishlist, +1 per unique session view.
     """
 
     product = models.OneToOneField(
@@ -255,9 +270,21 @@ class Favourite(models.Model):
         on_delete=models.CASCADE,
         related_name="favourite",
     )
+    score = models.PositiveIntegerField(
+        default=0,
+        help_text="Dynamic popularity score (sale +5, wishlist +3, view +1).",
+    )
     purchase_count = models.PositiveIntegerField(
         default=0,
-        help_text="Total units sold across all variants; higher = more popular.",
+        help_text="Total units sold across all variants.",
+    )
+    wishlist_count = models.PositiveIntegerField(
+        default=0,
+        help_text="Times this product was added to a wishlist.",
+    )
+    view_count = models.PositiveIntegerField(
+        default=0,
+        help_text="Unique session views of the product page.",
     )
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -265,10 +292,10 @@ class Favourite(models.Model):
         db_table = "favourites"
         verbose_name = "Favourite"
         verbose_name_plural = "Favourites"
-        ordering = ["-purchase_count", "product__name"]
+        ordering = ["-score", "-purchase_count", "product__name"]
 
     def __str__(self):
-        return f"{self.product.name} ({self.purchase_count})"
+        return f"{self.product.name} ({self.score})"
 
 
 class ProductVariant(models.Model):
@@ -300,7 +327,7 @@ class ProductVariant(models.Model):
     price = models.DecimalField(
         max_digits=8,
         decimal_places=2,
-        help_text="Price for this specific package size."
+        help_text="Price for this specific package size (stored rounded up to the next 0.10 €).",
     )
     stock = models.PositiveIntegerField(
         default=20,
@@ -342,6 +369,16 @@ class ProductVariant(models.Model):
     def __str__(self):
         return f"{self.product.name} - {self.weight}"
 
+    def save(self, *args, **kwargs):
+        if self.price is not None:
+            self.price = ceil_to_tenth(self.price)
+        super().save(*args, **kwargs)
+
+    @property
+    def selling_price(self):
+        """Customer-facing pack price, always on a 0.10 € step."""
+        return ceil_to_tenth(self.price)
+
     @property
     def is_in_stock(self):
         """Convenience property used across the site to check availability."""
@@ -356,7 +393,7 @@ class ProductVariant(models.Model):
 
     @property
     def unit_price(self):
-        """Price per kg/L for catalog cards (computed, not stored)."""
+        """Price per kg/L for catalog cards, rounded up to the next 0.10 €."""
         if self.weight and self.weight > 0:
-            return self.price / self.weight
+            return ceil_to_tenth(self.selling_price / self.weight)
         return None

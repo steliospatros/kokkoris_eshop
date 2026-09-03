@@ -697,7 +697,7 @@ session key κατά το login (`cycle_key()`, προστασία από sessio
   stock management, θα φτιάξουμε το πιο σύνθετο `ProductBundle` model (βλ. ενότητα 9).
 - Δημιουργία πραγματικών Google/Facebook OAuth credentials στο `.env` (βλ. ενότητα 11.2).
 - **Πραγματική σύνδεση Stripe** για πληρωμή με κάρτα (βλ. ενότητα 15.7).
-- **Πραγματική τιμολόγηση courier ανά μεταφορέα** στο `checkout/delivery.py::calculate_courier_fee()` (σήμερα σταθερά 5 €, βλ. 15.4).
+- **Πραγματική τιμολόγηση courier ανά μεταφορέα** στο `checkout/delivery.py::calculate_courier_fee()` (σήμερα σταθερά 3,20 €, βλ. 15.4).
 - Σελίδα ιστορικού παραγγελιών του πελάτη (`/orders/` λίστα).
 - Μετάβαση σε compiled Tailwind pipeline (αντί για CDN) όταν σταθεροποιηθεί το design.
 
@@ -834,7 +834,7 @@ state, Google Maps, λογική υπολογισμού μεταφορικών).
   χρειαστεί fine-tuning.
 - **`calculate_courier_fee(postal_code, delivery_method)`**: το **ένα και μοναδικό σημείο**
   όπου υπολογίζεται το κόστος courier. Για αποστολή στην πόρτα χρεώνει σταθερά
-  `COURIER_FLAT_FEE` (default **5,00 €**) όταν το καλάθι είναι κάτω από
+  `COURIER_FLAT_FEE` (default **3,20 €**) όταν το καλάθι είναι κάτω από
   `FREE_SHIPPING_ORDER_MINIMUM`· αλλιώς 0 €. Το BOX NOW locker κρατά τη δική του
   τιμολόγηση ανά θήκη. Όταν επιλεγεί συγκεκριμένος courier με πραγματική
   τιμολόγηση ανά ζώνη/βάρος, αλλάζει **μόνο** το σώμα αυτής της συνάρτησης.

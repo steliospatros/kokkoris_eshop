@@ -270,29 +270,29 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 2.25rem;
+  min-height: 5.5rem;
   text-align: center;
 }
 
 @media (min-width: 1024px) {
   .browse-company-header {
-    min-height: 2.5rem;
+    min-height: 8rem;
   }
 }
 
 .browse-company-header__logo {
   display: block;
-  height: 1.75rem;
+  height: 5.5rem;
   width: auto;
-  max-width: 8rem;
+  max-width: 20rem;
   object-fit: contain;
   object-position: center;
 }
 
 @media (min-width: 1024px) {
   .browse-company-header__logo {
-    height: 2rem;
-    max-width: 9.5rem;
+    height: 7.5rem;
+    max-width: 28rem;
   }
 }
 
@@ -305,6 +305,15 @@
   min-height: 0;
 }
 
-/* Homepage welcome greeting — see .hero-welcome-band in free-shipping-promo.css.
-   The old absolutely-positioned .hero-welcome overlay was removed: its
-   translate(-100% - 75px) pushed it out of the hero box and over the nav bar. */
+/* Homepage signed-in greeting: .home-hero-welcome in free-shipping-promo.css
+   — printed on the hero, under the glass promo label, with no background. */
+
+/* Brand-page path: same fill as the hero so the crumb strip is not a
+   white band between the header and Core / Ownat / Wild Side artwork. */
+.site-breadcrumbs--teal {
+  background: #4aa190;
+}
+
+.site-breadcrumbs--orange {
+  background: #ff931e;
+}

@@ -6,6 +6,7 @@ from django.shortcuts import render
 from django.views.decorators.http import require_GET, require_POST
 
 from products.catalog import build_catalog_cards, get_catalog_queryset
+from products.favourites import record_wishlist_change
 from products.models import Product
 
 from cart.cart import get_cart
@@ -42,6 +43,9 @@ def toggle(request):
 
     wishlist = get_wishlist(request)
     wishlisted = wishlist.toggle(product)
+    user = getattr(request, "user", None)
+    if user is None or not getattr(user, "is_staff", False):
+        record_wishlist_change(product, added=wishlisted)
     return JsonResponse(
         {
             "ok": True,

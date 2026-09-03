@@ -116,7 +116,8 @@ class CheckoutDeliveryViewTests(TestCase):
         self.assertContains(response, "Τρόπος πληρωμής")
         self.assertContains(response, "Παράδοση από υπάλληλο")
         self.assertContains(response, "Αποστολή με courier")
-        self.assertContains(response, "+5,00 €")
+        self.assertContains(response, "Παράδοση σε BOX NOW locker")
+        self.assertContains(response, "+3,20 €")
         self.assertNotContains(response, "ELTA")
         self.assertNotContains(response, "ΕΛΤΑ")
 
@@ -158,7 +159,7 @@ class DeliveryOptionsTests(TestCase):
             cart=[],
         )
         self.assertTrue(within)
-        self.assertEqual(len(options), 2)
+        self.assertEqual(len(options), 3)
         self.assertEqual(options[0]["value"], Order.DELIVERY_METHOD_COMPANY)
         self.assertFalse(options[0]["disabled"])
 
@@ -169,19 +170,19 @@ class DeliveryOptionsTests(TestCase):
             cart=[],
         )
         self.assertFalse(within)
-        self.assertEqual(len(options), 2)
+        self.assertEqual(len(options), 3)
         self.assertTrue(options[0]["disabled"])
         self.assertIn("υπάλληλο", options[0]["unavailable_message"])
         self.assertFalse(options[1]["disabled"])
         self.assertEqual(options[1]["value"], Order.DELIVERY_METHOD_COURIER)
         self.assertEqual(options[1]["label"], "Αποστολή με courier")
-        self.assertEqual(options[1]["fee"], Decimal("5.00"))
+        self.assertEqual(options[1]["fee"], Decimal("3.20"))
         self.assertNotIn("ELTA", options[1]["label"])
         self.assertNotIn("ELTA", options[1]["description"])
 
 
 @override_settings(
-    COURIER_FLAT_FEE=Decimal("5.00"),
+    COURIER_FLAT_FEE=Decimal("3.20"),
     FREE_SHIPPING_ORDER_MINIMUM=Decimal("60.00"),
 )
 class CourierFlatFeeTests(TestCase):
@@ -192,7 +193,7 @@ class CourierFlatFeeTests(TestCase):
             cart=[],
             cart_total=Decimal("25.00"),
         )
-        self.assertEqual(fee, Decimal("5.00"))
+        self.assertEqual(fee, Decimal("3.20"))
 
     def test_courier_is_free_at_or_above_threshold(self):
         fee = calculate_courier_fee(
@@ -221,7 +222,7 @@ class CourierFlatFeeTests(TestCase):
             cart=[heavy],
             cart_total=Decimal("15.00"),
         )
-        self.assertEqual(fee, Decimal("5.00"))
+        self.assertEqual(fee, Decimal("3.20"))
 
     def test_cod_surcharge_still_applies_on_top_of_flat_fee(self):
         from products.utils import COD_FEE
@@ -233,7 +234,7 @@ class CourierFlatFeeTests(TestCase):
             cart_total=Decimal("25.00"),
             is_cash_on_delivery=True,
         )
-        self.assertEqual(fee, Decimal("5.00") + COD_FEE)
+        self.assertEqual(fee, Decimal("3.20") + COD_FEE)
 
     def test_delivery_options_show_free_when_qualified(self):
         options, _within = build_delivery_options(

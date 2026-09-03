@@ -9,7 +9,7 @@ import time
 import requests
 from django.conf import settings
 
-from checkout.boxnow_pricing import cart_weight_grams, determine_compartment_size
+from checkout.boxnow_pricing import cart_weight_kg, determine_compartment_size
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +126,11 @@ def create_delivery_request_for_order(order):
 
     items = list(order.items.select_related("product_variant__product"))
     compartment_size = determine_compartment_size(items)
-    weight_grams = cart_weight_grams(items)
+    if compartment_size is None:
+        raise BoxNowAPIError(
+            f"Order {order.order_code} exceeds BOX NOW locker size/weight limits."
+        )
+    weight_kg = cart_weight_kg(items)
 
     is_cod = order.payment_method == order.PAYMENT_METHOD_COD
     payment_mode = "cod" if is_cod else "prepaid"
@@ -159,7 +163,7 @@ def create_delivery_request_for_order(order):
                 "name": f"Παραγγελία {order.order_code}",
                 "value": str(order.cart_cost),
                 "compartmentSize": compartment_size,
-                "weight": weight_grams,
+                "weight": weight_kg,
             }
         ],
     }
@@ -180,7 +184,36 @@ def create_delivery_request_for_order(order):
 
     order.boxnow_delivery_request_id = str(payload.get("id", ""))
     order.boxnow_parcel_id = parcel_id
+    order.boxnow_parcel_state = "new"
+    order.boxnow_last_event = "new"
     order.save(
-        update_fields=["boxnow_delivery_request_id", "boxnow_parcel_id"]
+        update_fields=[
+            "boxnow_delivery_request_id",
+            "boxnow_parcel_id",
+            "boxnow_parcel_state",
+            "boxnow_last_event",
+        ]
     )
     return payload
+
+
+def fetch_parcel_label_pdf(parcel_id):
+    """GET /api/v1/parcels/{id}/label.pdf — Partner API Manual §3.6."""
+    if not boxnow_api_enabled():
+        raise BoxNowAPIError("Box Now API is not fully configured.")
+    token = _get_access_token()
+    url = (
+        f"{settings.BOXNOW_API_URL.rstrip('/')}"
+        f"/api/v1/parcels/{parcel_id}/label.pdf"
+    )
+    response = requests.get(
+        url,
+        headers={"Authorization": f"Bearer {token}", "Accept": "application/pdf"},
+        timeout=30,
+    )
+    if response.status_code >= 400:
+        raise BoxNowAPIError(
+            f"Box Now label fetch failed ({response.status_code}): "
+            f"{response.text[:500]}"
+        )
+    return response.content

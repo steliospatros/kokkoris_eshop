@@ -100,17 +100,22 @@ class AdministrationInventoryTests(TestCase):
         self.assertContains(response, "12")
         self.assertContains(response, "3")
 
-    def test_favourites_page_lists_products_by_purchase_count(self):
+    def test_favourites_page_lists_products_by_score(self):
         product = Product.objects.get(name="Adult Mix")
         from products.models import Favourite
 
-        Favourite.objects.filter(product=product).update(purchase_count=12)
+        Favourite.objects.filter(product=product).update(
+            score=47,
+            purchase_count=5,
+            wishlist_count=4,
+            view_count=12,
+        )
 
         self.client.force_login(self.admin_user)
         response = self.client.get(reverse("administration:favourites"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Adult Mix")
-        self.assertContains(response, "12")
+        self.assertContains(response, "47")
         self.assertContains(response, "Favourites")
 
     def test_adjust_stock_add_and_remove(self):

@@ -1,135 +1,110 @@
 # Οδηγίες σύνδεσης BOX NOW
 
-Αυτός ο οδηγός περιγράφει πώς να ενεργοποιήσεις την παράδοση σε **BOX NOW locker** στο e-shop Kokkoris.
+Η παράδοση σε **BOX NOW locker** εμφανίζεται πάντα στο checkout (βήμα 2), μαζί με τις τιμές και τα όρια βάρους/διαστάσεων. Ο χάρτης locker και η αυτόματη δημιουργία voucher χρειάζονται τα κλειδιά του Partner API.
+
+Προδιαγραφές που ακολουθεί ο κώδικας:
+
+- OpenAPI **partner-api-1.68.yaml**
+- **BoxNow API Manual v7.2** (auth, delivery-requests, labels)
+- **Webhook-Based Parcel Tracking Guide v1.4.6**
 
 ## 1. Εγγραφή συνεργάτη
 
-1. Επικοινώνησε με την BOX NOW για partner account:
-   - **Email:** ict@boxnow.gr ή sales@boxnow.gr
-   - **Docs:** https://boxnow.gr/en/partner-api
-2. Θα λάβεις:
-   - `partnerId` (για το Map Widget)
-   - `client_id` / `client_secret` (OAuth 2.0)
-   - `API_URL` (staging + production)
-   - `locationId` του warehouse σου (σημείο παραλαβής δεμάτων)
+1. Επικοινώνησε με την BOX NOW: ict@boxnow.gr / sales@boxnow.gr
+2. Θα λάβεις `partnerId`, `client_id` / `client_secret`, API URLs, `locationId` αποθήκης, και (για tracking) webhook secret.
 
 ## 2. Ρύθμιση `.env`
 
-Αντίγραψε τις τιμές στο `.env` (δες `.env.example`):
-
 ```env
-# Widget (υποχρεωτικό για εμφάνιση επιλογής στο checkout)
 BOXNOW_PARTNER_ID=123
-
-# Partner API (υποχρεωτικό για αυτόματη δημιουργία voucher μετά την παραγγελία)
 BOXNOW_OAUTH_CLIENT_ID=...
 BOXNOW_OAUTH_CLIENT_SECRET=...
-
-# Staging (δοκιμές)
 BOXNOW_API_URL=https://api-stage.boxnow.gr
 BOXNOW_LOCATION_API_URL=https://locationapi-stage.boxnow.gr
-
-# Production (όταν είσαι έτοιμος)
-# BOXNOW_API_URL=https://api-production.boxnow.gr
-# BOXNOW_LOCATION_API_URL=https://locationapi-production.boxnow.gr
-
 BOXNOW_ORIGIN_LOCATION_ID=8
 BOXNOW_NOTIFY_EMAIL=orders@kokkorispetfood.gr
 BOXNOW_ORIGIN_CONTACT_NAME=Kokkoris Pet Food
 BOXNOW_ORIGIN_CONTACT_PHONE=+30210...
 BOXNOW_ORIGIN_CONTACT_EMAIL=orders@kokkorispetfood.gr
+BOXNOW_WEBHOOK_SECRET=...
 
-# Τιμές αποστολής ανά θήκη locker (€) — προσάρμοσε στο συμβόλαιό σου
+# Τιμές ανά θήκη από το συμβόλαιό σου (€)
 BOXNOW_FEE_SMALL=1.80
 BOXNOW_FEE_MEDIUM=2.50
 BOXNOW_FEE_LARGE=3.50
-BOXNOW_SMALL_MAX_KG=4.0
-BOXNOW_MEDIUM_MAX_KG=10.0
+BOXNOW_MAX_WEIGHT_KG=20.0
 ```
 
-## 3. Migration & έλεγχος
+Production URLs όταν είσαι έτοιμος:
+
+```
+BOXNOW_API_URL=https://api-production.boxnow.gr
+BOXNOW_LOCATION_API_URL=https://locationapi-production.boxnow.gr
+```
+
+## 3. Έλεγχος
 
 ```bash
-python manage.py migrate orders
+python manage.py migrate
 python manage.py check_boxnow --latlng=37.9755,23.7348
 ```
 
-Το `check_boxnow` ελέγχει OAuth και εμφανίζει κοντινά lockers.
+## 4. Checkout — τρόπος αποστολής
 
-## 4. Πώς λειτουργεί στο checkout
+Η επιλογή **«Παράδοση σε BOX NOW locker»** εμφανίζεται πάντα. Δείχνει:
 
-### Βήμα 2 — Τρόπος αποστολής
+- μέγεθος θήκης (1 μικρή / 2 μεσαία / 3 μεγάλη) από τις **επίσημες διαστάσεις locker**
+- χρεώσιμο βάρος και όριο **20 kg**
+- τιμή `BOXNOW_FEE_*` ή δωρεάν ≥ 60 €
 
-- Εμφανίζεται η επιλογή **«Παράδοση σε BOX NOW locker»** όταν έχει οριστεί `BOXNOW_PARTNER_ID`.
-- Ο πελάτης πατά **«Επιλογή locker BOX NOW»** → ανοίγει το επίσημο Map Widget (popup).
-- Μετά την επιλογή, αποθηκεύονται `locker id`, όνομα και διεύθυνση.
+Αν το δέμα δεν χωρά (βάρος > 20 kg ή διαστάσεις > 36×45×60 cm), η επιλογή γίνεται διάφανη/ανενεργή και εμφανίζεται μήνυμα να επιλεγεί courier.
 
-### Υπολογισμός κόστους
+Ο χάρτης (Map Widget v5) ανοίγει όταν υπάρχει `BOXNOW_PARTNER_ID`.
 
-Ο αλγόριθμος βρίσκεται στο `checkout/boxnow_pricing.py`:
+### Υπολογισμός θήκης
 
-| Βήμα | Λογική |
-|------|--------|
-| Βάρος | Υπολογίζεται το chargeable weight (max πραγματικό vs όγκομετρικό) |
-| Θήκη locker | ≤ `BOXNOW_SMALL_MAX_KG` → Μικρή (1), ≤ `BOXNOW_MEDIUM_MAX_KG` → Μεσαία (2), αλλιώς Μεγάλη (3) |
-| Διαθεσιμότητα | Αν βάρος > `BOXNOW_MAX_WEIGHT_KG` (default 10 kg), η επιλογή BOX NOW απενεργοποιείται |
-| Τιμή | `BOXNOW_FEE_SMALL` / `MEDIUM` / `LARGE` |
-| Δωρεάν αποστολή | Παραγγελίες ≥ `FREE_SHIPPING_ORDER_MINIMUM` (default **60€**) |
+| Θήκη | compartmentSize | Εσωτερικές διαστάσεις |
+|------|-----------------|------------------------|
+| Μικρή | 1 | 8 × 45 × 60 cm |
+| Μεσαία | 2 | 17 × 45 × 60 cm |
+| Μεγάλη | 3 | 36 × 45 × 60 cm |
 
-### Βήμα 3 — Πληρωμή
+Κώδικας: `checkout/boxnow_pricing.py`.
 
-- Για BOX NOW **δεν επιτρέπεται αντικαταβολή** — μόνο κάρτα (Stripe).
+### Πληρωμή
 
-## 5. Partner API — ροή μετά την παραγγελία
+Για BOX NOW δεν επιτρέπεται αντικαταβολή — μόνο κάρτα (Stripe).
 
-Όταν ολοκληρωθεί η παραγγελία με `delivery_method=box_now` και το API είναι ρυθμισμένο:
+## 5. Partner API μετά την παραγγελία
 
-1. `POST /api/v1/auth-sessions` → Bearer token
-2. `POST /api/v1/delivery-requests` με:
-   - `origin.locationId` = warehouse σου
-   - `destination.locationId` = locker που επέλεξε ο πελάτης
-   - `items[].compartmentSize` = 1/2/3
-   - `paymentMode` = `prepaid`
-3. Αποθηκεύονται `boxnow_delivery_request_id` και `boxnow_parcel_id` στην παραγγελία.
+1. `POST /api/v1/auth-sessions` (OAuth client credentials)
+2. `POST /api/v1/delivery-requests` με `origin.locationId`, `destination.locationId`, `items[].compartmentSize`, `items[].weight` **σε kg** (API 1.68)
+3. Αποθηκεύονται `boxnow_delivery_request_id` και `boxnow_parcel_id`
 
-Κώδικας: `checkout/boxnow_client.py`, `checkout/boxnow_service.py`.
+### Ετικέτα
 
-### Εκτύπωση label
+Admin → παραγγελία → ενέργεια **Εκτύπωση ετικέτας BOX NOW**:
 
 ```
 GET /api/v1/parcels/{parcel_id}/label.pdf
 ```
 
-ή μαζικά:
+## 6. Webhooks παρακολούθησης
+
+Στο partner portal όρισε:
 
 ```
-GET /api/v1/delivery-requests/{orderNumber}/label.pdf
+https://<domain>/checkout/boxnow/webhook/
 ```
 
-## 6. Webhooks παρακολούθησης (προαιρετικά)
+Το endpoint δέχεται CloudEvents (`gr.boxnow.parcel_event_change`), επαληθεύει HMAC-SHA256 του raw `data` με `BOXNOW_WEBHOOK_SECRET`, και ενημερώνει `boxnow_last_event` / κατάσταση παραγγελίας (`delivered` → παραδόθηκε).
 
-Η BOX NOW υποστηρίζει webhooks για status updates (π.χ. παραλαβή από locker).
-Δες το **Webhook-Based Parcel Tracking Guide** που σου έδωσαν.
-
-Για να τα ενεργοποιήσεις στο μέλλον, θα χρειαστεί endpoint στο Django + URL στο partner portal.
-
-## 7. Αρχεία που άλλαξαν
+## 7. Αρχεία
 
 | Αρχείο | Ρόλος |
 |--------|-------|
-| `checkout/delivery.py` | Επιλογές αποστολής + κεντρικός υπολογισμός fee |
-| `checkout/boxnow_pricing.py` | Θήκη locker + τιμολόγηση |
-| `checkout/boxnow_client.py` | OAuth + delivery-requests API |
+| `checkout/delivery.py` | Επιλογές αποστολής + fee |
+| `checkout/boxnow_pricing.py` | Θήκη, 20 kg, μηνύματα |
+| `checkout/boxnow_client.py` | OAuth + delivery-requests + labels |
+| `checkout/boxnow_webhooks.py` | Webhook events |
 | `templates/checkout/delivery.html` | Map Widget v5 |
-| `orders/models.py` | Πεδία locker + parcel id |
-| `core/settings.py` | Env variables |
-
-## 8. Troubleshooting
-
-| Πρόβλημα | Λύση |
-|----------|------|
-| Δεν εμφανίζεται η επιλογή BOX NOW | Βάλε `BOXNOW_PARTNER_ID` στο `.env` και κάνε restart server |
-| Widget δεν ανοίγει | Έλεγξε `partnerId`, ad-blockers, console errors |
-| API auth fails | Έλεγξε `client_id`/`secret` και staging vs production URL |
-| `P406 Invalid compartment size` | Το καλάθι χρειάζεται μεγαλύτερη θήκη — έλεγξε βάρη προϊόντων στο admin |
-| Δεν δημιουργείται voucher | Τρέξε `python manage.py check_boxnow` — χρειάζεται `BOXNOW_ORIGIN_LOCATION_ID` |

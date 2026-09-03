@@ -72,7 +72,7 @@ class CartItem(models.Model):
     @property
     def subtotal(self):
         """Live price x quantity - recalculated every time, never frozen."""
-        return self.quantity * self.product_variant.price
+        return self.quantity * self.product_variant.selling_price
 
     def get_stock_issue(self):
         """Delegates to the shared availability/stock rules in cart/cart.py."""

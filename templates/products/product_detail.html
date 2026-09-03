@@ -231,31 +231,31 @@
         {% if related_cards %}
         <section class="mt-12 lg:mt-16 browse-company-section product-detail-related">
             <h2 class="font-poppins font-light text-xl text-kokkoris-teal-dark tracking-wide mb-6 text-center">{% trans "Σχετικά προϊόντα" %}</h2>
-            <div class="relative flex items-stretch shadow-[0_8px_24px_rgba(0,0,0,0.12)] bg-kokkoris-brand-cell">
-                <button type="button"
-                        class="browse-row-prev hidden lg:flex w-10 shrink-0 items-center justify-center text-slate-300 hover:text-slate-500 transition-colors"
-                        aria-label="{% trans 'Προηγούμενα προϊόντα' %}">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5">
-                        <path d="M15 6l-6 6 6 6"/>
-                    </svg>
-                </button>
-
-                <div id="catalog-browse"
-                     class="browse-products-track flex flex-1 overflow-x-auto scroll-smooth snap-x snap-mandatory divide-x divide-slate-300 [&::-webkit-scrollbar]:hidden"
-                     style="scrollbar-width: none;"
+            <div class="brand-products brand-products--white brand-products--panel">
+                <div class="brand-products__row"
                      data-user-authenticated="{{ user_is_authenticated|yesno:'true,false' }}">
-                    {% for card in related_cards %}
-                        {% include "products/partials/product_browse_cell.html" with card=card %}
-                    {% endfor %}
-                </div>
+                    <button type="button"
+                            class="brand-products__nav brand-products__nav--prev hidden lg:flex browse-row-prev"
+                            aria-label="{% trans 'Προηγούμενα προϊόντα' %}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M15 6l-6 6 6 6"/>
+                        </svg>
+                    </button>
 
-                <button type="button"
-                        class="browse-row-next hidden lg:flex w-10 shrink-0 items-center justify-center text-slate-300 hover:text-slate-500 transition-colors"
-                        aria-label="{% trans 'Επόμενα προϊόντα' %}">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5">
-                        <path d="M9 6l6 6-6 6"/>
-                    </svg>
-                </button>
+                    <div id="catalog-browse" class="brand-products__track browse-products-track">
+                        {% for card in related_cards %}
+                            {% include "products/partials/product_browse_cell.html" with card=card %}
+                        {% endfor %}
+                    </div>
+
+                    <button type="button"
+                            class="brand-products__nav brand-products__nav--next hidden lg:flex browse-row-next"
+                            aria-label="{% trans 'Επόμενα προϊόντα' %}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M9 6l6 6-6 6"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
         </section>
         {% endif %}
@@ -279,9 +279,7 @@
             return;
         }
         function scrollByPage(direction) {
-            var cell = track.querySelector(".product-browse-cell");
-            var step = cell ? cell.offsetWidth * 5 : track.clientWidth * 0.9;
-            track.scrollBy({ left: direction * step, behavior: "smooth" });
+            track.scrollBy({ left: direction * track.clientWidth * 0.8, behavior: "smooth" });
         }
         prev.addEventListener("click", function () { scrollByPage(-1); });
         next.addEventListener("click", function () { scrollByPage(1); });

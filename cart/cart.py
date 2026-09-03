@@ -180,7 +180,7 @@ class SessionCartItem:
 
     @property
     def subtotal(self):
-        return self.quantity * self.product_variant.price
+        return self.quantity * self.product_variant.selling_price
 
     def get_stock_issue(self):
         return compute_stock_issue(self.product_variant, self.quantity)

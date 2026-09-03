@@ -23,7 +23,7 @@
                              alt="{{ company.name }}"
                              class="max-h-[80px] lg:max-h-[120px] w-auto max-w-full object-contain">
                     </div>
-                    <a href="{% if company.code == 'PUR' or company.code == 'CAR' or company.code == 'WLD' %}{% url 'products:company' company.code %}{% else %}#{% endif %}"
+                    <a href="{% url 'products:company' company.code %}"
                        aria-label="{{ company.name }}"
                        class="mt-4 lg:mt-6 inline-block rounded-full bg-kokkoris-teal-dark px-5 lg:px-8 py-1.5 lg:py-2 text-white text-sm lg:text-base font-inter font-medium whitespace-nowrap hover:opacity-90 transition-opacity">
                         {{ company.name }}

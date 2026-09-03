@@ -17,7 +17,7 @@
         {% trans "Προϊόντα" %}
     </h1>
     <p class="font-inter text-sm text-slate-600 mb-6">
-        {% trans "Κατάταξη δημοφιλίας — όσο μεγαλύτερος ο δείκτης αγορών, τόσο πιο πάνω εμφανίζεται το προϊόν." %}
+        {% trans "Δυναμικό σκορ δημοφιλίας: +5 ανά πώληση, +3 wishlist, +1 προβολή σελίδας. Τα προϊόντα με μεγαλύτερο σκορ προβάλλονται συχνότερα στο shop." %}
     </p>
 
     {% include "administration/partials/products_subnav.html" %}
@@ -39,8 +39,17 @@
                         <th scope="col" class="px-4 py-3 text-left font-inter text-xs uppercase tracking-wide text-slate-500 hidden md:table-cell">
                             {% trans "Κατηγορία" %}
                         </th>
-                        <th scope="col" class="px-4 py-3 text-right font-inter text-xs uppercase tracking-wide text-slate-500 w-28">
-                            {% trans "Αγορές" %}
+                        <th scope="col" class="px-4 py-3 text-right font-inter text-xs uppercase tracking-wide text-slate-500 w-24">
+                            {% trans "Σκορ" %}
+                        </th>
+                        <th scope="col" class="px-4 py-3 text-right font-inter text-xs uppercase tracking-wide text-slate-500 w-20 hidden sm:table-cell">
+                            {% trans "Πωλήσεις" %}
+                        </th>
+                        <th scope="col" class="px-4 py-3 text-right font-inter text-xs uppercase tracking-wide text-slate-500 w-20 hidden md:table-cell">
+                            Wishlist
+                        </th>
+                        <th scope="col" class="px-4 py-3 text-right font-inter text-xs uppercase tracking-wide text-slate-500 w-20 hidden md:table-cell">
+                            {% trans "Προβολές" %}
                         </th>
                     </tr>
                 </thead>
@@ -69,8 +78,17 @@
                             </td>
                             <td class="px-4 py-3 text-right">
                                 <span class="inline-flex min-w-[2.5rem] justify-center rounded-full bg-kokkoris-teal-dark/10 px-3 py-1 font-inter text-sm font-semibold text-kokkoris-teal-dark">
-                                    {{ row.purchase_count }}
+                                    {{ row.score }}
                                 </span>
+                            </td>
+                            <td class="px-4 py-3 text-right font-inter text-sm text-slate-600 hidden sm:table-cell">
+                                {{ row.purchase_count }}
+                            </td>
+                            <td class="px-4 py-3 text-right font-inter text-sm text-slate-600 hidden md:table-cell">
+                                {{ row.wishlist_count }}
+                            </td>
+                            <td class="px-4 py-3 text-right font-inter text-sm text-slate-600 hidden md:table-cell">
+                                {{ row.view_count }}
                             </td>
                         </tr>
                     {% endfor %}

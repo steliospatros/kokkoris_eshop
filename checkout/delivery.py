@@ -15,7 +15,7 @@ from decimal import Decimal
 from django.conf import settings
 
 from checkout.boxnow_pricing import (
-    COMPARTMENT_LABELS,
+    build_boxnow_option_copy,
     calculate_boxnow_shipping_cost,
     determine_compartment_size,
     exceeds_boxnow_weight_limit,
@@ -58,8 +58,8 @@ def calculate_courier_fee(
     Single, centralized place where the courier fee is computed for a given
     address + chosen delivery method.
 
-    Door-delivery courier uses settings.COURIER_FLAT_FEE (default 5.00 €)
-    below the free-shipping threshold. BOX NOW keeps its own size/weight
+    Door-delivery courier uses settings.COURIER_FLAT_FEE (default 3.20 €)
+    below the free-shipping threshold. BOX NOW keeps locker size/weight
     pricing. Cash-on-delivery still adds the existing COD surcharge.
     """
     if cart is None or cart_total is None:
@@ -155,46 +155,40 @@ def build_delivery_options(*, cart_total, postal_code, cart=None):
         }
     )
 
-    if settings.BOXNOW_WIDGET_ENABLED:
-        cart_items = cart.items if cart and hasattr(cart, "items") else (cart or [])
-        too_heavy = exceeds_boxnow_weight_limit(cart_items)
-        compartment = determine_compartment_size(cart_items)
-        boxnow_fee = calculate_courier_fee(
-            postal_code,
-            Order.DELIVERY_METHOD_BOX_NOW,
-            cart=cart,
-            cart_total=cart_total,
-        )
-        boxnow_total = cart_total + boxnow_fee
-        compartment_label = COMPARTMENT_LABELS.get(compartment, "")
-        options.append(
-            {
-                "value": Order.DELIVERY_METHOD_BOX_NOW,
-                "label": "Παράδοση σε BOX NOW locker",
-                "description": (
-                    f"Παράλαβε από αυτόματο locker BOX NOW (θήκη {compartment_label}). "
-                    "Επίλεξε σημείο παραλαβής στον χάρτη."
-                    if not too_heavy
-                    else "Μη διαθέσιμο — το βάρος της παραγγελίας υπερβαίνει τα όρια του BOX NOW."
-                ),
-                "fee": boxnow_fee,
-                "fee_display": (
-                    f"+{format_decimal_greek(boxnow_fee)} €"
-                    if boxnow_fee
-                    else "Δωρεάν"
-                ),
-                "total": boxnow_total,
-                "total_display": format_decimal_greek(boxnow_total),
-                "disabled": too_heavy,
-                "unavailable_message": (
-                    "Το βάρος της παραγγελίας υπερβαίνει τα όρια του BOX NOW. "
-                    "Επιλέξτε αποστολή με courier."
-                    if too_heavy
-                    else ""
-                ),
-                "requires_locker": not too_heavy,
-                "compartment_size": compartment,
-            }
-        )
+    cart_items = cart.items if cart and hasattr(cart, "items") else (cart or [])
+    too_heavy = exceeds_boxnow_weight_limit(cart_items)
+    compartment = determine_compartment_size(cart_items)
+    boxnow_fee = calculate_courier_fee(
+        postal_code,
+        Order.DELIVERY_METHOD_BOX_NOW,
+        cart=cart,
+        cart_total=cart_total,
+    )
+    boxnow_total = cart_total + boxnow_fee
+    description, unavailable = build_boxnow_option_copy(
+        cart_items,
+        too_heavy=too_heavy,
+        fee=boxnow_fee,
+        free_minimum=free_minimum,
+    )
+    options.append(
+        {
+            "value": Order.DELIVERY_METHOD_BOX_NOW,
+            "label": "Παράδοση σε BOX NOW locker",
+            "description": description,
+            "fee": boxnow_fee,
+            "fee_display": (
+                f"+{format_decimal_greek(boxnow_fee)} €"
+                if boxnow_fee
+                else "Δωρεάν"
+            ),
+            "total": boxnow_total,
+            "total_display": format_decimal_greek(boxnow_total),
+            "disabled": too_heavy,
+            "unavailable_message": unavailable,
+            "requires_locker": not too_heavy,
+            "compartment_size": compartment or 0,
+        }
+    )
 
     return options, within_urban_area

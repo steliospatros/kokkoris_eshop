@@ -1,5 +1,8 @@
 from django.contrib import admin, messages
+from django.http import HttpResponse
 from django.utils import timezone
+
+from checkout.boxnow_client import BoxNowAPIError, fetch_parcel_label_pdf
 
 from .models import Order, OrderItem
 from .refunds import StripeRefundError, create_stripe_refund_for_order, order_requires_stripe_refund
@@ -71,6 +74,35 @@ def cancel_without_refund(modeladmin, request, queryset):
         messages.success(request, f"Ακυρώθηκαν {processed} παραγγελία/ες.")
 
 
+@admin.action(description="Εκτύπωση ετικέτας BOX NOW (PDF)")
+def download_boxnow_label(modeladmin, request, queryset):
+    if queryset.count() != 1:
+        modeladmin.message_user(
+            request,
+            "Επίλεξε μία παραγγελία BOX NOW για εκτύπωση ετικέτας.",
+            level=messages.ERROR,
+        )
+        return None
+    order = queryset.get()
+    if not order.boxnow_parcel_id:
+        modeladmin.message_user(
+            request,
+            f"#{order.order_code}: δεν υπάρχει boxnow_parcel_id.",
+            level=messages.ERROR,
+        )
+        return None
+    try:
+        pdf = fetch_parcel_label_pdf(order.boxnow_parcel_id)
+    except BoxNowAPIError as exc:
+        modeladmin.message_user(request, str(exc), level=messages.ERROR)
+        return None
+    response = HttpResponse(pdf, content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'attachment; filename="boxnow-{order.order_code}.pdf"'
+    )
+    return response
+
+
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     """Order management — cancellation requests and Stripe refunds handled here."""
@@ -90,7 +122,7 @@ class OrderAdmin(admin.ModelAdmin):
     search_fields = ("order_code", "user__email", "stripe_payment_intent_id", "id")
     date_hierarchy = "order_date"
     inlines = [OrderItemInline]
-    actions = [process_stripe_refund_and_cancel, cancel_without_refund]
+    actions = [process_stripe_refund_and_cancel, cancel_without_refund, download_boxnow_label]
     readonly_fields = (
         "order_code",
         "order_date",
@@ -133,6 +165,10 @@ class OrderAdmin(admin.ModelAdmin):
                 "boxnow_locker_postal_code",
                 "boxnow_delivery_request_id",
                 "boxnow_parcel_id",
+                "boxnow_parcel_state",
+                "boxnow_last_event",
+                "boxnow_last_event_at",
+                "boxnow_parcel_pin",
                 "preferred_delivery_time",
             ),
         }),

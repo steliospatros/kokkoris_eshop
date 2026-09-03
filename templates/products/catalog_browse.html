@@ -36,9 +36,7 @@
             return;
         }
         function scrollByPage(direction) {
-            var cell = track.querySelector(".product-browse-cell");
-            var step = cell ? cell.offsetWidth * 5 : track.clientWidth * 0.9;
-            track.scrollBy({ left: direction * step, behavior: "smooth" });
+            track.scrollBy({ left: direction * track.clientWidth * 0.8, behavior: "smooth" });
         }
         prev.addEventListener("click", function () { scrollByPage(-1); });
         next.addEventListener("click", function () { scrollByPage(1); });

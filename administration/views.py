@@ -49,7 +49,7 @@ def administration_products_view(request):
 
 @administration_user_required
 def administration_favourites_view(request):
-    """Products ranked by purchase count (favourites table)."""
+    """Products ranked by dynamic favourite score."""
     return render(
         request,
         "administration/favourites.html",

@@ -1,4 +1,5 @@
 from decimal import Decimal
+import json
 
 from django.conf import settings
 from django.contrib import messages
@@ -17,6 +18,11 @@ from orders.stock import InsufficientStockError, reserve_stock_for_cart
 from products.favourites import increment_favourite_counts
 
 from .boxnow_service import schedule_boxnow_delivery
+from .boxnow_webhooks import (
+    BoxNowWebhookError,
+    apply_boxnow_parcel_event,
+    verify_boxnow_signature,
+)
 from .delivery import build_delivery_options, calculate_courier_fee
 from .forms import CheckoutProfileForm, PaymentMethodForm
 from .payment_options import build_payment_options
@@ -148,7 +154,7 @@ def _create_order_from_checkout(
                 order=order,
                 product_variant=item.product_variant,
                 quantity=item.quantity,
-                price_at_purchase=item.product_variant.price,
+                price_at_purchase=item.product_variant.selling_price,
             )
         increment_favourite_counts(cart.items)
         cart.clear()
@@ -318,7 +324,16 @@ def checkout_delivery_view(request):
         "checkout_data": checkout_data,
         "selected_method": selected_method,
         "boxnow_widget_enabled": settings.BOXNOW_WIDGET_ENABLED,
-        "boxnow_partner_id": settings.BOXNOW_PARTNER_ID,
+        "boxnow_partner_id": settings.BOXNOW_PARTNER_ID or "",
+        "boxnow_required_size": next(
+            (
+                option.get("compartment_size")
+                for option in options
+                if option["value"] == Order.DELIVERY_METHOD_BOX_NOW
+                and option.get("compartment_size")
+            ),
+            1,
+        ),
         "checkout_postal_code": postal_code,
     })
 
@@ -602,6 +617,31 @@ def stripe_webhook_view(request):
             stripe_payment_intent_id=intent["id"],
             status__in=(Order.STATUS_PENDING, Order.STATUS_NEW),
         ).update(status=Order.STATUS_FAILED)
+
+    return JsonResponse({"received": True})
+
+
+@csrf_exempt
+@require_POST
+def boxnow_webhook_view(request):
+    """
+    BOX NOW parcel events (CloudEvents). Register this URL in the partner portal:
+
+        https://<your-domain>/checkout/boxnow/webhook/
+    """
+    try:
+        payload = json.loads(request.body.decode("utf-8") or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    try:
+        verify_boxnow_signature(
+            request.body,
+            payload.get("datasignature") or request.META.get("HTTP_X_BOXNOW_SIGNATURE", ""),
+        )
+        apply_boxnow_parcel_event(payload)
+    except BoxNowWebhookError as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
 
     return JsonResponse({"received": True})
 

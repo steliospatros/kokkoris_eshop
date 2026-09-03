@@ -55,12 +55,18 @@
                             <div id="boxnow-locker-panel"
                                  class="checkout-boxnow-panel{% if selected_method != option.value %} hidden{% endif %}"
                                  data-delivery-value="{{ option.value }}">
+                                {% if boxnow_widget_enabled %}
                                 <p class="checkout-boxnow-panel__hint">
                                     {% trans "Πάτησε το κουμπί για να ανοίξει ο χάρτης BOX NOW και να επιλέξεις locker." %}
                                 </p>
                                 <button type="button" class="boxnow-widget-button checkout-boxnow-panel__button">
                                     {% trans "Επιλογή locker BOX NOW" %}
                                 </button>
+                                {% else %}
+                                <p class="checkout-boxnow-panel__hint">
+                                    {% trans "Ο χάρτης locker ενεργοποιείται όταν οριστεί το BOXNOW_PARTNER_ID στο .env (Partner API). Η χρέωση και τα όρια βάρους ισχύουν ήδη." %}
+                                </p>
+                                {% endif %}
                                 <div id="boxnow-locker-summary"
                                      class="checkout-boxnow-panel__summary{% if not checkout_data.boxnow_locker_id %} hidden{% endif %}">
                                     <p class="checkout-boxnow-panel__summary-title">{% trans "Επιλεγμένο σημείο" %}</p>
@@ -165,12 +171,13 @@
     var summaryAddressEl = document.getElementById("boxnow-locker-summary-address");
 
     window._bn_map_widget_config = {
-        partnerId: {{ boxnow_partner_id }},
+        partnerId: {{ boxnow_partner_id|default:"0" }},
         parentElement: "#boxnowmap",
         type: "popup",
         buttonSelector: ".boxnow-widget-button",
         zip: "{{ checkout_postal_code|escapejs }}",
         gps: "yes",
+        requiredSize: {{ boxnow_required_size|default:1 }},
         afterSelect: function (selected) {
             var lockerId = selected.boxnowLockerId || "";
             var lockerName = selected.boxnowLockerTitle || selected.boxnowLockerName || "";

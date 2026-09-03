@@ -111,7 +111,14 @@ class ProductVariantAdmin(admin.ModelAdmin):
 
 @admin.register(Favourite)
 class FavouriteAdmin(admin.ModelAdmin):
-    list_display = ("product", "purchase_count", "updated_at")
+    list_display = (
+        "product",
+        "score",
+        "purchase_count",
+        "wishlist_count",
+        "view_count",
+        "updated_at",
+    )
     search_fields = ("product__name", "product__company__name")
-    ordering = ("-purchase_count", "product__name")
+    ordering = ("-score", "-purchase_count", "product__name")
     readonly_fields = ("updated_at",)

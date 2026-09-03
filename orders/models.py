@@ -184,6 +184,29 @@ class Order(models.Model):
         default="",
         help_text="Box Now parcel/voucher id for label printing.",
     )
+    boxnow_parcel_state = models.CharField(
+        max_length=32,
+        blank=True,
+        default="",
+        help_text="Latest BOX NOW parcelState from the Partner API / webhook.",
+    )
+    boxnow_last_event = models.CharField(
+        max_length=32,
+        blank=True,
+        default="",
+        help_text="Latest BOX NOW webhook event (use this, not parcelState, for customer copy).",
+    )
+    boxnow_last_event_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp of the last applied BOX NOW webhook event.",
+    )
+    boxnow_parcel_pin = models.CharField(
+        max_length=32,
+        blank=True,
+        default="",
+        help_text="Pickup PIN from BOX NOW webhooks, when provided.",
+    )
     preferred_delivery_time = models.CharField(
         max_length=100,
         blank=True,

@@ -3,7 +3,7 @@ Smart storefront search: synonyms, Greeklish, popular misspellings.
 
 Maps everyday Greek / Latin / Greeklish queries onto animal, category,
 brand, and free-text matches across product fields. Results are ordered
-by Favourite.purchase_count (then name).
+by Favourite.score (then name).
 """
 from __future__ import annotations
 
@@ -386,10 +386,8 @@ _ALIAS_ROWS: list[tuple[tuple[str, ...], dict]] = [
         {"companies": {"CLUB4PAWS"}},
     ),
     (("everclean", "ever clean", "εβερκλιν"), {"companies": {"EVERCLEAN"}}),
-    (("carnis", "καρνισ"), {"companies": {"Carnis"}}),
     (("core", "κορ"), {"companies": {"Core"}}),
     (("wild side", "wildside", "γουαιλντ"), {"companies": {"Wild Side"}}),
-    (("puro instinto", "puro", "πουρο"), {"companies": {"Puro Instinto"}}),
     # Popular brands users type even if not stocked
     (
         ("royal canin", "ρογιαλ κανιν", "ρογιαλ", "royal"),
@@ -550,7 +548,7 @@ def build_search_queryset(query: str) -> QuerySet[Product]:
     ):
         return qs.none()
 
-    return annotate_purchase_count(qs).order_by("-purchase_count", "name")
+    return annotate_purchase_count(qs).order_by("-score", "name")
 
 
 def search_products(query: str, limit: int = SEARCH_SUGGESTION_LIMIT) -> list[Product]:

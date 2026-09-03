@@ -7,6 +7,7 @@ from cart.cart import get_cart
 from products.catalog import (
     apply_catalog_filters,
     apply_catalog_sort,
+    catalog_mix_seed,
     build_animal_category_tiles,
     chunk_animal_category_rows,
     build_brand_tiles,
@@ -33,7 +34,7 @@ from products.catalog import (
     SORT_DEFAULT,
 )
 from products.company_pages import build_company_page_context, has_brand_page
-from products.favourites import build_favourites_browse_cards
+from products.favourites import build_favourites_browse_cards, record_product_view
 from products.models import Company, Product
 from products.search import SEARCH_SUGGESTION_LIMIT, search_products
 from products.shipping_promo import build_free_shipping_promo, build_static_free_shipping_promo
@@ -53,10 +54,12 @@ def _catalog_filter_hidden_fields(sort, per_page):
 def home(request):
     """
     Homepage: full-bleed hero/about/brands/animals sections.
-    The brand carousel lists every Company that has a logo uploaded.
+    The brand carousel lists public companies (those with products) that have a logo.
+    Empty brands stay frozen and hidden.
     """
     companies = (
-        Company.objects.exclude(logo="")
+        Company.objects.public()
+        .exclude(logo="")
         .exclude(logo__isnull=True)
         .order_by("name")
     )
@@ -117,9 +120,9 @@ def _catalog_page(request, page_title):
     )
 
     sort = parse_sort(request.GET.get("sort"))
-    products = apply_catalog_sort(products, sort)
+    products = apply_catalog_sort(products, sort, mix_seed=catalog_mix_seed(request))
 
-    total_count = products.count()
+    total_count = len(products) if isinstance(products, list) else products.count()
     per_page = parse_per_page(request.GET.get("per_page"))
     page_number = parse_page_number(request.GET.get("page"))
     pagination = paginate_catalog_queryset(products, per_page, page_number)
@@ -166,9 +169,14 @@ def _catalog_browse_page(request, animal_slug, category_slug):
     )
 
     sort = parse_sort(request.GET.get("sort"))
-    products = apply_catalog_sort(products, sort, browse_mode=True)
+    products = apply_catalog_sort(
+        products,
+        sort,
+        browse_mode=True,
+        mix_seed=catalog_mix_seed(request),
+    )
 
-    total_count = products.count()
+    total_count = len(products) if isinstance(products, list) else products.count()
     company_sections = build_browse_company_sections(
         products,
         cart_quantities=_cart_quantities(request),
@@ -239,9 +247,11 @@ def catalog_all(request):
     animal_slugs = resolve_animal_slugs(request)
     page_title = "Όλα τα προϊόντα"
     if len(brand_codes) == 1:
-        company = Company.objects.filter(code__iexact=brand_codes[0]).first()
+        company = Company.objects.public().filter(code__iexact=brand_codes[0]).first()
         if company:
             page_title = company.name
+        elif Company.objects.filter(code__iexact=brand_codes[0]).exists():
+            return redirect(reverse("products:brands"))
     elif animal_slugs == ["dog"]:
         page_title = "Σκύλος"
     elif animal_slugs == ["cat"]:
@@ -264,6 +274,8 @@ def _build_brand_page_product_cards(request, queryset):
 @ensure_csrf_cookie
 def company_page(request, company_code):
     company = get_object_or_404(Company, code__iexact=company_code)
+    if not company.products.exists():
+        return redirect(reverse("products:brands"))
     context = build_company_page_context(company)
     if context is None:
         return redirect(reverse("products:all"))
@@ -282,7 +294,11 @@ def company_page(request, company_code):
                     products = products.filter(category__name=section["category"])
                 section["product_cards"] = _build_brand_page_product_cards(
                     request,
-                    apply_catalog_sort(products, SORT_DEFAULT),
+                    apply_catalog_sort(
+                        products,
+                        SORT_DEFAULT,
+                        mix_seed=catalog_mix_seed(request),
+                    ),
                 )
             sections.append(section)
         context["page_sections"] = sections
@@ -291,6 +307,7 @@ def company_page(request, company_code):
         products = apply_catalog_sort(
             get_catalog_queryset().filter(company=company),
             SORT_DEFAULT,
+            mix_seed=catalog_mix_seed(request),
         )
         context["product_cards"] = _build_brand_page_product_cards(request, products)
         context["user_is_authenticated"] = request.user.is_authenticated
@@ -333,6 +350,7 @@ def product_detail(request, slug):
 
         raise Http404("Product has no purchasable variants.")
 
+    record_product_view(request, product)
     return render(request, "products/product_detail.html", context)
 
 
@@ -341,7 +359,7 @@ def search_suggestions(request):
     JSON endpoint backing the nav's live search dropdown.
 
     Uses smart search (synonyms, Greeklish, popular terms) across product
-    fields; results are ordered by favourites (purchase_count).
+    fields; results are ordered by favourites score.
     """
     query = request.GET.get("q", "").strip()
     products = search_products(query, limit=SEARCH_SUGGESTION_LIMIT)

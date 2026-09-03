@@ -45,8 +45,8 @@ class SmartSearchTests(TestCase):
             category=cls.dry,
             is_active=True,
         )
-        Favourite.objects.filter(product=cls.dog_chicken).update(purchase_count=50)
-        Favourite.objects.filter(product=cls.dog_dry).update(purchase_count=10)
+        Favourite.objects.filter(product=cls.dog_chicken).update(purchase_count=50, score=250)
+        Favourite.objects.filter(product=cls.dog_dry).update(purchase_count=10, score=50)
 
     def test_dog_greek_returns_all_dogs_favourites_first(self):
         results = search_products("σκύλος", limit=10)

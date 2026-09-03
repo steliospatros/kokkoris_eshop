@@ -144,3 +144,96 @@ class ProductDetailViewTests(TestCase):
         card = build_catalog_card(product)
         self.assertIn("detail_url", card)
         self.assertIn(self.product.slug, card["detail_url"])
+
+    def test_unit_price_shown_only_for_dry_food(self):
+        from products.catalog import build_catalog_card, build_variant_option, get_catalog_queryset
+
+        dry = get_catalog_queryset().get(pk=self.product.pk)
+        dry_card = build_catalog_card(dry)
+        self.assertTrue(dry_card["unit_price_display"])
+
+        sachets = Category.objects.create(name="Sachets", slug="sachets")
+        wet = Product.objects.create(
+            name="Wet Chicken Pouch",
+            company=self.company,
+            animal_type=self.animal,
+            category=sachets,
+            is_active=True,
+        )
+        wet_variant = ProductVariant.objects.create(
+            product=wet,
+            weight=Decimal("0.10"),
+            price=Decimal("1.20"),
+        )
+        wet = get_catalog_queryset().get(pk=wet.pk)
+        wet_card = build_catalog_card(wet)
+        self.assertEqual(wet_card["unit_price_display"], "")
+        self.assertEqual(build_variant_option(wet_variant)["unit_price_display"], "")
+
+    def test_default_sort_mixes_but_keeps_popular_ahead(self):
+        from products.catalog import apply_catalog_sort, get_catalog_queryset, popularity_mix_list
+        from products.models import Favourite
+
+        popular = Product.objects.create(
+            name="Popular Mix Food",
+            company=self.company,
+            animal_type=self.animal,
+            category=self.category,
+            is_active=True,
+        )
+        ProductVariant.objects.create(product=popular, weight=Decimal("2.00"), price=Decimal("10.00"))
+        Favourite.objects.filter(product=popular).update(purchase_count=80, score=400)
+
+        other = Product.objects.create(
+            name="Quiet Mix Food",
+            company=self.company,
+            animal_type=self.animal,
+            category=self.category,
+            is_active=True,
+        )
+        ProductVariant.objects.create(product=other, weight=Decimal("2.00"), price=Decimal("10.00"))
+
+        queryset = get_catalog_queryset().filter(pk__in=[popular.pk, other.pk, self.product.pk])
+        first = apply_catalog_sort(queryset, "default", mix_seed=7)
+        second = apply_catalog_sort(queryset, "default", mix_seed=7)
+        shuffled_input = list(reversed(list(queryset)))
+        third = popularity_mix_list(shuffled_input, seed=7)
+        self.assertEqual([p.pk for p in first], [p.pk for p in second])
+        self.assertEqual([p.pk for p in first], [p.pk for p in third])
+        self.assertEqual(first[0].pk, popular.pk)
+
+        mixed_seeds = [
+            popularity_mix_list(queryset, seed=seed)[0].pk
+            for seed in range(1, 21)
+        ]
+        self.assertGreaterEqual(mixed_seeds.count(popular.pk), 15)
+
+
+class FrozenEmptyCompanyTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.empty = Company.objects.create(name="Empty Brand", code="EMP")
+        cls.visible = Company.objects.create(name="Visible Brand", code="VIS")
+        animal = AnimalType.objects.create(name="Dog", slug="dog")
+        category = Category.objects.create(name="Dry Food", slug="dry-food")
+        Product.objects.create(
+            name="Visible Food",
+            company=cls.visible,
+            animal_type=animal,
+            category=category,
+            is_active=True,
+        )
+
+    def test_empty_company_hidden_from_brand_tiles(self):
+        from products.catalog import build_brand_tiles
+
+        labels = [tile["label"] for tile in build_brand_tiles()]
+        self.assertIn("Visible Brand", labels)
+        self.assertNotIn("Empty Brand", labels)
+
+    def test_empty_company_page_redirects(self):
+        response = self.client.get(
+            reverse("products:company", kwargs={"company_code": "EMP"})
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("products:brands"))

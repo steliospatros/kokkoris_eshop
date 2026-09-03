@@ -1,22 +1,22 @@
 {% load i18n %}
 {% if breadcrumbs %}
-<nav class="site-breadcrumbs w-full border-b border-slate-100/80 bg-white"
+<nav class="site-breadcrumbs w-full{% if breadcrumb_theme == 'teal' %} site-breadcrumbs--teal{% elif breadcrumb_theme == 'orange' %} site-breadcrumbs--orange{% else %} border-b border-slate-100/80 bg-white{% endif %}"
      aria-label="{% trans 'Διαδρομή πλοήγησης' %}">
     <div class="max-w-[960px] mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-5">
-        <ol class="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1.5 font-poppins font-light text-sm sm:text-base lg:text-lg text-slate-500 tracking-wide text-center">
+        <ol class="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1.5 font-poppins font-light text-sm sm:text-base lg:text-lg tracking-wide text-center {% if breadcrumb_theme == 'teal' or breadcrumb_theme == 'orange' %}text-white/75{% else %}text-slate-500{% endif %}">
             {% for crumb in breadcrumbs %}
                 {% if not forloop.first %}
-                    <li class="text-slate-300 select-none leading-none" aria-hidden="true">/</li>
+                    <li class="select-none leading-none {% if breadcrumb_theme == 'teal' or breadcrumb_theme == 'orange' %}text-white/40{% else %}text-slate-300{% endif %}" aria-hidden="true">/</li>
                 {% endif %}
                 <li class="min-w-0 max-w-full">
                     {% if forloop.last %}
-                        <h1 class="inline text-slate-800 font-normal truncate max-w-full m-0 p-0 text-inherit leading-inherit tracking-inherit"
+                        <h1 class="inline font-normal truncate max-w-full m-0 p-0 text-inherit leading-inherit tracking-inherit {% if breadcrumb_theme == 'teal' or breadcrumb_theme == 'orange' %}text-white{% else %}text-slate-800{% endif %}"
                             aria-current="page">
                             {{ crumb.label }}
                         </h1>
                     {% else %}
                         <a href="{{ crumb.url }}"
-                           class="text-kokkoris-teal-dark hover:text-kokkoris-teal-mid hover:underline underline-offset-2 transition-colors truncate inline-block max-w-full">
+                           class="hover:underline underline-offset-2 transition-colors truncate inline-block max-w-full {% if breadcrumb_theme == 'teal' or breadcrumb_theme == 'orange' %}text-white hover:text-white/80{% else %}text-kokkoris-teal-dark hover:text-kokkoris-teal-mid{% endif %}">
                             {{ crumb.label }}
                         </a>
                     {% endif %}

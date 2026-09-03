@@ -111,3 +111,22 @@ class BreadcrumbTrailTests(TestCase):
         self.assertEqual(len(breadcrumbs), 2)
         self.assertEqual(breadcrumbs[0]["label"], HOME_LABEL)
         self.assertEqual(breadcrumbs[1]["label"], "Επικοινωνία")
+
+    def test_core_brand_page_tints_breadcrumb_to_hero(self):
+        from products.models import AnimalType, Category, Company, Product
+
+        company = Company.objects.create(name="Core", code="COR")
+        animal = AnimalType.objects.create(name="Dog", slug="dog")
+        category = Category.objects.create(name="Dry Food", slug="dry-food")
+        Product.objects.create(
+            name="Core Adult",
+            company=company,
+            animal_type=animal,
+            category=category,
+            is_active=True,
+        )
+        response = self.client.get(reverse("products:company", kwargs={"company_code": "COR"}))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["breadcrumb_theme"], "teal")
+        self.assertContains(response, "site-breadcrumbs--teal")
+        self.assertNotContains(response, "border-slate-100/80 bg-white")

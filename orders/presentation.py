@@ -13,6 +13,7 @@ from accounts.profile_labels import (
 )
 from orders.models import Order
 from products.catalog import format_decimal_greek, format_weight
+from checkout.boxnow_webhooks import BOXNOW_EVENT_LABELS
 
 
 def add_business_days(start_day: date, business_days: int) -> date:
@@ -42,10 +43,17 @@ def build_delivery_eta_message(order: Order) -> str:
 
     if order.delivery_method == Order.DELIVERY_METHOD_BOX_NOW:
         locker = order.boxnow_locker_name or "το επιλεγμένο locker"
+        tracking = BOXNOW_EVENT_LABELS.get(order.boxnow_last_event, "")
+        pin_note = (
+            f" PIN παραλαβής: {order.boxnow_parcel_pin}."
+            if order.boxnow_parcel_pin
+            else ""
+        )
+        status_note = f" {tracking}" if tracking else ""
         return (
             f"Δεδομένης της καταχώρησης στις {registered_label}, η παραγγελία σας "
             f"θα παραδοθεί στο BOX NOW locker «{locker}». Εκτιμώμενη παράδοση: "
-            f"{eta_range} (2–4 εργάσιμες ημέρες)."
+            f"{eta_range} (2–4 εργάσιμες ημέρες).{status_note}{pin_note}"
         )
 
     return (

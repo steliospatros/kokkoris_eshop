@@ -4,12 +4,21 @@
 {% block title %}Kokkoris Eshop - Αρχική{% endblock %}
 
 {% block hero %}
-    {# Marketing strip sits flush under the nav links, then the signed-in    #}
-    {# greeting, then the hero artwork — all in normal flow so nothing       #}
-    {# overlaps the teal header panel.                                       #}
-    {% include "partials/free-shipping-strip.html" with promo=homepage_free_shipping_promo %}
-    {% include "partials/hero-welcome-band.html" %}
-    {% include "partials/hero.html" %}
+    {# Soft veil on the hero: barely-there frost so the offer stays readable #}
+    {# without becoming its own coloured band. Welcome is printed below.    #}
+    <div class="home-hero-stage">
+        {% include "partials/hero.html" %}
+        <div class="home-hero-chrome">
+            {% include "partials/free-shipping-strip.html" with promo=homepage_free_shipping_promo %}
+            {% if user.is_authenticated %}
+            <p class="home-hero-welcome">
+                {% trans "Καλωσήρθατε στην σελίδα μας" %}{% if user.first_name or user.last_name %},
+                    <span class="home-hero-welcome__name">{{ user.first_name }}{% if user.first_name and user.last_name %} {% endif %}{{ user.last_name }}</span>
+                {% endif %}
+            </p>
+            {% endif %}
+        </div>
+    </div>
     {% include "partials/hero-about.html" %}
 {% endblock %}
 
@@ -31,9 +40,7 @@
             return;
         }
         function scrollByPage(direction) {
-            var cell = track.querySelector(".product-browse-cell");
-            var step = cell ? cell.offsetWidth * 5 : track.clientWidth * 0.9;
-            track.scrollBy({ left: direction * step, behavior: "smooth" });
+            track.scrollBy({ left: direction * track.clientWidth * 0.8, behavior: "smooth" });
         }
         prev.addEventListener("click", function () { scrollByPage(-1); });
         next.addEventListener("click", function () { scrollByPage(1); });

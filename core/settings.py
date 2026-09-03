@@ -321,9 +321,10 @@ BOXNOW_ORIGIN_CONTACT_EMAIL = os.environ.get("BOXNOW_ORIGIN_CONTACT_EMAIL", "").
 BOXNOW_FEE_SMALL = Decimal(os.environ.get("BOXNOW_FEE_SMALL", "1.80"))
 BOXNOW_FEE_MEDIUM = Decimal(os.environ.get("BOXNOW_FEE_MEDIUM", "2.50"))
 BOXNOW_FEE_LARGE = Decimal(os.environ.get("BOXNOW_FEE_LARGE", "3.50"))
-BOXNOW_SMALL_MAX_KG = os.environ.get("BOXNOW_SMALL_MAX_KG", "4.0")
-BOXNOW_MEDIUM_MAX_KG = os.environ.get("BOXNOW_MEDIUM_MAX_KG", "10.0")
-BOXNOW_MAX_WEIGHT_KG = os.environ.get("BOXNOW_MAX_WEIGHT_KG", BOXNOW_MEDIUM_MAX_KG)
+# Official locker cap (BOX NOW locker-info): 20 kg, Large 36×45×60 cm.
+BOXNOW_MAX_WEIGHT_KG = os.environ.get("BOXNOW_MAX_WEIGHT_KG", "20.0")
+BOXNOW_WEBHOOK_SECRET = os.environ.get("BOXNOW_WEBHOOK_SECRET", "").strip()
+# Map widget needs partnerId. The shipping option itself is always offered.
 BOXNOW_WIDGET_ENABLED = bool(BOXNOW_PARTNER_ID)
 
 # -----------------------------------------------------------------------------
@@ -332,4 +333,4 @@ BOXNOW_WIDGET_ENABLED = bool(BOXNOW_PARTNER_ID)
 FREE_SHIPPING_ORDER_MINIMUM = Decimal(os.environ.get("FREE_SHIPPING_ORDER_MINIMUM", "60.00"))
 # Door-delivery courier fee below the free-shipping threshold (not Box Now).
 # Temporary flat rate until a carrier (ACS / Γενική / ΕΛΤΑ, etc.) is chosen.
-COURIER_FLAT_FEE = Decimal(os.environ.get("COURIER_FLAT_FEE", "5.00"))
+COURIER_FLAT_FEE = Decimal(os.environ.get("COURIER_FLAT_FEE", "3.20"))

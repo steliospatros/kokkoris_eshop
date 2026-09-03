@@ -18,6 +18,11 @@
   margin: 0;
   padding: clamp(40px, 5.5vw, 88px) 0 0;
   background: #ff931e;
+  line-height: 0;
+}
+
+.brand-hero-orange.brand-hero-flush {
+  padding: 0;
 }
 
 /* Core / Ownat — the artwork's own teal starts at the very top edge, so the
@@ -27,6 +32,7 @@
   margin: 0;
   padding: 0;
   background: #4aa190;
+  line-height: 0;
 }
 
 .brand-hero-white__band {
@@ -45,6 +51,10 @@
 
   .brand-hero-orange {
     padding-top: clamp(28px, 4vw, 56px);
+  }
+
+  .brand-hero-orange.brand-hero-flush {
+    padding: 0;
   }
 }
 
@@ -71,8 +81,11 @@
 /* Core / Ownat bands carry a horizontal glow, so letterboxing them past
    1920px would expose flat side bars that miss it — they stay full-bleed. */
 .brand-hero-teal .brand-hero-white__band,
+.brand-hero-flush .brand-hero-white__band,
+.brand-hero-flush + .brand-story-band .brand-story-band__slice,
 .brand-story-band--full .brand-story-band__slice {
   max-width: none;
+  width: 100%;
 }
 
 .brand-story-band__slice {
@@ -110,7 +123,10 @@
    from the neighbouring bands' touching edges and stretched over the row, so
    both seams line up exactly however tall the row grows. */
 .brand-products--core-cats,
-.brand-products--ownat-cats {
+.brand-products--club4paws-cats,
+.brand-products--ownat-cats,
+.brand-products--profine-cats,
+.brand-products--wild-cats {
   background-repeat: no-repeat;
   background-size: 100% 100%;
 }
@@ -119,8 +135,20 @@
   background-image: url("../images/brand-page/core/cats-row-bg.png");
 }
 
+.brand-products--club4paws-cats {
+  background-image: url("../images/brand-page/club4paws/cats-row-bg.png");
+}
+
 .brand-products--ownat-cats {
   background-image: url("../images/brand-page/ownat/cats-row-bg.png");
+}
+
+.brand-products--profine-cats {
+  background-image: url("../images/brand-page/profine/cats-row-bg.png");
+}
+
+.brand-products--wild-cats {
+  background-image: url("../images/brand-page/wild-side/cats-row-bg.png");
 }
 
 /* Wild Side — breathing room between product row and cat intro (PDF mock carousel removed). */
@@ -356,8 +384,12 @@
   padding: 2.2% 0 4.6%;
 }
 
-.brand-products--panel.brand-products--core-cats {
-  padding: 0 0 4.4%;
+.brand-products--panel.brand-products--core-cats,
+.brand-products--panel.brand-products--club4paws-cats,
+.brand-products--panel.brand-products--profine-cats,
+.brand-products--panel.brand-products--wild-cats,
+.brand-products--panel.brand-products--teal {
+  padding: 2.2% 0 4.6%;
 }
 
 /* Ownat has no outro band — the mock-up's orange glow continues under

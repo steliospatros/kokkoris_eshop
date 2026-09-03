@@ -10,9 +10,21 @@ CARNIS_CODE = "CAR"
 WILD_SIDE_CODE = "WLD"
 CORE_CODE = "COR"
 OWNAT_CODE = "OWN"
+CLUB4PAWS_CODE = "C4P"
+PROFINE_CODE = "PRF"
+EVERCLEAN_CODE = "EVC"
 
 BRAND_PAGE_CODES = frozenset(
-    {PURO_INSTINTO_CODE, CARNIS_CODE, WILD_SIDE_CODE, CORE_CODE, OWNAT_CODE}
+    {
+        PURO_INSTINTO_CODE,
+        CARNIS_CODE,
+        WILD_SIDE_CODE,
+        CORE_CODE,
+        OWNAT_CODE,
+        CLUB4PAWS_CODE,
+        PROFINE_CODE,
+        EVERCLEAN_CODE,
+    }
 )
 
 # Sampled from PDF page 2.
@@ -114,6 +126,22 @@ CORE_BRAND_ACCENT = "#FF931E"
 # Ownat — SEL1_OWNAT.pdf, same two-half layout as Core.
 OWNAT_BRAND_ACCENT = "#FF931E"
 
+# Club4Paws — sel_club4paws.pdf, orange dog hero / teal cat half.
+CLUB4PAWS_BRAND_ACCENT = "#FF931E"
+
+# Profine — PROFINE_SEL1.pdf, orange dog hero / teal cat half.
+PROFINE_BRAND_ACCENT = "#FF931E"
+
+# Ever Clean — EVER VLEAN_SEL1.pdf, teal hero over white litter story.
+EVERCLEAN_BRAND_ACCENT = "#4AA190"
+
+# Breadcrumb strip follows the hero so it does not sit as a white bar on
+# a coloured brand page (Core / Ownat teal, Wild Side orange).
+HERO_BREADCRUMB_THEME = {
+    "brand-hero-teal": "teal",
+    "brand-hero-orange": "orange",
+}
+
 
 def _build_puro_context(company):
     return {
@@ -125,6 +153,7 @@ def _build_puro_context(company):
         "story_blocks": PURO_STORY_BLOCKS,
         "brand_accent": PURO_BRAND_ACCENT,
         "show_products_row": True,
+        "products_row_class": "brand-products--white brand-products--panel",
         "show_product_detail": True,
     }
 
@@ -145,7 +174,7 @@ def _build_carnis_context(company):
                 "type": "products",
                 "animal_type": "Dog",
                 "category": "Dry Food",
-                "products_row_class": "brand-products--teal",
+                "products_row_class": "brand-products--teal brand-products--panel",
             },
             {
                 "type": "story",
@@ -156,7 +185,7 @@ def _build_carnis_context(company):
                 "type": "products",
                 "animal_type": "Cat",
                 "category": "Dry Food",
-                "products_row_class": "brand-products--teal",
+                "products_row_class": "brand-products--teal brand-products--panel",
             },
         ),
         "brand_accent": CARNIS_BRAND_ACCENT,
@@ -165,35 +194,27 @@ def _build_carnis_context(company):
 
 
 def _build_wild_side_context(company):
-    """PDF page 4 — orange hero, dog story, products, cat story, products."""
+    """PDF page 4 — orange/white dog half, teal cat half, live product panels."""
     return {
         "company": company,
         "page_title": "Wild Side",
-        "hero_band_static": "images/brand-page/wild-side/benefits-hero-clean.png",
-        "hero_section_class": "brand-hero-orange",
+        "hero_band_static": "images/brand-page/wild-side/hero-dogs.png",
+        "hero_section_class": "brand-hero-orange brand-hero-flush",
         "page_sections": (
             {
+                "type": "products",
+                "animal_type": "Dog",
+                "products_row_class": "brand-products--white brand-products--panel",
+            },
+            {
                 "type": "story",
-                "static": "images/brand-page/wild-side/story-white-dog.png",
-                "section_class": "brand-story-band--white",
+                "static": "images/brand-page/wild-side/story-cats.png",
+                "section_class": "brand-story-band--teal brand-story-band--full",
             },
             {
                 "type": "products",
-                "products_row_class": "brand-products--orange brand-products--wild-gap-before-cat",
-            },
-            {
-                "type": "story",
-                "static": "images/brand-page/wild-side/story-white-cat.png",
-                "section_class": "brand-story-band--white brand-story-band--wild-cat-intro",
-            },
-            {
-                "type": "story",
-                "static": "images/brand-page/wild-side/story-teal-cat.png",
-                "section_class": "brand-story-band--teal",
-            },
-            {
-                "type": "products",
-                "products_row_class": "brand-products--teal",
+                "animal_type": "Cat",
+                "products_row_class": "brand-products--wild-cats brand-products--panel",
             },
         ),
         "brand_accent": WILD_SIDE_BRAND_ACCENT,
@@ -235,6 +256,87 @@ def _build_core_context(company):
     }
 
 
+def _build_club4paws_context(company):
+    """sel_club4paws.pdf — orange dog hero, white dog row, teal cat half."""
+    return {
+        "company": company,
+        "page_title": "CLUB4PAWS",
+        "hero_band_static": "images/brand-page/club4paws/hero-dogs.png",
+        "hero_section_class": "brand-hero-orange brand-hero-flush",
+        "page_sections": (
+            {
+                "type": "products",
+                "animal_type": "Dog",
+                "products_row_class": "brand-products--white brand-products--panel",
+            },
+            {
+                "type": "story",
+                "static": "images/brand-page/club4paws/story-cats-intro.png",
+                "section_class": "brand-story-band--teal brand-story-band--full",
+            },
+            {
+                "type": "products",
+                "animal_type": "Cat",
+                "products_row_class": "brand-products--club4paws-cats brand-products--panel",
+            },
+        ),
+        "brand_accent": CLUB4PAWS_BRAND_ACCENT,
+        "show_product_detail": False,
+    }
+
+
+def _build_profine_context(company):
+    """PROFINE_SEL1.pdf — orange dog hero, white dog row, teal cat half."""
+    return {
+        "company": company,
+        "page_title": "Profine",
+        "hero_band_static": "images/brand-page/profine/hero-dogs.png",
+        "hero_section_class": "brand-hero-orange brand-hero-flush",
+        "page_sections": (
+            {
+                "type": "products",
+                "animal_type": "Dog",
+                "products_row_class": "brand-products--white brand-products--panel",
+            },
+            {
+                "type": "story",
+                "static": "images/brand-page/profine/story-cats-intro.png",
+                "section_class": "brand-story-band--teal brand-story-band--full",
+            },
+            {
+                "type": "products",
+                "animal_type": "Cat",
+                "products_row_class": "brand-products--profine-cats brand-products--panel",
+            },
+        ),
+        "brand_accent": PROFINE_BRAND_ACCENT,
+        "show_product_detail": False,
+    }
+
+
+def _build_everclean_context(company):
+    """EVER VLEAN_SEL1.pdf — teal hero, litter products, white outro."""
+    return {
+        "company": company,
+        "page_title": "Ever Clean",
+        "hero_band_static": "images/brand-page/everclean/hero.png",
+        "hero_section_class": "brand-hero-teal",
+        "page_sections": (
+            {
+                "type": "products",
+                "products_row_class": "brand-products--white brand-products--panel",
+            },
+            {
+                "type": "story",
+                "static": "images/brand-page/everclean/story-outro.png",
+                "section_class": "brand-story-band--white brand-story-band--full",
+            },
+        ),
+        "brand_accent": EVERCLEAN_BRAND_ACCENT,
+        "show_product_detail": False,
+    }
+
+
 def _build_ownat_context(company):
     """SEL1_OWNAT.pdf — teal dog hero, white dog row, orange cat half."""
     return {
@@ -270,6 +372,9 @@ _BUILDERS = {
     WILD_SIDE_CODE: _build_wild_side_context,
     CORE_CODE: _build_core_context,
     OWNAT_CODE: _build_ownat_context,
+    CLUB4PAWS_CODE: _build_club4paws_context,
+    PROFINE_CODE: _build_profine_context,
+    EVERCLEAN_CODE: _build_everclean_context,
 }
 
 
@@ -282,4 +387,12 @@ def build_company_page_context(company):
     builder = _BUILDERS.get(company.code.upper())
     if builder is None:
         return None
-    return builder(company)
+    context = builder(company)
+    hero_class = context.get("hero_section_class", "")
+    theme = "white"
+    for token, mapped in HERO_BREADCRUMB_THEME.items():
+        if token in hero_class.split():
+            theme = mapped
+            break
+    context.setdefault("breadcrumb_theme", theme)
+    return context

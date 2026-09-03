@@ -17,7 +17,7 @@ from orders.models import Order
 from products.utils import REGION_ATTICA
 
 
-def _cart_item(*, weight, length=10, width=10, height=10, quantity=1):
+def _cart_item(*, weight, length=6, width=20, height=30, quantity=1):
     product = SimpleNamespace(
         weight=Decimal(str(weight)),
         length=Decimal(str(length)),
@@ -31,24 +31,23 @@ def _cart_item(*, weight, length=10, width=10, height=10, quantity=1):
     BOXNOW_FEE_SMALL=Decimal("1.80"),
     BOXNOW_FEE_MEDIUM=Decimal("2.50"),
     BOXNOW_FEE_LARGE=Decimal("3.50"),
-    BOXNOW_SMALL_MAX_KG="4.0",
-    BOXNOW_MEDIUM_MAX_KG="10.0",
+    BOXNOW_MAX_WEIGHT_KG="20.0",
 )
 class BoxNowPricingTests(SimpleTestCase):
-    def test_small_compartment_for_light_cart(self):
-        items = [_cart_item(weight=2)]
+    def test_small_compartment_for_small_dims(self):
+        items = [_cart_item(weight=1, length=6, width=20, height=30)]
         self.assertEqual(determine_compartment_size(items), COMPARTMENT_SMALL)
 
-    def test_medium_compartment_for_mid_weight_cart(self):
-        items = [_cart_item(weight=6)]
+    def test_medium_compartment_when_height_exceeds_small(self):
+        items = [_cart_item(weight=3, length=12, width=30, height=40)]
         self.assertEqual(determine_compartment_size(items), COMPARTMENT_MEDIUM)
 
-    def test_large_compartment_for_heavy_cart(self):
-        items = [_cart_item(weight=12)]
+    def test_large_compartment_for_tall_pack(self):
+        items = [_cart_item(weight=8, length=20, width=40, height=50)]
         self.assertEqual(determine_compartment_size(items), COMPARTMENT_LARGE)
 
     def test_free_shipping_over_minimum(self):
-        items = [_cart_item(weight=2)]
+        items = [_cart_item(weight=1)]
         fee = calculate_boxnow_shipping_cost(
             items,
             Decimal("60.00"),
@@ -57,7 +56,7 @@ class BoxNowPricingTests(SimpleTestCase):
         self.assertEqual(fee, Decimal("0.00"))
 
     def test_charges_medium_fee_outside_free_threshold(self):
-        items = [_cart_item(weight=6)]
+        items = [_cart_item(weight=3, length=12, width=30, height=40)]
         fee = calculate_boxnow_shipping_cost(
             items,
             Decimal("15.00"),
@@ -65,28 +64,29 @@ class BoxNowPricingTests(SimpleTestCase):
         )
         self.assertEqual(fee, Decimal("2.50"))
 
-    def test_exceeds_weight_limit_above_max_kg(self):
-        items = [_cart_item(weight=12)]
+    def test_exceeds_weight_limit_above_20kg(self):
+        items = [_cart_item(weight=21)]
+        self.assertTrue(exceeds_boxnow_weight_limit(items))
+
+    def test_exceeds_when_larger_than_large_locker(self):
+        items = [_cart_item(weight=5, length=40, width=50, height=70)]
         self.assertTrue(exceeds_boxnow_weight_limit(items))
 
 
 @override_settings(
-    BOXNOW_PARTNER_ID="123",
     BOXNOW_FEE_SMALL=Decimal("1.80"),
     BOXNOW_FEE_MEDIUM=Decimal("2.50"),
     BOXNOW_FEE_LARGE=Decimal("3.50"),
-    BOXNOW_SMALL_MAX_KG="4.0",
-    BOXNOW_MEDIUM_MAX_KG="10.0",
-    BOXNOW_WIDGET_ENABLED=True,
-    COURIER_FLAT_FEE=Decimal("5.00"),
+    BOXNOW_MAX_WEIGHT_KG="20.0",
+    COURIER_FLAT_FEE=Decimal("3.20"),
     FREE_SHIPPING_ORDER_MINIMUM=Decimal("60.00"),
 )
 class BoxNowDeliveryOptionsTests(SimpleTestCase):
-    def test_build_delivery_options_includes_box_now(self):
+    def test_build_delivery_options_includes_box_now_without_partner_id(self):
         options, _within = build_delivery_options(
             cart_total=Decimal("15.00"),
             postal_code="10563",
-            cart=[_cart_item(weight=2)],
+            cart=[_cart_item(weight=1)],
         )
         values = [option["value"] for option in options]
         self.assertIn(Order.DELIVERY_METHOD_BOX_NOW, values)
@@ -96,12 +96,14 @@ class BoxNowDeliveryOptionsTests(SimpleTestCase):
         )
         self.assertTrue(box_now["requires_locker"])
         self.assertEqual(box_now["fee"], Decimal("1.80"))
+        self.assertIn("8×45×60", box_now["description"])
+        self.assertIn("20", box_now["description"])
 
     def test_calculate_courier_fee_for_box_now(self):
         fee = calculate_courier_fee(
             "10563",
             Order.DELIVERY_METHOD_BOX_NOW,
-            cart=[_cart_item(weight=2)],
+            cart=[_cart_item(weight=1)],
             cart_total=Decimal("15.00"),
         )
         self.assertEqual(fee, Decimal("1.80"))
@@ -110,7 +112,7 @@ class BoxNowDeliveryOptionsTests(SimpleTestCase):
         options, _within = build_delivery_options(
             cart_total=Decimal("15.00"),
             postal_code="10563",
-            cart=[_cart_item(weight=12)],
+            cart=[_cart_item(weight=21)],
         )
         box_now = next(
             option for option in options
@@ -119,13 +121,14 @@ class BoxNowDeliveryOptionsTests(SimpleTestCase):
         self.assertTrue(box_now["disabled"])
         self.assertFalse(box_now["requires_locker"])
         self.assertIn("courier", box_now["unavailable_message"])
+        self.assertIn("20", box_now["unavailable_message"])
         self.assertNotIn("ELTA", box_now["unavailable_message"])
         courier = next(
             option for option in options
             if option["value"] == Order.DELIVERY_METHOD_COURIER
         )
         self.assertFalse(courier["disabled"])
-        self.assertEqual(courier["fee"], Decimal("5.00"))
+        self.assertEqual(courier["fee"], Decimal("3.20"))
 
 
 @override_settings(BOXNOW_PARTNER_ID="123", BOXNOW_WIDGET_ENABLED=True)
@@ -158,6 +161,10 @@ class BoxNowCheckoutDeliveryTests(TestCase):
             animal_type=animal,
             category=category,
             is_active=True,
+            weight=Decimal("1.00"),
+            length=Decimal("6.00"),
+            width=Decimal("20.00"),
+            height=Decimal("30.00"),
         )
         cls.variant = ProductVariant.objects.create(
             product=product,
@@ -211,3 +218,69 @@ class BoxNowCheckoutDeliveryTests(TestCase):
         data = self.client.session[self.session_key]
         self.assertEqual(data["delivery_method"], Order.DELIVERY_METHOD_BOX_NOW)
         self.assertEqual(data["boxnow_locker_id"], "42")
+
+
+class BoxNowWebhookTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        from django.contrib.auth import get_user_model
+
+        User = get_user_model()
+        cls.user = User.objects.create_user(
+            email="hook@example.com",
+            password="testpass123",
+            phone_number="+306900000000",
+            city="Αθήνα",
+            street="Ερμού",
+            street_number="1",
+            postal_code="10563",
+            latitude=Decimal("37.9755"),
+            longitude=Decimal("23.7348"),
+        )
+        cls.order = Order.objects.create(
+            user=cls.user,
+            payment_method=Order.PAYMENT_METHOD_CARD,
+            status=Order.STATUS_PAID,
+            cart_cost=Decimal("10.00"),
+            courier_fee=Decimal("1.80"),
+            total_cost=Decimal("11.80"),
+            delivery_method=Order.DELIVERY_METHOD_BOX_NOW,
+            delivery_phone_number="+306900000000",
+            delivery_city="Αθήνα",
+            delivery_address="Ερμού 1",
+            delivery_postal_code="10563",
+            delivery_latitude=Decimal("37.9755"),
+            delivery_longitude=Decimal("23.7348"),
+            boxnow_locker_id="8",
+        )
+
+    def test_webhook_updates_event_and_delivered_status(self):
+        payload = {
+            "specversion": "1.0",
+            "type": "gr.boxnow.parcel_event_change",
+            "source": "https://boxnow.gr/api/v1/webhooks/1",
+            "subject": "111",
+            "id": "msg-1",
+            "time": "2026-09-01T11:00:00.000Z",
+            "datacontenttype": "application/json",
+            "datasignature": "",
+            "data": {
+                "parcelId": "111",
+                "parcelState": "delivered",
+                "parcelReferenceNumber": "",
+                "parcelName": "order",
+                "orderNumber": self.order.order_code,
+                "event": "delivered",
+                "time": "2026-09-01T11:00:00.000Z",
+            },
+        }
+        response = self.client.post(
+            "/checkout/boxnow/webhook/",
+            data=__import__("json").dumps(payload),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.boxnow_last_event, "delivered")
+        self.assertEqual(self.order.status, Order.STATUS_DELIVERED)
+        self.assertEqual(self.order.boxnow_parcel_id, "111")

@@ -1,6 +1,8 @@
 """
 Catalog presentation helpers — card data for the product grid UI.
 """
+import random
+import secrets
 from decimal import Decimal
 from functools import lru_cache
 from urllib.parse import urlencode
@@ -39,6 +41,17 @@ CATEGORY_LABELS = {
     "Litter": "Άμμος",
     "Bundle": "Πακέτα",
 }
+
+DRY_FOOD_CATEGORY_SLUG = "dry-food"
+DRY_FOOD_CATEGORY_NAME = "Dry Food"
+
+
+def shows_unit_price(product):
+    """€/kg is only shown for dry-food bags."""
+    category = getattr(product, "category", None)
+    if category is None:
+        return False
+    return category.slug == DRY_FOOD_CATEGORY_SLUG or category.name == DRY_FOOD_CATEGORY_NAME
 
 AVAILABILITY_FILTER_IN_STORE = "in_store"
 AVAILABILITY_FILTER_ON_ORDER = "on_order"
@@ -260,8 +273,9 @@ def get_display_title(product, variant):
 
 
 def annotate_purchase_count(queryset):
-    """Attach ``purchase_count`` from the favourites table (0 when missing)."""
+    """Attach favourite ``score`` and ``purchase_count`` (0 when missing)."""
     return queryset.annotate(
+        score=Coalesce(F("favourite__score"), Value(0)),
         purchase_count=Coalesce(F("favourite__purchase_count"), Value(0)),
     )
 
@@ -305,14 +319,53 @@ def _annotate_default_variant_sort_fields(queryset):
     )
 
 
-def apply_catalog_sort(queryset, sort_key, *, browse_mode=False):
+CATALOG_MIX_SESSION_KEY = "catalog_mix_seed"
+
+
+def catalog_mix_seed(request):
+    """Stable per-visit seed so pagination does not reshuffle mid-browse."""
+    session = getattr(request, "session", None)
+    if session is None:
+        return 0
+    seed = session.get(CATALOG_MIX_SESSION_KEY)
+    if not seed:
+        seed = secrets.randbelow(1_000_000_000) + 1
+        session[CATALOG_MIX_SESSION_KEY] = seed
+    return int(seed)
+
+
+def popularity_mix_list(products, *, seed=0, group_by_company=False):
+    """
+    Shuffle products so the grid mixes, while higher favourite score ranks
+    earlier more often (weighted random: mix = random * (1 + score)).
+    """
+    scored = []
+    rng = random.Random(seed)
+    # Stable input order so the same seed always maps to the same scores.
+    for product in sorted(products, key=lambda item: item.pk):
+        weight = getattr(product, "score", None)
+        if weight is None:
+            weight = getattr(product, "purchase_count", 0) or 0
+        score = rng.random() * (1 + (weight or 0))
+        company_key = ""
+        if group_by_company:
+            company = getattr(product, "company", None)
+            company_key = company.name.lower() if company else ""
+        scored.append((company_key, -score, product.pk, product))
+    scored.sort(key=lambda row: (row[0], row[1], row[2]))
+    return [row[3] for row in scored]
+
+
+def apply_catalog_sort(queryset, sort_key, *, browse_mode=False, mix_seed=0):
     if sort_key == SORT_DEFAULT:
-        if browse_mode:
-            return queryset.order_by("company__name", "-purchase_count", "name")
-        return queryset.order_by("-purchase_count", "company__name", "name")
+        return popularity_mix_list(
+            queryset,
+            seed=mix_seed,
+            group_by_company=browse_mode,
+        )
 
     queryset = _annotate_default_variant_sort_fields(queryset)
-    tie_breaker = ("-purchase_count", "company__name", "name")
+    tie_breaker = ("-score", "-purchase_count", "company__name", "name")
 
     sort_map = {
         SORT_PRICE_ASC: ("sort_price", *tie_breaker),
@@ -554,7 +607,7 @@ def build_catalog_card(product, *, cart_qty=0, is_wishlisted=False):
     if not variant:
         return None
 
-    unit_price = variant.unit_price
+    unit_price = variant.unit_price if shows_unit_price(product) else None
     count = product.variant_count
     if count == 1:
         sizes_label = "1 ΜΕΓΕΘΟΣ"
@@ -571,8 +624,8 @@ def build_catalog_card(product, *, cart_qty=0, is_wishlisted=False):
         "title": get_display_title(product, variant),
         "sizes_label": sizes_label,
         "variant_count": count,
-        "price": variant.price,
-        "price_display": format_decimal_greek(variant.price),
+        "price": variant.selling_price,
+        "price_display": format_decimal_greek(variant.selling_price),
         "unit_price_display": format_decimal_greek(unit_price) if unit_price else "",
         "unit_label": variant.unit_label,
         "availability": variant.availability,
@@ -607,7 +660,7 @@ def get_product_detail_queryset():
 def build_variant_option(variant, *, selected=False, cart_qty=0):
     """One package-size row for the product detail size picker."""
     stock_display = get_stock_display(variant)
-    unit_price = variant.unit_price
+    unit_price = variant.unit_price if shows_unit_price(variant.product) else None
     size_label = format_weight(variant.weight, variant.unit_label)
     return {
         "id": variant.id,
@@ -616,8 +669,8 @@ def build_variant_option(variant, *, selected=False, cart_qty=0):
         "unit_label": variant.unit_label,
         "size_label": size_label,
         "sku": variant.sku or "",
-        "price": variant.price,
-        "price_display": format_decimal_greek(variant.price),
+        "price": variant.selling_price,
+        "price_display": format_decimal_greek(variant.selling_price),
         "unit_price_display": format_decimal_greek(unit_price) if unit_price else "",
         "availability_label": stock_display["label"],
         "availability_color_class": stock_display["color_class"],
@@ -658,7 +711,7 @@ def get_related_products_for_detail(product, *, limit=24):
             continue
 
         candidates.append(
-            (tier, -candidate.purchase_count, candidate.company.name.lower(), candidate.name.lower(), candidate)
+            (tier, -getattr(candidate, "score", 0), candidate.company.name.lower(), candidate.name.lower(), candidate)
         )
 
     candidates.sort(key=lambda row: (row[0], row[1], row[2], row[3]))
@@ -1022,7 +1075,7 @@ def build_brand_tiles():
     from products.company_pages import has_brand_page
 
     tiles = []
-    for company in Company.objects.order_by("name"):
+    for company in Company.objects.public().order_by("name"):
         if has_brand_page(company.code):
             url = reverse("products:company", args=[company.code])
         else:
