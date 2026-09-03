@@ -80,6 +80,22 @@ class Order(models.Model):
         choices=PAYMENT_METHOD_CHOICES,
         help_text="How the customer will pay for this order."
     )
+    collected_payment_method = models.CharField(
+        max_length=20,
+        blank=True,
+        default="",
+        choices=[
+            ("", "Not collected"),
+            (PAYMENT_METHOD_CARD, "Card"),
+            (PAYMENT_METHOD_COD, "Cash"),
+        ],
+        help_text="Cash or card actually collected at delivery. Empty until the courier declares it, or for prepaid Stripe.",
+    )
+    delivered_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When staff marked this order as delivered.",
+    )
     status = models.CharField(
         max_length=10,
         choices=STATUS_CHOICES,
@@ -145,8 +161,12 @@ class Order(models.Model):
     delivery_address = models.CharField(max_length=255)
     delivery_postal_code = models.CharField(max_length=10)
     delivery_floor = models.CharField(max_length=20, blank=True, default="")
-    delivery_latitude = models.DecimalField(max_digits=9, decimal_places=6)
-    delivery_longitude = models.DecimalField(max_digits=9, decimal_places=6)
+    delivery_latitude = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True
+    )
+    delivery_longitude = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True
+    )
     delivery_notes = models.TextField(blank=True, default="")
     boxnow_locker_id = models.CharField(
         max_length=64,
@@ -252,6 +272,20 @@ class Order(models.Model):
 
     def is_refund_pending(self):
         return self.status == self.STATUS_CANCELLATION_REQUESTED
+
+    def is_prepaid_card(self):
+        """Paid online with Stripe — money is already received, no door collection."""
+        return (
+            self.payment_method == self.PAYMENT_METHOD_CARD
+            and bool(self.stripe_payment_intent_id)
+            and not self.stripe_refund_id
+        )
+
+    def needs_collection_declaration(self):
+        """Staff must say cash vs card only for door collections, not BOX NOW."""
+        if self.delivery_method == self.DELIVERY_METHOD_BOX_NOW:
+            return False
+        return not self.is_prepaid_card()
 
 
 class OrderItem(models.Model):

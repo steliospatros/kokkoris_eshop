@@ -13,38 +13,137 @@
         </a>
     </p>
 
-    <h1 class="font-poppins font-light text-2xl sm:text-3xl text-kokkoris-teal-dark mb-6">
-        {% trans "Ιστορικό πληρωμών" %}
+    <h1 class="font-poppins font-light text-2xl sm:text-3xl text-kokkoris-teal-dark mb-2">
+        {% trans "Πληρωμές" %}
     </h1>
+    <p class="font-inter text-slate-600 mb-6">
+        {% trans "Εισπράξεις και αναμενόμενα ποσά για την επιλεγμένη περίοδο." %}
+    </p>
 
-    {% include "administration/partials/admin_panel_filters.html" %}
-
-    <section aria-labelledby="payments-heading">
-        <h2 id="payments-heading" class="font-poppins text-xl text-kokkoris-teal-dark mb-4">
-            {% trans "Πληρωμές" %}
-            <span class="text-sm font-inter text-slate-500">({{ payments_count }})</span>
-        </h2>
-
-        {% if grouped_payments %}
-            <div class="space-y-8">
-                {% for day_group in grouped_payments %}
-                    <div>
-                        <h3 class="font-inter font-medium text-slate-700 mb-3 border-b border-slate-200 pb-2">
-                            {{ day_group.date_label }}
-                        </h3>
-                        <ul class="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
-                            {% for order in day_group.orders %}
-                                {% include "administration/partials/order_row.html" with order=order highlight=False show_payment_info=True %}
-                            {% endfor %}
-                        </ul>
-                    </div>
-                {% endfor %}
+    <form method="get" class="mb-8 rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm space-y-4">
+        <div class="flex flex-wrap gap-2">
+            {% for value, label in period_choices %}
+                <label class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-inter cursor-pointer {% if period == value %}bg-kokkoris-teal-dark text-white{% else %}bg-slate-100 text-slate-700{% endif %}">
+                    <input type="radio" name="period" value="{{ value }}" {% if period == value %}checked{% endif %} class="sr-only">
+                    {{ label }}
+                </label>
+            {% endfor %}
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div id="period-day-field" class="{% if period != 'day' %}hidden{% endif %}">
+                <label class="font-inter text-sm text-slate-700 block">
+                    {% trans "Ημέρα" %}
+                    <input type="date" name="date" value="{{ anchor_date }}"
+                           class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                </label>
             </div>
-        {% else %}
-            <p class="text-slate-500 font-inter py-8 text-center">
-                {% trans "Δεν βρέθηκαν πληρωμές για τα κριτήρια που επέλεξες." %}
+            <div id="period-week-field" class="{% if period != 'week' %}hidden{% endif %}">
+                <label class="font-inter text-sm text-slate-700 block">
+                    {% trans "Εβδομάδα" %}
+                    <input type="week" name="week" value="{{ week_value }}"
+                           class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                </label>
+            </div>
+            <div id="period-month-field" class="{% if period != 'month' %}hidden{% endif %}">
+                <label class="font-inter text-sm text-slate-700 block">
+                    {% trans "Μήνας" %}
+                    <input type="month" name="month" value="{{ month_value }}"
+                           class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                </label>
+            </div>
+        </div>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <p class="font-inter text-sm text-slate-600">
+                {{ period_label }} · {{ range_label }}
             </p>
-        {% endif %}
-    </section>
+            <button type="submit"
+                    class="rounded-lg bg-kokkoris-teal-dark px-4 py-2 text-sm font-inter text-white hover:opacity-90 transition-opacity">
+                {% trans "Εφαρμογή" %}
+            </button>
+        </div>
+    </form>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm" aria-labelledby="received-heading">
+            <h2 id="received-heading" class="font-poppins text-xl text-kokkoris-teal-dark mb-1">
+                {% trans "Παραλήφθηκαν" %}
+            </h2>
+            <p class="font-inter text-xs text-slate-500 mb-4">{{ received_count }} {% trans "πληρωμές" %}</p>
+            <dl class="space-y-3 font-inter">
+                <div class="flex items-center justify-between">
+                    <dt class="text-slate-600">{% trans "Μετρητά" %}</dt>
+                    <dd class="text-slate-900 font-medium">{{ received.cash_display }} €</dd>
+                </div>
+                <div class="flex items-center justify-between">
+                    <dt class="text-slate-600">{% trans "Κάρτα" %}</dt>
+                    <dd class="text-slate-900 font-medium">{{ received.card_display }} €</dd>
+                </div>
+                <div class="flex items-center justify-between border-t border-slate-200 pt-3">
+                    <dt class="text-slate-800 font-medium">{% trans "Σύνολο" %}</dt>
+                    <dd class="text-kokkoris-teal-dark font-semibold text-lg">{{ received.total_display }} €</dd>
+                </div>
+            </dl>
+        </section>
+
+        <section class="rounded-xl border border-amber-200 bg-amber-50/60 p-5 shadow-sm" aria-labelledby="expected-heading">
+            <h2 id="expected-heading" class="font-poppins text-xl text-amber-900 mb-1">
+                {% trans "Αναμένονται" %}
+            </h2>
+            <p class="font-inter text-xs text-amber-800/80 mb-4">{{ expected_count }} {% trans "εκκρεμείς παραγγελίες" %}</p>
+            <dl class="space-y-3 font-inter">
+                <div class="flex items-center justify-between">
+                    <dt class="text-amber-900/80">{% trans "Μετρητά" %}</dt>
+                    <dd class="text-amber-950 font-medium">{{ expected.cash_display }} €</dd>
+                </div>
+                <div class="flex items-center justify-between">
+                    <dt class="text-amber-900/80">{% trans "Κάρτα" %}</dt>
+                    <dd class="text-amber-950 font-medium">{{ expected.card_display }} €</dd>
+                </div>
+                <div class="flex items-center justify-between border-t border-amber-200 pt-3">
+                    <dt class="text-amber-950 font-medium">{% trans "Σύνολο" %}</dt>
+                    <dd class="text-amber-950 font-semibold text-lg">{{ expected.total_display }} €</dd>
+                </div>
+            </dl>
+        </section>
+    </div>
 </section>
+
+<script>
+(function () {
+    var form = document.querySelector("form");
+    if (!form) return;
+    var radios = form.querySelectorAll('input[name="period"]');
+    var dayField = document.getElementById("period-day-field");
+    var weekField = document.getElementById("period-week-field");
+    var monthField = document.getElementById("period-month-field");
+
+    function syncPeriodFields() {
+        var selected = form.querySelector('input[name="period"]:checked');
+        var value = selected ? selected.value : "month";
+        if (dayField) dayField.classList.toggle("hidden", value !== "day");
+        if (weekField) weekField.classList.toggle("hidden", value !== "week");
+        if (monthField) monthField.classList.toggle("hidden", value !== "month");
+        radios.forEach(function (radio) {
+            var label = radio.closest("label");
+            if (!label) return;
+            label.classList.toggle("bg-kokkoris-teal-dark", radio.checked);
+            label.classList.toggle("text-white", radio.checked);
+            label.classList.toggle("bg-slate-100", !radio.checked);
+            label.classList.toggle("text-slate-700", !radio.checked);
+        });
+    }
+
+    radios.forEach(function (radio) {
+        radio.addEventListener("change", function () {
+            syncPeriodFields();
+            form.requestSubmit();
+        });
+    });
+    ["date", "week", "month"].forEach(function (name) {
+        var input = form.querySelector('[name="' + name + '"]');
+        if (input) input.addEventListener("change", function () { form.requestSubmit(); });
+    });
+    syncPeriodFields();
+})();
+</script>
 {% endblock %}

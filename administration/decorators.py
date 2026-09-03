@@ -3,7 +3,7 @@ from functools import wraps
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 
-from administration.permissions import user_is_administration_user
+from administration.permissions import user_is_administration_user, user_is_shop_admin
 
 
 def administration_user_required(view_func):
@@ -13,6 +13,23 @@ def administration_user_required(view_func):
     @wraps(view_func)
     def _wrapped(request, *args, **kwargs):
         if not user_is_administration_user(request.user):
+            return HttpResponseForbidden("Δεν έχετε πρόσβαση στη διαχείριση.")
+        return view_func(request, *args, **kwargs)
+
+    return _wrapped
+
+
+def shop_admin_required(view_func):
+    """Require a shop administrator (couriers cannot open inventory/orders/payments)."""
+
+    @login_required
+    @wraps(view_func)
+    def _wrapped(request, *args, **kwargs):
+        if not user_is_shop_admin(request.user):
+            if user_is_administration_user(request.user):
+                return HttpResponseForbidden(
+                    "Ο λογαριασμός courier έχει πρόσβαση μόνο στις παραδόσεις."
+                )
             return HttpResponseForbidden("Δεν έχετε πρόσβαση στη διαχείριση.")
         return view_func(request, *args, **kwargs)
 

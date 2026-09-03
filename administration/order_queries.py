@@ -9,7 +9,12 @@ from accounts.profile_labels import (
     PAYMENT_METHOD_LABELS,
 )
 from orders.models import Order
-from orders.presentation import build_order_detail_context, build_order_item_rows
+from orders.presentation import (
+    build_delivery_map_url,
+    build_delivery_maps_link,
+    build_order_detail_context,
+    build_order_item_rows,
+)
 from products.catalog import format_decimal_greek
 
 
@@ -226,6 +231,9 @@ def build_order_row(order):
         "stripe_refund_id": order.stripe_refund_id,
         "is_refunded": bool(order.stripe_refund_id),
         "detail_url": f"/administration/orders/{order.pk}/",
+        "map_thumb_url": build_delivery_map_url(order, size="120x120", zoom=16),
+        "map_url": build_delivery_map_url(order, size="640x320", zoom=16),
+        "maps_link": build_delivery_maps_link(order),
     }
 
 
@@ -300,7 +308,7 @@ def build_orders_panel_context(
     cancellation_requests = [
         build_order_row(order)
         for order in base_qs.filter(status=Order.STATUS_CANCELLATION_REQUESTED).prefetch_related(
-            "items__product_variant__product"
+            "items__product_variant__product__company"
         )
     ]
 
@@ -314,7 +322,7 @@ def build_orders_panel_context(
         filtered_qs = filter_orders_by_period(filtered_qs, period, anchor_date)
 
     order_list = list(
-        filtered_qs.prefetch_related("items__product_variant__product")[:500]
+        filtered_qs.prefetch_related("items__product_variant__product__company")[:500]
     )
     grouped_orders = group_orders(
         order_list,
@@ -390,7 +398,7 @@ def build_payments_panel_context(
         filtered_qs = filter_orders_by_period(filtered_qs, period, anchor_date)
 
     payment_list = list(
-        filtered_qs.prefetch_related("items__product_variant__product")[:500]
+        filtered_qs.prefetch_related("items__product_variant__product__company")[:500]
     )
     grouped_payments = group_orders(
         payment_list,

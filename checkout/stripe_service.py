@@ -57,23 +57,35 @@ def create_checkout_payment_intent(
     session so we can validate it on form submit and in webhooks.
     """
     _configure_stripe()
-    return stripe.PaymentIntent.create(
-        amount=decimal_to_stripe_cents(total_cost),
-        currency=settings.STRIPE_CURRENCY,
-        automatic_payment_methods={"enabled": True},
-        receipt_email=user.email or None,
-        metadata={
-            "user_id": str(user.pk),
-            "checkout_session_key": checkout_session_key,
-            "site": "kokkorispetfood.gr",
-        },
-    )
+    try:
+        return stripe.PaymentIntent.create(
+            amount=decimal_to_stripe_cents(total_cost),
+            currency=settings.STRIPE_CURRENCY,
+            automatic_payment_methods={"enabled": True},
+            receipt_email=user.email or None,
+            metadata={
+                "user_id": str(user.pk),
+                "checkout_session_key": checkout_session_key,
+                "site": "kokkorispetfood.gr",
+            },
+        )
+    except stripe.StripeError as exc:
+        raise StripePaymentError(
+            "Δεν ήταν δυνατή η έναρξη της πληρωμής με κάρτα."
+        ) from exc
 
 
 def retrieve_payment_intent(payment_intent_id: str):
     """Fetch a PaymentIntent from Stripe."""
+    if not payment_intent_id:
+        raise StripePaymentError("Λείπει η πληρωμή με κάρτα.")
     _configure_stripe()
-    return stripe.PaymentIntent.retrieve(payment_intent_id)
+    try:
+        return stripe.PaymentIntent.retrieve(payment_intent_id)
+    except stripe.StripeError as exc:
+        raise StripePaymentError(
+            "Δεν ήταν δυνατή η επαλήθευση της πληρωμής με κάρτα."
+        ) from exc
 
 
 def verify_card_payment_intent(

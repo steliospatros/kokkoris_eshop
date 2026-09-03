@@ -1,8 +1,9 @@
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
-from administration.decorators import administration_user_required
+from administration.decorators import administration_user_required, shop_admin_required
 from administration.inventory import build_inventory_sections
 from products.favourites import build_favourites_rows
 from administration.order_queries import (
@@ -19,11 +20,17 @@ from administration.order_queries import (
     STATUS_UNDELIVERED,
     build_admin_order_detail_context,
     build_orders_panel_context,
-    build_payments_panel_context,
     parse_anchor_date,
     parse_month_value,
     parse_week_value,
 )
+from administration.money import build_payments_dashboard_context
+from administration.deliveries import (
+    SHOW_PENDING,
+    build_deliveries_panel_context,
+    mark_order_delivery,
+)
+from administration.permissions import user_is_shop_admin
 from administration.services import adjust_variant_stock, set_product_paused
 from orders.models import Order
 from products.models import Product, ProductVariant
@@ -32,6 +39,8 @@ from products.models import Product, ProductVariant
 @administration_user_required
 def administration_hub_view(request):
     """Administration home — list of available management actions."""
+    if not user_is_shop_admin(request.user):
+        return redirect("administration:deliveries")
     return render(
         request,
         "administration/hub.html",
@@ -41,13 +50,13 @@ def administration_hub_view(request):
     )
 
 
-@administration_user_required
+@shop_admin_required
 def administration_products_view(request):
     """Products section — redirects to favourites ranking."""
     return redirect("administration:favourites")
 
 
-@administration_user_required
+@shop_admin_required
 def administration_favourites_view(request):
     """Products ranked by dynamic favourite score."""
     return render(
@@ -61,7 +70,7 @@ def administration_favourites_view(request):
     )
 
 
-@administration_user_required
+@shop_admin_required
 def administration_inventory_view(request):
     """All product variants grouped by company, category and animal type."""
     inventory_sections, inventory_nav = build_inventory_sections()
@@ -77,7 +86,7 @@ def administration_inventory_view(request):
     )
 
 
-@administration_user_required
+@shop_admin_required
 @require_POST
 def administration_adjust_stock_view(request, variant_id):
     variant = get_object_or_404(ProductVariant.objects.select_related("product"), pk=variant_id)
@@ -102,7 +111,7 @@ def administration_adjust_stock_view(request, variant_id):
     return redirect("administration:inventory")
 
 
-@administration_user_required
+@shop_admin_required
 @require_POST
 def administration_toggle_product_pause_view(request, product_id):
     product = get_object_or_404(Product, pk=product_id)
@@ -149,21 +158,7 @@ def _orders_panel_filters(request):
     return period, anchor_date, user_email, status_filter, delivery_filter, use_period_filter
 
 
-def _payments_panel_filters(request):
-    period, anchor_date, user_email = _panel_filters(request)
-    status_filter = request.GET.get("status", STATUS_ALL)
-    valid_statuses = {STATUS_UNDELIVERED, STATUS_ALL, STATUS_COMPLETED, STATUS_NEW, STATUS_PAID}
-    if status_filter not in valid_statuses:
-        status_filter = STATUS_ALL
-    delivery_filter = request.GET.get("delivery", DELIVERY_ALL)
-    valid_deliveries = {DELIVERY_ALL, DELIVERY_COURIER, DELIVERY_COMPANY}
-    if delivery_filter not in valid_deliveries:
-        delivery_filter = DELIVERY_ALL
-    use_period_filter = request.GET.get("range") == "1"
-    return period, anchor_date, user_email, status_filter, delivery_filter, use_period_filter
-
-
-@administration_user_required
+@shop_admin_required
 def administration_orders_view(request):
     period, anchor_date, user_email, status_filter, delivery_filter, use_period_filter = (
         _orders_panel_filters(request)
@@ -180,7 +175,7 @@ def administration_orders_view(request):
     return render(request, "administration/orders.html", context)
 
 
-@administration_user_required
+@shop_admin_required
 def administration_order_detail_view(request, order_id):
     order = get_object_or_404(
         Order.objects.select_related("user").prefetch_related(
@@ -194,17 +189,55 @@ def administration_order_detail_view(request, order_id):
 
 
 @administration_user_required
-def administration_payments_view(request):
-    period, anchor_date, user_email, status_filter, delivery_filter, use_period_filter = (
-        _payments_panel_filters(request)
+def administration_deliveries_view(request):
+    """Courier tool: pending deliveries oldest-first, one-tap mark delivered."""
+    show = request.GET.get("show", SHOW_PENDING)
+    context = build_deliveries_panel_context(show=show)
+    context["page_title"] = "Παραδόσεις"
+    return render(request, "administration/deliveries.html", context)
+
+
+@administration_user_required
+@require_POST
+def administration_mark_delivery_view(request, order_id):
+    order = get_object_or_404(
+        Order.objects.select_related("user"),
+        pk=order_id,
     )
-    context = build_payments_panel_context(
+    delivered = request.POST.get("delivered") == "1"
+    collected_payment = (request.POST.get("collected_payment") or "").strip()
+    ok, message = mark_order_delivery(
+        order,
+        delivered=delivered,
+        collected_payment=collected_payment,
+    )
+    if ok:
+        messages.success(request, message)
+    else:
+        messages.error(request, message)
+    show = request.POST.get("show") or request.GET.get("show") or SHOW_PENDING
+    return redirect(f"{reverse('administration:deliveries')}?show={show}")
+
+
+@shop_admin_required
+def administration_payments_view(request):
+    period = request.GET.get("period", PERIOD_MONTH)
+    if period not in {PERIOD_DAY, PERIOD_WEEK, PERIOD_MONTH}:
+        period = PERIOD_MONTH
+
+    anchor_date = parse_anchor_date(request.GET.get("date"))
+    if period == PERIOD_WEEK:
+        week_anchor = parse_week_value(request.GET.get("week"))
+        if week_anchor:
+            anchor_date = week_anchor
+    elif period == PERIOD_MONTH:
+        month_anchor = parse_month_value(request.GET.get("month"))
+        if month_anchor:
+            anchor_date = month_anchor
+
+    context = build_payments_dashboard_context(
         period=period,
         anchor_date=anchor_date,
-        user_email=user_email,
-        status_filter=status_filter,
-        delivery_filter=delivery_filter,
-        use_period_filter=use_period_filter,
     )
-    context["page_title"] = "Ιστορικό πληρωμών"
+    context["page_title"] = "Πληρωμές"
     return render(request, "administration/payments.html", context)

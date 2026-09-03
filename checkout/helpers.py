@@ -121,8 +121,8 @@ def stash_checkout_address(request, user):
         "address": format_delivery_address(user),
         "postal_code": user.postal_code,
         "floor": user.floor or "",
-        "latitude": str(user.latitude),
-        "longitude": str(user.longitude),
+        "latitude": "" if user.latitude is None else str(user.latitude),
+        "longitude": "" if user.longitude is None else str(user.longitude),
         "delivery_notes": user.delivery_notes or "",
     }
 

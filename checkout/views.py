@@ -1,5 +1,6 @@
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 import json
+import logging
 
 from django.conf import settings
 from django.contrib import messages
@@ -12,6 +13,7 @@ from django.views.decorators.http import require_POST
 
 from accounts.profile_context import build_profile_form_context
 from cart.cart import get_cart
+from orders.emails import send_order_status_email
 from orders.models import Order, OrderItem
 from orders.presentation import build_order_detail_context
 from orders.stock import InsufficientStockError, reserve_stock_for_cart
@@ -44,6 +46,18 @@ from .stripe_service import (
     stripe_payments_enabled,
     verify_card_payment_intent,
 )
+
+logger = logging.getLogger(__name__)
+
+
+def _checkout_coordinate(value):
+    """Parse a session lat/lng; empty or invalid values become None."""
+    if value in (None, "", "None"):
+        return None
+    try:
+        return Decimal(str(value))
+    except (InvalidOperation, TypeError, ValueError):
+        return None
 
 
 def _redirect_if_cart_empty(request):
@@ -141,8 +155,8 @@ def _create_order_from_checkout(
             delivery_address=checkout_data["address"],
             delivery_postal_code=checkout_data["postal_code"],
             delivery_floor=checkout_data.get("floor", ""),
-            delivery_latitude=Decimal(checkout_data["latitude"]),
-            delivery_longitude=Decimal(checkout_data["longitude"]),
+            delivery_latitude=_checkout_coordinate(checkout_data.get("latitude")),
+            delivery_longitude=_checkout_coordinate(checkout_data.get("longitude")),
             delivery_notes=checkout_data.get("delivery_notes", ""),
             boxnow_locker_id=checkout_data.get("boxnow_locker_id", ""),
             boxnow_locker_name=checkout_data.get("boxnow_locker_name", ""),
@@ -158,6 +172,11 @@ def _create_order_from_checkout(
             )
         increment_favourite_counts(cart.items)
         cart.clear()
+
+    try:
+        send_order_status_email(order, is_new=True)
+    except Exception:
+        logger.exception("Failed to send new-order email for order %s", order.pk)
 
     if order.delivery_method == Order.DELIVERY_METHOD_BOX_NOW:
         schedule_boxnow_delivery(order)
@@ -571,6 +590,8 @@ def create_payment_intent_view(request):
             {"error": "Η πληρωμή με κάρτα δεν είναι διαθέσιμη."},
             status=503,
         )
+    except StripePaymentError as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
 
     return JsonResponse(
         {

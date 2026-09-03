@@ -15,15 +15,20 @@ def _site_base_url() -> str:
 
 def build_order_status_intro(order: Order, *, previous_status=None, is_new=False) -> str:
     """Short Greek explanation of why the customer received this email."""
+    details_note = (
+        " Παρακάτω θα βρεις όλα τα στοιχεία, τα προϊόντα και το κόστος της παραγγελίας."
+    )
     if is_new:
         if order.payment_method == Order.PAYMENT_METHOD_CARD:
             return (
                 "Η παραγγελία σου καταχωρήθηκε και η πληρωμή με κάρτα "
                 "ολοκληρώθηκε επιτυχώς."
+                + details_note
             )
         return (
             "Η παραγγελία σου καταχωρήθηκε. Θα πληρώσεις με αντικαταβολή "
             "κατά την παράδοση."
+            + details_note
         )
 
     status = order.status
@@ -35,7 +40,11 @@ def build_order_status_intro(order: Order, *, previous_status=None, is_new=False
     if status == Order.STATUS_CANCELLED:
         return "Η παραγγελία σου ακυρώθηκε."
     if status == Order.STATUS_DELIVERED:
-        return "Η παραγγελία σου παραδόθηκε."
+        return (
+            "Η παραγγελία σου παραδόθηκε. Σε ευχαριστούμε που επέλεξες "
+            "το Kokkoris Pet Food."
+            + details_note
+        )
     if status == Order.STATUS_PAID:
         return "Η παραγγελία σου επισημάνθηκε ως πληρωμένη."
     if status == Order.STATUS_FAILED:
@@ -58,6 +67,8 @@ def send_order_status_email(order: Order, *, previous_status=None, is_new=False)
         f"{_site_base_url()}"
         f"{reverse('orders:detail', kwargs={'order_id': order.pk})}"
     )
+    is_new = bool(is_new)
+    is_delivered = (not is_new) and order.status == Order.STATUS_DELIVERED
     context = {
         **build_order_detail_context(order),
         "status_intro": build_order_status_intro(
@@ -66,12 +77,15 @@ def send_order_status_email(order: Order, *, previous_status=None, is_new=False)
             is_new=is_new,
         ),
         "is_new_order": is_new,
+        "is_delivered_order": is_delivered,
         "detail_url": detail_url,
         "site_name": "Kokkoris Pet Food",
     }
 
     if is_new:
         subject = f"Η παραγγελία σου {order.public_code_display} καταχωρήθηκε"
+    elif is_delivered:
+        subject = f"Η παραγγελία σου {order.public_code_display} παραδόθηκε"
     else:
         subject = (
             f"Ενημέρωση παραγγελίας {order.public_code_display} — "

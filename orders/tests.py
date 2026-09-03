@@ -86,6 +86,42 @@ class OrderStockTests(TestCase):
         self.variant.refresh_from_db()
         self.assertEqual(self.variant.stock, 5)
 
+    def test_create_order_accepts_missing_coordinates(self):
+        cart = DBCart(self.user)
+        cart.add_item(self.variant, quantity=1)
+        factory = RequestFactory()
+        request = factory.post("/checkout/payment/")
+        request.user = self.user
+        from django.contrib.sessions.middleware import SessionMiddleware
+
+        middleware = SessionMiddleware(lambda req: None)
+        middleware.process_request(request)
+        request.session.save()
+        checkout_data = {
+            "delivery_method": Order.DELIVERY_METHOD_COURIER,
+            "phone_number": "+306900000000",
+            "city": "Αθήνα",
+            "address": "Ερμού 1",
+            "postal_code": "10563",
+            "floor": "",
+            "latitude": "None",
+            "longitude": "None",
+            "delivery_notes": "",
+        }
+        request.session[SESSION_KEY] = checkout_data
+        order = _create_order_from_checkout(
+            request,
+            cart=cart,
+            checkout_data=checkout_data,
+            payment_method=Order.PAYMENT_METHOD_COD,
+            courier_fee=Decimal("2.00"),
+            cart_total=Decimal("10.00"),
+            total_cost=Decimal("12.00"),
+            order_status=Order.STATUS_NEW,
+        )
+        self.assertIsNone(order.delivery_latitude)
+        self.assertIsNone(order.delivery_longitude)
+
 
 class OrderPresentationTests(TestCase):
     def test_add_business_days_skips_weekend(self):

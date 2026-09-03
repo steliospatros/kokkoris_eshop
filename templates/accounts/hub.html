@@ -28,10 +28,16 @@
             <span class="font-inter text-lg text-slate-800">{% trans "Το καλάθι μου" %}</span>
             <span class="text-kokkoris-teal-dark text-xl" aria-hidden="true">›</span>
         </a>
-        {% if is_administration_user %}
+        {% if is_shop_admin %}
             <a href="{% url 'administration:hub' %}"
                class="flex items-center justify-between gap-4 rounded-xl border border-kokkoris-teal-dark/30 bg-kokkoris-teal-dark/5 px-5 py-4 shadow-sm hover:border-kokkoris-teal-dark hover:shadow-md transition-all">
                 <span class="font-inter text-lg text-kokkoris-teal-dark">{% trans "Διαχείριση" %}</span>
+                <span class="text-kokkoris-teal-dark text-xl" aria-hidden="true">›</span>
+            </a>
+        {% elif is_courier_user %}
+            <a href="{% url 'administration:deliveries' %}"
+               class="flex items-center justify-between gap-4 rounded-xl border border-kokkoris-teal-dark/30 bg-kokkoris-teal-dark/5 px-5 py-4 shadow-sm hover:border-kokkoris-teal-dark hover:shadow-md transition-all">
+                <span class="font-inter text-lg text-kokkoris-teal-dark">{% trans "Παραδόσεις" %}</span>
                 <span class="text-kokkoris-teal-dark text-xl" aria-hidden="true">›</span>
             </a>
         {% endif %}

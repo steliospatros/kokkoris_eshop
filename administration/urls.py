@@ -22,5 +22,11 @@ urlpatterns = [
     ),
     path("orders/", views.administration_orders_view, name="orders"),
     path("orders/<int:order_id>/", views.administration_order_detail_view, name="order_detail"),
+    path("deliveries/", views.administration_deliveries_view, name="deliveries"),
+    path(
+        "deliveries/<int:order_id>/mark/",
+        views.administration_mark_delivery_view,
+        name="mark_delivery",
+    ),
     path("payments/", views.administration_payments_view, name="payments"),
 ]

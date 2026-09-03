@@ -54,11 +54,10 @@ class OrderEmailTests(TestCase):
         defaults.update(kwargs)
         return Order.objects.create(**defaults)
 
-    def test_new_order_sends_confirmation_email(self):
+    def test_new_order_create_does_not_email_until_checkout_sends(self):
         with patch("orders.signals.send_order_status_email") as mock_send:
-            order = self._make_order()
-        mock_send.assert_called_once()
-        self.assertTrue(mock_send.call_args.kwargs.get("is_new"))
+            self._make_order()
+        mock_send.assert_not_called()
 
     def test_status_change_sends_update_email(self):
         order = self._make_order(status=Order.STATUS_NEW)
@@ -76,3 +75,38 @@ class OrderEmailTests(TestCase):
         body = mail.outbox[0].body
         self.assertIn("ΕΝΗΜΕΡΩΣΗ ΠΑΡΑΔΟΣΗΣ", body)
         self.assertIn("Σύνολο πληρωμής", body)
+        self.assertIn("Παρακάτω θα βρεις όλα τα στοιχεία", body)
+
+    def test_delivered_email_uses_delivered_subject_and_items(self):
+        from orders.models import OrderItem
+        from products.models import AnimalType, Category, Company, Product, ProductVariant
+
+        company = Company.objects.create(name="BRAND", code="BRD")
+        animal = AnimalType.objects.create(name="Dog", slug="dog-mail")
+        category = Category.objects.create(name="Dry Food", slug="dry-mail")
+        product = Product.objects.create(
+            name="Adult Mix",
+            company=company,
+            animal_type=animal,
+            category=category,
+            is_active=True,
+        )
+        variant = ProductVariant.objects.create(
+            product=product,
+            weight=Decimal("2.00"),
+            price=Decimal("10.00"),
+        )
+        order = self._make_order()
+        OrderItem.objects.create(
+            order=order,
+            product_variant=variant,
+            quantity=2,
+            price_at_purchase=Decimal("10.00"),
+        )
+        mail.outbox.clear()
+        order.status = Order.STATUS_DELIVERED
+        order.save()
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("παραδόθηκε", mail.outbox[0].subject)
+        self.assertIn("BRAND Adult Mix", mail.outbox[0].body)
+        self.assertIn("2×", mail.outbox[0].body)

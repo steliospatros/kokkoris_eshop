@@ -23,6 +23,11 @@
             <span class="font-inter text-lg text-slate-800">{% trans "Προϊόντα" %}</span>
             <span class="text-kokkoris-teal-dark text-xl" aria-hidden="true">›</span>
         </a>
+        <a href="{% url 'administration:deliveries' %}"
+           class="flex items-center justify-between gap-4 rounded-xl border border-kokkoris-teal-dark/40 bg-kokkoris-teal-dark/5 px-5 py-4 shadow-sm hover:border-kokkoris-teal-dark hover:shadow-md transition-all">
+            <span class="font-inter text-lg text-kokkoris-teal-dark">{% trans "Παραδόσεις" %}</span>
+            <span class="text-kokkoris-teal-dark text-xl" aria-hidden="true">›</span>
+        </a>
         <a href="{% url 'administration:orders' %}"
            class="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm hover:border-kokkoris-teal-dark hover:shadow-md transition-all">
             <span class="font-inter text-lg text-slate-800">{% trans "Διαχείριση παραγγελιών" %}</span>
@@ -30,7 +35,7 @@
         </a>
         <a href="{% url 'administration:payments' %}"
            class="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm hover:border-kokkoris-teal-dark hover:shadow-md transition-all">
-            <span class="font-inter text-lg text-slate-800">{% trans "Ιστορικό πληρωμών" %}</span>
+            <span class="font-inter text-lg text-slate-800">{% trans "Πληρωμές" %}</span>
             <span class="text-kokkoris-teal-dark text-xl" aria-hidden="true">›</span>
         </a>
     </nav>

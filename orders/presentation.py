@@ -63,31 +63,44 @@ def build_delivery_eta_message(order: Order) -> str:
     )
 
 
-def build_delivery_map_url(order: Order):
+def build_delivery_map_url(order: Order, *, size="640x320", zoom=16, scale=2):
     """Static map snapshot for the delivery coordinates."""
     api_key = getattr(settings, "GOOGLE_MAPS_API_KEY", "")
     if not api_key:
         return None
     lat = order.delivery_latitude
     lng = order.delivery_longitude
+    if lat is None or lng is None:
+        return None
     return (
         "https://maps.googleapis.com/maps/api/staticmap"
-        f"?center={lat},{lng}&zoom=16&size=640x320&scale=2"
+        f"?center={lat},{lng}&zoom={zoom}&size={size}&scale={scale}"
         f"&markers=color:0x42746c%7C{lat},{lng}"
         f"&key={api_key}"
     )
 
 
+def build_delivery_maps_link(order: Order):
+    """Google Maps page centered on the delivery pin."""
+    lat = order.delivery_latitude
+    lng = order.delivery_longitude
+    if lat is None or lng is None:
+        return None
+    return f"https://www.google.com/maps?q={lat},{lng}"
+
+
 def build_order_item_rows(order: Order):
     """Line items with product images for templates."""
     rows = []
-    for item in order.items.select_related("product_variant__product"):
+    for item in order.items.select_related("product_variant__product__company"):
         product = item.product_variant.product
         variant = item.product_variant
+        company_name = product.company.name if product.company_id else ""
+        display_name = f"{company_name} {product.name}".strip() if company_name else product.name
         rows.append(
             {
                 "quantity": item.quantity,
-                "name": product.name,
+                "name": display_name,
                 "weight": variant.weight,
                 "size_label": format_weight(variant.weight, variant.unit_label),
                 "unit_price": item.price_at_purchase,
@@ -143,6 +156,8 @@ def build_order_detail_context(order: Order, *, show_success_banner=False):
         "boxnow_locker_display": boxnow_locker_display,
         "is_boxnow_delivery": order.delivery_method == Order.DELIVERY_METHOD_BOX_NOW,
         "item_rows": build_order_item_rows(order),
+        "customer_name": order.user.get_full_name() if order.user_id else "",
+        "customer_email": order.user.email if order.user_id else "",
         "cart_cost_display": format_decimal_greek(order.cart_cost),
         "courier_fee_display": format_decimal_greek(order.courier_fee),
         "total_cost_display": format_decimal_greek(order.total_cost),

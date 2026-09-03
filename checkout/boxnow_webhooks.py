@@ -11,6 +11,7 @@ import logging
 from datetime import timezone as dt_timezone
 
 from django.conf import settings
+from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
 from orders.models import Order
@@ -112,6 +113,12 @@ def apply_boxnow_parcel_event(payload):
     if event == "delivered" and order.status != Order.STATUS_CANCELLED:
         order.status = Order.STATUS_DELIVERED
         update_fields.append("status")
+        if not order.delivered_at:
+            order.delivered_at = event_at or timezone.now()
+            update_fields.append("delivered_at")
+        if not order.collected_payment_method and order.is_prepaid_card():
+            order.collected_payment_method = Order.PAYMENT_METHOD_CARD
+            update_fields.append("collected_payment_method")
 
     order.save(update_fields=update_fields)
     return order

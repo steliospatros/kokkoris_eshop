@@ -27,7 +27,8 @@
 
 ΣΤΟΙΧΕΙΑ ΠΑΡΑΔΟΣΗΣ
 ------------------
-Διεύθυνση: {{ delivery_address_display }}
+{% if customer_name %}Πελάτης: {{ customer_name }}
+{% endif %}Διεύθυνση: {{ delivery_address_display }}
 Τηλέφωνο: {{ order.delivery_phone_number }}
 Τρόπος πληρωμής: {{ payment_label }}
 Τρόπος παράδοσης: {{ delivery_label }}

@@ -1,0 +1,65 @@
+{% extends "page.html" %}
+{% load i18n %}
+
+{% block title %}{{ page_title }} — Kokkoris Eshop{% endblock %}
+
+{% block main_class %}w-full max-w-none min-h-[60vh]{% endblock %}
+
+{% block content %}
+<section class="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 pb-20">
+    <p class="mb-6">
+        {% if is_shop_admin %}
+            <a href="{% url 'administration:hub' %}" class="text-kokkoris-teal-dark hover:underline font-inter text-sm">
+                ← {% trans "Πίσω στη διαχείριση" %}
+            </a>
+        {% else %}
+            <a href="{% url 'accounts:hub' %}" class="text-kokkoris-teal-dark hover:underline font-inter text-sm">
+                ← {% trans "Πίσω στο προφίλ" %}
+            </a>
+        {% endif %}
+    </p>
+
+    <h1 class="font-poppins font-light text-2xl sm:text-3xl text-kokkoris-teal-dark mb-2">
+        {% trans "Παραδόσεις" %}
+    </h1>
+    <p class="font-inter text-slate-600 mb-6">
+        {% trans "Πρώτα η παράδοση από την εταιρία (εντός Αθηνών). Μέσα σε κάθε ομάδα οι παλαιότερες είναι πρώτες." %}
+    </p>
+
+    <nav class="mb-8 flex flex-wrap gap-2" aria-label="{% trans 'Φίλτρο παραδόσεων' %}">
+        <a href="{% url 'administration:deliveries' %}?show=pending"
+           class="rounded-full px-4 py-2 text-sm font-inter transition-colors {% if is_pending_view %}bg-kokkoris-teal-dark text-white{% else %}bg-slate-100 text-slate-700 hover:bg-slate-200{% endif %}">
+            {% trans "Προς παράδοση" %}
+            <span class="ml-1 opacity-80">({{ pending_count }})</span>
+        </a>
+        <a href="{% url 'administration:deliveries' %}?show=delivered"
+           class="rounded-full px-4 py-2 text-sm font-inter transition-colors {% if not is_pending_view %}bg-red-700 text-white{% else %}bg-slate-100 text-slate-700 hover:bg-slate-200{% endif %}">
+            {% trans "Παραδομένες" %}
+            <span class="ml-1 opacity-80">({{ delivered_count }})</span>
+        </a>
+    </nav>
+
+    <div class="space-y-10">
+        {% for group in delivery_groups %}
+            <section aria-labelledby="delivery-group-{{ group.key }}">
+                <h2 id="delivery-group-{{ group.key }}"
+                    class="font-poppins text-xl text-kokkoris-teal-dark mb-4 border-b border-slate-200 pb-2">
+                    {{ group.label }}
+                    <span class="text-sm font-inter text-slate-500">({{ group.count }})</span>
+                </h2>
+                {% if group.orders %}
+                    <ul class="space-y-4">
+                        {% for order in group.orders %}
+                            {% include "administration/partials/delivery_row.html" %}
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-slate-500 font-inter py-6 text-center rounded-xl border border-dashed border-slate-200 bg-white">
+                        {% trans "Καμία παραγγελία σε αυτή την ομάδα." %}
+                    </p>
+                {% endif %}
+            </section>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

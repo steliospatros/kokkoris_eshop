@@ -2,6 +2,7 @@ from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
+from django.core import mail
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
@@ -300,6 +301,12 @@ class StripeServiceTests(TestCase):
     def test_decimal_to_stripe_cents(self):
         self.assertEqual(decimal_to_stripe_cents(Decimal("12.34")), 1234)
 
+    def test_retrieve_missing_intent_id_raises_payment_error(self):
+        from checkout.stripe_service import retrieve_payment_intent
+
+        with self.assertRaises(StripePaymentError):
+            retrieve_payment_intent("")
+
 
 class CardCheckoutViewTests(CheckoutDeliveryViewTests):
     """Reuse cart + session setup from delivery view tests."""
@@ -349,3 +356,39 @@ class CardCheckoutViewTests(CheckoutDeliveryViewTests):
             fetch_redirect_response=False,
         )
         mock_finalize.assert_called_once()
+
+    def test_cod_post_creates_order_and_confirmation(self):
+        response = self.client.post(
+            reverse("checkout:payment"),
+            {"payment_method": Order.PAYMENT_METHOD_COD},
+        )
+        order = Order.objects.get(user=self.user)
+        self.assertRedirects(
+            response,
+            reverse("checkout:confirmation", kwargs={"order_id": order.id}),
+        )
+        self.assertEqual(order.payment_method, Order.PAYMENT_METHOD_COD)
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_cod_confirmation_email_includes_products(self):
+        mail.outbox.clear()
+        self.client.post(
+            reverse("checkout:payment"),
+            {"payment_method": Order.PAYMENT_METHOD_COD},
+        )
+        self.assertEqual(len(mail.outbox), 1)
+        body = mail.outbox[0].body
+        self.assertIn("καταχωρήθηκε", mail.outbox[0].subject)
+        self.assertIn("Test Product", body)
+        self.assertIn("Παρακάτω θα βρεις όλα τα στοιχεία", body)
+
+    def test_card_post_without_intent_stays_on_payment(self):
+        response = self.client.post(
+            reverse("checkout:payment"),
+            {
+                "payment_method": Order.PAYMENT_METHOD_CARD,
+                "stripe_payment_intent_id": "",
+            },
+        )
+        self.assertRedirects(response, reverse("checkout:payment"))
+        self.assertFalse(Order.objects.filter(user=self.user).exists())
