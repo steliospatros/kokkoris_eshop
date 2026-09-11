@@ -1,14 +1,21 @@
 {{ site_name }}
-================================================================
+
+Αγαπητέ/ή{% if greeting_name %} {{ greeting_name }}{% endif %},
 
 {{ status_intro }}
-
+{% if cancellation_reason %}
+ΛΟΓΟΣ ΑΚΥΡΩΣΗΣ
+--------------
+{{ cancellation_reason }}
+{% endif %}
 Παραγγελία: {{ order_code_display }}
 Κατάσταση: {{ status_label }}
+Τρόπος πληρωμής: {{ payment_label }}
+Κατάσταση πληρωμής: {{ payment_state_label }}
 Ημερομηνία καταχώρησης: {{ order_date_display }}
 
-ΕΝΗΜΕΡΩΣΗ ΠΑΡΑΔΟΣΗΣ
--------------------
+ΠΑΡΑΔΟΣΗ
+--------
 {{ eta_message }}
 
 ΠΡΟΪΟΝΤΑ
@@ -21,21 +28,28 @@
 
 ΚΟΣΤΟΣ
 ------
-Τιμή προϊόντων: {{ cart_cost_display }} €
+Προϊόντα: {{ cart_cost_display }} €
 Αποστολή: {% if courier_fee_is_free %}Δωρεάν{% else %}{{ courier_fee_display }} €{% endif %}
 Σύνολο πληρωμής: {{ total_cost_display }} €
 
 ΣΤΟΙΧΕΙΑ ΠΑΡΑΔΟΣΗΣ
 ------------------
 {% if customer_name %}Πελάτης: {{ customer_name }}
-{% endif %}Διεύθυνση: {{ delivery_address_display }}
-Τηλέφωνο: {{ order.delivery_phone_number }}
-Τρόπος πληρωμής: {{ payment_label }}
+{% endif %}{% if is_boxnow_delivery and boxnow_locker_display %}Locker: {{ boxnow_locker_display }}
+{% else %}Διεύθυνση: {{ delivery_address_display }}
+{% endif %}Τηλέφωνο: {{ order.delivery_phone_number }}
 Τρόπος παράδοσης: {{ delivery_label }}
 {% if order.delivery_notes %}Σημειώσεις: {{ order.delivery_notes }}{% endif %}
 
-Δες τις λεπτομέρειες της παραγγελίας:
+Προβολή παραγγελίας:
 {{ detail_url }}
 
+Για οποιαδήποτε ακύρωση ή μετατροπή της παραγγελίας σας, παρακαλούμε επικοινωνήστε μαζί μας στα τηλέφωνα της εταιρίας:
+210 6038727
+697 7927008
+ή μέσω email στο {{ brand_contact_email }}.
+
+Με εκτίμηση,
+Η ομάδα του Kokkoris Pet Food
 ---
-Kokkoris Pet Food — www.kokkorispetfood.gr
+www.kokkorispetfood.gr

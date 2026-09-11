@@ -12,9 +12,11 @@
                                 · {{ order.total_display }} €
                                 · {{ order.payment_label }}
                             </p>
-                            <p class="mt-1 font-inter text-sm text-slate-600">
-                                {{ order.order_date|date:"d/m/Y H:i" }}
-                                · {{ order.user_email }}
+                            <p class="mt-1 font-inter text-sm font-semibold text-slate-900">
+                                {% trans "Καταχώρηση" %}: {{ order.order_date|date:"d/m/Y, H:i" }}
+                            </p>
+                            <p class="mt-0.5 font-inter text-sm text-slate-600">
+                                {{ order.user_email }}
                                 {% if order.user_name and order.user_name != order.user_email %}
                                     ({{ order.user_name }})
                                 {% endif %}

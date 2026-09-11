@@ -6,10 +6,9 @@ Usage:
         --file "/path/to/WILD SIDE.docx" \\
         --photos-dir "/path/to/WILD SIDE_PHOTO&KEIMENA"
 
-The supplier document carries no SKUs and no prices — only recipe copy and pack
-sizes — so variants are created at 0.00 € and the products are left inactive on
-first import. Set the prices in the admin, tick "is active", and the range goes
-live; re-running this command will not switch them back off.
+The supplier document carries pack sizes and recipe copy. Retail prices come
+from the brand-page cards in PAGE_BRAND.pdf. Re-running fills 0.00 € variants
+and activates products that were left as drafts.
 """
 from __future__ import annotations
 
@@ -37,6 +36,30 @@ SIZES_RE = re.compile(r"^Διαθέσιμο\s+σε\b", re.IGNORECASE)
 WEIGHT_RE = re.compile(r"([\d]+(?:[.,]\d+)?)\s*kg", re.IGNORECASE)
 COMPONENTS_RE = re.compile(r"^Σύνθεση\s*:", re.IGNORECASE)
 CAT_HINT_RE = re.compile(r"γ[άα]τ", re.IGNORECASE)
+
+# PAGE_BRAND.pdf product cards. 3 kg bags share the 18 € small-pack price used
+# on the range cards; the large-bag price is the card's listed figure.
+VARIANT_PRICES = {
+    "AFRICAN SUNSET": {
+        Decimal("3.00"): Decimal("18.00"),
+        Decimal("10.40"): Decimal("62.00"),
+    },
+    "DEEP FOREST": {
+        Decimal("3.00"): Decimal("18.00"),
+        Decimal("10.40"): Decimal("71.00"),
+    },
+    "NOMAD WINGS": {
+        Decimal("3.00"): Decimal("18.00"),
+        Decimal("10.40"): Decimal("52.00"),
+    },
+    "CANADIAN WHITEWATERS": {
+        Decimal("3.00"): Decimal("18.00"),
+        Decimal("10.40"): Decimal("50.00"),
+    },
+    "SALMON HUNTER": {
+        Decimal("2.00"): Decimal("18.00"),
+    },
+}
 
 
 def to_decimal(raw: str) -> Decimal | None:
@@ -101,7 +124,7 @@ def find_photo(photos_dir: str, heading: str) -> str | None:
 
 
 class Command(BaseCommand):
-    help = "Import the WILD SIDE range (inactive until prices are set) and attach photos."
+    help = "Import the WILD SIDE range with brand-page pack prices and activate it."
 
     def add_arguments(self, parser):
         parser.add_argument("--file", required=True, help='Path to "WILD SIDE.docx"')
@@ -160,8 +183,8 @@ class Command(BaseCommand):
                         "category": category,
                         "description": description,
                         "components": block["components"],
-                        # Not sellable until someone fills in the prices.
-                        "is_active": False,
+                        # Sellable once pack prices from PAGE_BRAND are attached.
+                        "is_active": True,
                     },
                 )
                 if was_created:
@@ -172,12 +195,14 @@ class Command(BaseCommand):
                     product.category = category
                     product.description = description
                     product.components = block["components"]
+                    product.is_active = True
                     product.save(
                         update_fields=[
                             "animal_type",
                             "category",
                             "description",
                             "components",
+                            "is_active",
                             "updated_at",
                         ]
                     )
@@ -189,20 +214,34 @@ class Command(BaseCommand):
                 elif not photo_path:
                     warnings.append(f"No photo for {block['name']}")
 
+                prices = VARIANT_PRICES.get(block["heading"], {})
                 for weight in block["weights"]:
-                    _obj, v_created = ProductVariant.objects.get_or_create(
+                    price = prices.get(weight, Decimal("0.00"))
+                    variant, v_created = ProductVariant.objects.get_or_create(
                         product=product,
                         weight=weight,
                         defaults={
-                            "price": Decimal("0.00"),
-                            "stock": 0,
-                            "availability": ProductVariant.AVAILABILITY_ON_ORDER,
+                            "price": price,
+                            "stock": 20,
+                            "availability": ProductVariant.AVAILABILITY_AVAILABLE_NOW,
                         },
                     )
                     if v_created:
                         created_variants += 1
                     else:
                         updated_variants += 1
+                        changed = []
+                        if variant.price == Decimal("0.00") and price:
+                            variant.price = price
+                            changed.append("price")
+                        if variant.availability != ProductVariant.AVAILABILITY_AVAILABLE_NOW:
+                            variant.availability = ProductVariant.AVAILABILITY_AVAILABLE_NOW
+                            changed.append("availability")
+                        if variant.stock == 0:
+                            variant.stock = 20
+                            changed.append("stock")
+                        if changed:
+                            variant.save(update_fields=changed)
 
         if dry_run:
             self.stdout.write(self.style.SUCCESS(f"Dry run complete: {len(blocks)} recipes."))
@@ -217,10 +256,4 @@ class Command(BaseCommand):
         )
         for warning in warnings:
             self.stdout.write(self.style.WARNING(f"  ! {warning}"))
-        if created_products:
-            self.stdout.write(
-                self.style.WARNING(
-                    "New WILD SIDE products are INACTIVE with 0.00 € variants. "
-                    "Set prices and tick 'is active' in the admin to publish them."
-                )
-            )
+        self.stdout.write(self.style.SUCCESS("WILD SIDE products are active with pack prices."))

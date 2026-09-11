@@ -1,5 +1,6 @@
+from django.conf import settings
 from django.db import models
-from django.db.models import Count
+from django.db.models import Q
 from django.utils.text import slugify
 from unidecode import unidecode
 
@@ -43,10 +44,14 @@ def unique_ascii_slug(instance, text, *, field="slug"):
 
 class CompanyQuerySet(models.QuerySet):
     def public(self):
-        """Companies that have at least one product. Empty brands stay frozen."""
-        return self.annotate(_product_count=Count("products")).filter(
-            _product_count__gt=0
-        )
+        """Companies that still have at least one product the shop can sell."""
+        return self.filter(
+            products__is_active=True,
+            products__variants__availability__in=(
+                ProductVariant.AVAILABILITY_AVAILABLE_NOW,
+                ProductVariant.AVAILABILITY_ON_ORDER,
+            ),
+        ).distinct()
 
 
 class Company(models.Model):
@@ -262,7 +267,7 @@ class Favourite(models.Model):
     Popularity tracker — one row per product.
 
     ``score`` is the ranking weight used on the storefront:
-    +5 per unit sold, +3 when added to a wishlist, +1 per unique session view.
+    +20 per unit sold, +4 when added to a wishlist, +1 per unique visitor view.
     """
 
     product = models.OneToOneField(
@@ -272,7 +277,7 @@ class Favourite(models.Model):
     )
     score = models.PositiveIntegerField(
         default=0,
-        help_text="Dynamic popularity score (sale +5, wishlist +3, view +1).",
+        help_text="Dynamic popularity score (sale +20, wishlist +4, view +1 once per user).",
     )
     purchase_count = models.PositiveIntegerField(
         default=0,
@@ -284,7 +289,7 @@ class Favourite(models.Model):
     )
     view_count = models.PositiveIntegerField(
         default=0,
-        help_text="Unique session views of the product page.",
+        help_text="Unique visitors who opened the product page (once per user).",
     )
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -296,6 +301,44 @@ class Favourite(models.Model):
 
     def __str__(self):
         return f"{self.product.name} ({self.score})"
+
+
+class FavouriteView(models.Model):
+    """One credited product-page view per logged-in user or browser visitor."""
+
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="score_views",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="product_score_views",
+        null=True,
+        blank=True,
+    )
+    visitor_key = models.CharField(max_length=32, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Favourite view"
+        verbose_name_plural = "Favourite views"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["product", "user"],
+                condition=Q(user__isnull=False),
+                name="unique_favourite_view_per_user",
+            ),
+            models.UniqueConstraint(
+                fields=["product", "visitor_key"],
+                name="unique_favourite_view_per_visitor",
+            ),
+        ]
+
+    def __str__(self):
+        who = self.user.email if self.user_id else self.visitor_key
+        return f"{self.product_id} viewed by {who}"
 
 
 class ProductVariant(models.Model):

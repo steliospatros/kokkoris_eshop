@@ -6,7 +6,6 @@ from checkout.boxnow_client import BoxNowAPIError, fetch_parcel_label_pdf
 
 from .models import Order, OrderItem
 from .refunds import StripeRefundError, create_stripe_refund_for_order, order_requires_stripe_refund
-from .stock import release_stock_for_order
 
 
 class OrderItemInline(admin.TabularInline):
@@ -25,15 +24,6 @@ def process_stripe_refund_and_cancel(modeladmin, request, queryset):
     """
     processed = 0
     for order in queryset:
-        if order.status not in (
-            Order.STATUS_CANCELLATION_REQUESTED,
-            Order.STATUS_PAID,
-        ):
-            messages.error(
-                request,
-                f"#{order.order_code}: μόνο πληρωμένες ή αιτήματα ακύρωσης.",
-            )
-            continue
         if not order_requires_stripe_refund(order):
             messages.error(
                 request,
@@ -46,7 +36,6 @@ def process_stripe_refund_and_cancel(modeladmin, request, queryset):
             messages.error(request, f"#{order.order_code}: {exc}")
             continue
 
-        release_stock_for_order(order)
         order.stripe_refund_id = refund.id
         order.status = Order.STATUS_CANCELLED
         order.save(update_fields=["stripe_refund_id", "status"])
@@ -66,7 +55,6 @@ def cancel_without_refund(modeladmin, request, queryset):
     for order in queryset:
         if order.status == Order.STATUS_CANCELLED:
             continue
-        release_stock_for_order(order)
         order.status = Order.STATUS_CANCELLED
         order.save(update_fields=["status"])
         processed += 1
@@ -142,6 +130,7 @@ class OrderAdmin(admin.ModelAdmin):
                 "delivered_at",
                 "status",
                 "cancellation_requested_at",
+                "cancellation_reason",
                 "special_notes",
             ),
         }),
@@ -176,6 +165,13 @@ class OrderAdmin(admin.ModelAdmin):
             ),
         }),
     )
+
+    def get_readonly_fields(self, request, obj=None):
+        """Stripe-paid orders: the payment record is final, fulfillment is not."""
+        fields = list(super().get_readonly_fields(request, obj))
+        if obj is not None and obj.payment_is_locked():
+            fields += ["payment_method", "collected_payment_method"]
+        return tuple(fields)
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)

@@ -190,7 +190,7 @@ python manage.py fix_product_names
 **Σκοπός:** Ορίζει το ίδιο `stock` σε **όλα** τα `ProductVariant` (default: **20**). Χρήσιμο
 μετά από import (όπου αρχικά μπορεί να είναι 0) ή για μαζική ενημέρωση development.
 
-> ⚠️ Σε production χρησιμοποίησε πραγματικούς αριθμούς ανά SKU — όχι μαζικό 20.
+> ⚠️ Σε production χρησιμοποίησε `apply_shelf_stock` (χειρόγραφο απόθεμα καταστήματος) — όχι μαζικό 20.
 
 ### Παράμετροι
 
@@ -203,6 +203,20 @@ python manage.py fix_product_names
 ```bash
 python manage.py set_initial_stock
 python manage.py set_initial_stock --stock 50
+```
+
+---
+
+## 3.3 Custom Management Command: `apply_shelf_stock`
+
+**Αρχείο:** `products/management/commands/apply_shelf_stock.py`
+
+**Σκοπός:** Εφαρμόζει το χειρόγραφο απόθεμα καταστήματος. Όλα τα υπόλοιπα variants γίνονται
+`on_order` με `stock=0` (απόθεμα προμηθευτή, όχι καταστήματος).
+
+```bash
+python manage.py apply_shelf_stock --dry-run
+python manage.py apply_shelf_stock
 ```
 
 ---

@@ -36,6 +36,8 @@ def compute_stock_issue(product_variant, quantity):
 
     Returns a human-readable problem message, or None if the line is fine.
     """
+    if not product_variant.product.is_active:
+        return "Το προϊόν δεν είναι πλέον διαθέσιμο."
     if product_variant.availability == ProductVariant.AVAILABILITY_OUT_OF_STOCK:
         return "Το προϊόν δεν είναι πλέον διαθέσιμο."
     if product_variant.availability == ProductVariant.AVAILABILITY_ON_ORDER:
@@ -103,6 +105,8 @@ class DBCart(BaseCart):
     def add_item(self, product_variant, quantity=1):
         if quantity < 1:
             raise CartError("Η ποσότητα πρέπει να είναι τουλάχιστον 1.")
+        if not product_variant.product.is_active:
+            raise CartError("Το προϊόν δεν είναι πλέον διαθέσιμο.")
         if product_variant.availability == ProductVariant.AVAILABILITY_OUT_OF_STOCK:
             raise CartError("Το προϊόν είναι εξαντλημένο και δεν μπορεί να προστεθεί στο καλάθι.")
         if (
@@ -216,6 +220,8 @@ class SessionCart(BaseCart):
     def add_item(self, product_variant, quantity=1):
         if quantity < 1:
             raise CartError("Η ποσότητα πρέπει να είναι τουλάχιστον 1.")
+        if not product_variant.product.is_active:
+            raise CartError("Το προϊόν δεν είναι πλέον διαθέσιμο.")
         if product_variant.availability == ProductVariant.AVAILABILITY_OUT_OF_STOCK:
             raise CartError("Το προϊόν είναι εξαντλημένο και δεν μπορεί να προστεθεί στο καλάθι.")
         if (

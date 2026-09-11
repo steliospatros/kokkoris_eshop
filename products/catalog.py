@@ -1,6 +1,8 @@
 """
 Catalog presentation helpers — card data for the product grid UI.
 """
+import math
+import os
 import random
 import secrets
 from decimal import Decimal
@@ -97,6 +99,28 @@ CATEGORY_TILE_IMAGES = {
     "bundle": "images/category-tiles/bundles.png",
 }
 
+# Test 1_TROFES.pdf — page 1 cats (orange, 4 circles), page 2 dogs (teal, 3).
+ANIMAL_LANDING = {
+    "cat": {
+        "band": "images/animal-landing/cats-band.png",
+        "band_px": (2667, 942),
+        "categories": ("dry-food", "canned-food", "sachets", "litter"),
+        # Pixel-measured from cats-band.png circle rims.
+        "cx": (18.97, 39.71, 60.40, 81.10),
+        "cy": 44.48,
+        "size": 15.45,
+    },
+    "dog": {
+        "band": "images/animal-landing/dogs-band.png",
+        "band_px": (2667, 957),
+        "categories": ("dry-food", "canned-food", "sachets"),
+        # Pixel-measured from dogs-band.png circle rims.
+        "cx": (22.08, 49.23, 76.38),
+        "cy": 48.80,
+        "size": 15.37,
+    },
+}
+
 # Reference sachet photo: CLUB4PAWS Adult - Rabbit in Jelly 0,08 kg (830×1083).
 SACHET_REFERENCE_IMAGE_SIZE = (830, 1083)
 SACHET_IMAGE_SCALE_MIN = 0.85
@@ -189,12 +213,28 @@ def format_weight(weight, unit_label="kg"):
     return f"{_format_amount_greek(amount)} {unit_label}"
 
 
+SHOP_VISIBLE_AVAILABILITIES = (
+    ProductVariant.AVAILABILITY_AVAILABLE_NOW,
+    ProductVariant.AVAILABILITY_ON_ORDER,
+)
+
+
+def shop_visible_variant_queryset():
+    return ProductVariant.objects.filter(
+        availability__in=SHOP_VISIBLE_AVAILABILITIES,
+    ).order_by("weight")
+
+
 def get_default_variant(product):
-    """Largest package size — used for card price, SKU, and add-to-cart."""
-    variants = list(product.variants.all())
+    """Largest package that is actually offered in the shop."""
+    variants = [
+        variant
+        for variant in product.variants.all()
+        if variant.availability in SHOP_VISIBLE_AVAILABILITIES
+    ]
     if not variants:
         return None
-    return max(variants, key=lambda v: v.weight)
+    return max(variants, key=lambda variant: variant.weight)
 
 
 AVAILABILITY_LABELS = {
@@ -221,10 +261,10 @@ def get_stock_display(variant):
         return {
             "status": STOCK_STATUS_ON_ORDER,
             "label": AVAILABILITY_LABELS[ProductVariant.AVAILABILITY_ON_ORDER],
-            "color_class": "text-kokkoris-blue",
+            "color_class": "text-slate-500",
             "can_add": True,
             "max_quantity": None,
-            "button_label": "Κατόπιν παραγγελίας",
+            "button_label": "Αγορά",
         }
 
     if variant.availability == ProductVariant.AVAILABILITY_OUT_OF_STOCK:
@@ -256,8 +296,8 @@ def get_stock_display(variant):
 
     return {
         "status": STOCK_STATUS_AVAILABLE,
-        "label": AVAILABILITY_LABELS[ProductVariant.AVAILABILITY_AVAILABLE_NOW],
-        "color_class": "text-emerald-600",
+        "label": "",
+        "color_class": "text-slate-500",
         "can_add": True,
         "max_quantity": variant.stock,
     }
@@ -281,12 +321,14 @@ def annotate_purchase_count(queryset):
 
 
 def get_catalog_queryset():
-    """Active products with variants prefetched for grid rendering."""
+    """Active products that still have a size the shop can sell."""
     return annotate_purchase_count(
         Product.objects.filter(is_active=True)
+        .filter(variants__availability__in=SHOP_VISIBLE_AVAILABILITIES)
+        .distinct()
         .select_related("company", "animal_type", "category")
         .prefetch_related(
-            Prefetch("variants", queryset=ProductVariant.objects.order_by("weight"))
+            Prefetch("variants", queryset=shop_visible_variant_queryset())
         )
         .annotate(variant_count=Count("variants"))
     )
@@ -303,7 +345,10 @@ def parse_sort(raw_value):
 def _annotate_default_variant_sort_fields(queryset):
     """Sort keys from the largest package variant (same as catalog cards)."""
     default_variant = (
-        ProductVariant.objects.filter(product=OuterRef("pk"))
+        ProductVariant.objects.filter(
+            product=OuterRef("pk"),
+            availability__in=SHOP_VISIBLE_AVAILABILITIES,
+        )
         .annotate(
             unit_price_calc=ExpressionWrapper(
                 F("price") / F("weight"),
@@ -394,7 +439,12 @@ def parse_filter_values(request, param_name):
 
 
 def _default_variant_subquery():
-    return ProductVariant.objects.filter(product=OuterRef("pk")).order_by("-weight")
+    return (
+        ProductVariant.objects.filter(
+            product=OuterRef("pk"),
+            availability__in=SHOP_VISIBLE_AVAILABILITIES,
+        ).order_by("-weight")
+    )
 
 
 def _annotate_default_variant_fields(queryset):
@@ -650,9 +700,11 @@ def build_catalog_card(product, *, cart_qty=0, is_wishlisted=False):
 def get_product_detail_queryset():
     return (
         Product.objects.filter(is_active=True)
+        .filter(variants__availability__in=SHOP_VISIBLE_AVAILABILITIES)
+        .distinct()
         .select_related("company", "animal_type", "category")
         .prefetch_related(
-            Prefetch("variants", queryset=ProductVariant.objects.order_by("weight"))
+            Prefetch("variants", queryset=shop_visible_variant_queryset())
         )
     )
 
@@ -743,7 +795,11 @@ def build_product_filter_links(product):
 
 def build_product_detail_context(request, product, *, selected_variant_id=None):
     """Template context for the product detail page (petcity-style)."""
-    variants = list(product.variants.all())
+    variants = [
+        variant
+        for variant in product.variants.all()
+        if variant.availability in SHOP_VISIBLE_AVAILABILITIES
+    ]
     if not variants:
         return None
 
@@ -1046,6 +1102,37 @@ def build_animal_category_tiles(animal_slug):
     return tiles
 
 
+def build_animal_landing_page(animal_slug):
+    """Full-bleed TROFES landing band with circular category hotspots."""
+    spec = ANIMAL_LANDING[animal_slug]
+    size = spec["size"]
+    band_w, band_h = spec["band_px"]
+    # width% is of the section width; top% is of the section height, so the
+    # circle's vertical centre needs the image aspect taken into account.
+    top = spec["cy"] - (size / 2) * (band_w / band_h)
+    hotspots = []
+    for slug, cx in zip(spec["categories"], spec["cx"]):
+        query = urlencode([("animal", animal_slug), ("category", slug)])
+        hotspots.append(
+            {
+                "slug": slug,
+                "label": CATEGORY_SLUG_LABELS.get(slug, slug),
+                "url": f"{reverse('products:browse')}?{query}",
+                "left": round(cx - size / 2, 2),
+                "top": round(top, 2),
+                "size": size,
+            }
+        )
+    return {
+        "page_title": ANIMAL_SLUG_LABELS.get(animal_slug, ""),
+        "animal_slug": animal_slug,
+        "landing_band": spec["band"],
+        "landing_band_w": spec["band_px"][0],
+        "landing_band_h": spec["band_px"][1],
+        "landing_hotspots": hotspots,
+    }
+
+
 def chunk_animal_category_rows(tiles, columns=3):
     """
     Group tiles into rows of ``columns``.
@@ -1070,21 +1157,85 @@ def chunk_animal_category_rows(tiles, columns=3):
     return rows
 
 
-def build_brand_tiles():
-    """Large brand squares for /products/brands/ landing page."""
+# SEL_oles etairies.pdf — 2×4 ovals, PDF order.
+BRAND_LIST_ORDER = ("C4P", "COR", "PRF", "OWN", "PUR", "CAR", "WLD", "EVC")
+BRAND_LANDING_BAND = "images/brand-landing/brands-band.png"
+BRAND_LANDING_BAND_PX = (4000, 1435)
+BRAND_LANDING_HOTSPOTS = (
+    ("C4P", 26.80, 38.19, 10.85, 17.28),
+    ("COR", 40.15, 38.19, 10.85, 17.28),
+    ("PRF", 53.50, 38.19, 10.85, 17.28),
+    ("OWN", 66.88, 38.19, 10.85, 17.28),
+    ("PUR", 26.80, 64.67, 10.85, 17.28),
+    ("CAR", 40.15, 64.67, 10.85, 17.28),
+    ("WLD", 53.50, 64.67, 10.85, 17.28),
+    ("EVC", 66.88, 64.67, 10.85, 17.28),
+)
+
+
+def _company_catalog_url(company):
     from products.company_pages import has_brand_page
 
+    if has_brand_page(company.code):
+        return reverse("products:company", args=[company.code])
+    return f"{reverse('products:all')}?{urlencode([('brand', company.code)])}"
+
+
+def build_homepage_brand_list():
+    """PDF brand ovals for the homepage about-us section."""
+    by_code = {company.code.upper(): company for company in Company.objects.public()}
+    brands = []
+    for code in BRAND_LIST_ORDER:
+        company = by_code.get(code)
+        if not company:
+            continue
+        brands.append(
+            {
+                "code": code,
+                "label": company.name,
+                "url": _company_catalog_url(company),
+                "image": f"images/brand-landing/oval-{code.lower()}.png",
+            }
+        )
+    return brands
+
+
+def build_brand_landing_page():
+    """Full-bleed brands band from SEL_oles etairies, with oval hotspots."""
+    by_code = {company.code.upper(): company for company in Company.objects.public()}
+    hotspots = []
+    for code, left, top, width, height in BRAND_LANDING_HOTSPOTS:
+        company = by_code.get(code)
+        if not company:
+            continue
+        hotspots.append(
+            {
+                "code": code,
+                "label": company.name,
+                "url": _company_catalog_url(company),
+                "left": left,
+                "top": top,
+                "width": width,
+                "height": height,
+            }
+        )
+    return {
+        "page_title": "Brands",
+        "landing_band": BRAND_LANDING_BAND,
+        "landing_band_w": BRAND_LANDING_BAND_PX[0],
+        "landing_band_h": BRAND_LANDING_BAND_PX[1],
+        "landing_hotspots": hotspots,
+    }
+
+
+def build_brand_tiles():
+    """Large brand squares for /products/brands/ landing page."""
     tiles = []
     for company in Company.objects.public().order_by("name"):
-        if has_brand_page(company.code):
-            url = reverse("products:company", args=[company.code])
-        else:
-            url = f"{reverse('products:all')}?{urlencode([('brand', company.code)])}"
-
         tile = {
             "slug": company.code.lower(),
             "label": company.name,
-            "url": url,
+            "url": _company_catalog_url(company),
         }
         if company.logo:
             tile["image_url"] = company.logo.url
@@ -1100,6 +1251,49 @@ def get_browse_page_title(animal_slug, category_slug):
     return f"{animal} — {category}"
 
 
+# Brand logos range from a square badge (Wild Side) to a 6.5:1 banner (Puro
+# Instinto). One shared CSS height therefore renders the square ones as tiny
+# circles next to the wide wordmarks, so each logo is scaled to cover the same
+# artwork area instead. The target is calibrated on CLUB4PAWS and CARNIS.
+BROWSE_LOGO_ARTWORK_AREA_PX = 27000
+BROWSE_LOGO_FALLBACK_HEIGHT_REM = 7.5
+_ROOT_FONT_SIZE_PX = 16
+
+
+@lru_cache(maxsize=64)
+def _browse_logo_height_rem(path, _mtime):
+    """Cached per file; _mtime busts the cache when a logo is replaced."""
+    from PIL import Image, UnidentifiedImageError
+
+    try:
+        with Image.open(path) as image:
+            file_height = image.height
+            # Opaque bounds only: Carnis ships a third of its canvas as padding.
+            artwork = image.convert("RGBA").getbbox()
+    except (OSError, UnidentifiedImageError):
+        return BROWSE_LOGO_FALLBACK_HEIGHT_REM
+    if not artwork:
+        return BROWSE_LOGO_FALLBACK_HEIGHT_REM
+
+    area = (artwork[2] - artwork[0]) * (artwork[3] - artwork[1])
+    if area <= 0:
+        return BROWSE_LOGO_FALLBACK_HEIGHT_REM
+    scale = math.sqrt(BROWSE_LOGO_ARTWORK_AREA_PX / area)
+    return round(file_height * scale / _ROOT_FONT_SIZE_PX, 2)
+
+
+def browse_logo_height_rem(company):
+    """Rendered height in rem that equalises this logo against the others."""
+    if not company.logo:
+        return BROWSE_LOGO_FALLBACK_HEIGHT_REM
+    try:
+        path = company.logo.path
+        mtime = os.path.getmtime(path)
+    except (NotImplementedError, ValueError, OSError):
+        return BROWSE_LOGO_FALLBACK_HEIGHT_REM
+    return _browse_logo_height_rem(path, mtime)
+
+
 def build_browse_company_sections(products, *, cart_quantities=None, wishlisted_ids=None):
     """Group browse products by company for hero-brands-style rows."""
     cart_quantities = cart_quantities or {}
@@ -1113,9 +1307,12 @@ def build_browse_company_sections(products, *, cart_quantities=None, wishlisted_
         if company.id not in sections_by_id:
             sections_by_id[company.id] = {
                 "company": {
+                    "id": company.id,
                     "name": company.name,
                     "code": company.code,
+                    "url": _company_catalog_url(company),
                     "logo_url": company.logo.url if company.logo else None,
+                    "logo_height_rem": browse_logo_height_rem(company),
                 },
                 "products": [],
             }

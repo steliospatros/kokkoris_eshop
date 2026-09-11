@@ -25,6 +25,10 @@
   padding: 0;
 }
 
+.brand-hero-white.brand-hero-flush {
+  padding: 0;
+}
+
 /* Core / Ownat — the artwork's own teal starts at the very top edge, so the
    band sits flush under the (teal) site header instead of on a padded strip. */
 .brand-hero-teal {
@@ -53,7 +57,8 @@
     padding-top: clamp(28px, 4vw, 56px);
   }
 
-  .brand-hero-orange.brand-hero-flush {
+  .brand-hero-orange.brand-hero-flush,
+  .brand-hero-white.brand-hero-flush {
     padding: 0;
   }
 }
@@ -62,12 +67,27 @@
   width: 100%;
   margin: 0;
   padding: 0;
-  background: #f58220;
+  background: #ff992b;
   line-height: 0;
+}
+
+.brand-story-band > img {
+  display: block;
+  width: 100%;
+  height: auto;
+  vertical-align: top;
 }
 
 .brand-story-band--teal {
   background: #28c4b0;
+}
+
+.brand-story-band--c4p-teal {
+  background: #4aa190;
+}
+
+.brand-story-band--wild-teal {
+  background: #4aa190;
 }
 
 .brand-story-band--white {
@@ -75,7 +95,7 @@
 }
 
 .brand-story-band--orange {
-  background: #ff931e;
+  background: #ff992b;
 }
 
 /* Core / Ownat bands carry a horizontal glow, so letterboxing them past
@@ -106,7 +126,10 @@
 }
 
 .brand-products--orange {
-  background: #ff931e;
+  background-color: #ff992b;
+  background-image: url("../images/brand-page/puro-instinto/products-row-bg.png?v=join");
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
 }
 
 .brand-products--white {
@@ -126,7 +149,8 @@
 .brand-products--club4paws-cats,
 .brand-products--ownat-cats,
 .brand-products--profine-cats,
-.brand-products--wild-cats {
+.brand-products--wild-cats,
+.brand-products--orange {
   background-repeat: no-repeat;
   background-size: 100% 100%;
 }
@@ -136,7 +160,8 @@
 }
 
 .brand-products--club4paws-cats {
-  background-image: url("../images/brand-page/club4paws/cats-row-bg.png");
+  background-color: #4aa190;
+  background-image: url("../images/brand-page/club4paws/cats-row-bg.png?v=c4p-glow");
 }
 
 .brand-products--ownat-cats {
@@ -148,6 +173,7 @@
 }
 
 .brand-products--wild-cats {
+  background-color: #5ca89a;
   background-image: url("../images/brand-page/wild-side/cats-row-bg.png");
 }
 
@@ -162,6 +188,13 @@
 
 .brand-products--teal {
   background: #28c4b0;
+}
+
+.brand-products--carnis-dogs {
+  background-color: #4aa190;
+  background-image: url("../images/brand-page/carnis/dogs-row-bg.png?v=fade");
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
 }
 
 .brand-products__row {
@@ -384,12 +417,41 @@
   padding: 2.2% 0 4.6%;
 }
 
+/* Carnis cat list starts immediately under the cat — no inset white frame. */
+.brand-products--panel.brand-products--carnis-cats {
+  padding: 0 0 4.6%;
+  margin-top: -3.2%;
+}
+
+.brand-products--carnis-cats .brand-products__row {
+  width: 100%;
+}
+
+.brand-products--carnis-cats .brand-products__row::before {
+  box-shadow: none;
+}
+
+.brand-products--carnis-cats .product-browse-cell .product-image-slot {
+  padding-top: 0.2rem;
+}
+
 .brand-products--panel.brand-products--core-cats,
-.brand-products--panel.brand-products--club4paws-cats,
 .brand-products--panel.brand-products--profine-cats,
 .brand-products--panel.brand-products--wild-cats,
+.brand-products--panel.brand-products--carnis-dogs,
+.brand-products--panel.brand-products--orange,
 .brand-products--panel.brand-products--teal {
   padding: 2.2% 0 4.6%;
+}
+
+/* Club4Paws: list sits in the PDF slot under the paw; glow continues in the outro. */
+.brand-products--panel.brand-products--club4paws-cats {
+  padding: 0 0 2.2%;
+  margin-top: -2.4%;
+}
+
+.brand-products--panel.brand-products--orange {
+  padding: 2.2% 0 6.2%;
 }
 
 /* Ownat has no outro band — the mock-up's orange glow continues under
@@ -403,12 +465,13 @@
   margin: 0;
   padding: 0;
   background: #fff;
+  line-height: 0;
 }
 
 .brand-detail-white__frame {
   position: relative;
   width: 100%;
-  max-width: 1920px;
+  max-width: none;
   margin: 0 auto;
 }
 

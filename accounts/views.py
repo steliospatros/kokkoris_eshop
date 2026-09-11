@@ -16,7 +16,7 @@ from allauth.core import ratelimit
 
 from accounts.phone_verification import effective_phone_verified, phone_verification_enabled
 from newsletter.services import subscribe_newsletter
-from orders.presentation import build_order_item_rows
+from orders.presentation import build_order_item_rows, build_payment_display
 from products.catalog import format_decimal_greek
 
 from .forms import KokkorisSignupForm, ProfileForm
@@ -26,7 +26,6 @@ from .floor_options import FLOOR_OTHER_LABEL, FLOOR_PRESET_OPTIONS
 from .profile_labels import (
     DELIVERY_METHOD_LABELS,
     ORDER_STATUS_LABELS,
-    PAYMENT_METHOD_LABELS,
     PROFILE_EDITABLE_FIELDS,
 )
 
@@ -391,9 +390,7 @@ def account_orders_view(request):
                 "status_label": ORDER_STATUS_LABELS.get(
                     order.status, order.get_status_display()
                 ),
-                "payment_label": PAYMENT_METHOD_LABELS.get(
-                    order.payment_method, order.get_payment_method_display()
-                ),
+                **build_payment_display(order),
                 "delivery_label": DELIVERY_METHOD_LABELS.get(
                     order.delivery_method, order.get_delivery_method_display()
                 ),

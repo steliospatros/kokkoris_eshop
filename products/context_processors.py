@@ -7,8 +7,8 @@ def nav_state(request):
 
     page_background = None
     if not is_homepage:
-        if app_name == "products" and url_name in ("dogs", "cats"):
-            page_background = "back2"
+        if app_name == "products" and url_name in ("dogs", "cats", "brands"):
+            page_background = None
         else:
             page_background = "back1"
 

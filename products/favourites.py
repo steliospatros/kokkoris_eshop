@@ -1,15 +1,19 @@
 from collections import Counter
+import uuid
 
+from django.db import IntegrityError
 from django.db.models import F, Value
 from django.db.models.functions import Greatest
 
-from products.models import Favourite, Product
+from products.models import Favourite, FavouriteView, Product
 
-SCORE_SALE = 5
-SCORE_WISHLIST = 3
+SCORE_SALE = 20
+SCORE_WISHLIST = 4
 SCORE_VIEW = 1
 
-VIEWED_SESSION_KEY = "favourite_viewed_ids"
+VIEWER_COOKIE = "fp_viewer"
+VIEWER_SESSION_KEY = "favourite_visitor_key"
+VIEWER_COOKIE_MAX_AGE = 365 * 24 * 60 * 60
 
 
 def ensure_favourite_for_product(product):
@@ -45,7 +49,7 @@ def _adjust_favourite(product_id, *, score=0, purchases=0, wishlists=0, views=0)
 
 def increment_favourite_counts(cart_items):
     """
-    Record completed sales: +1 unit and +5 score per quantity.
+    Record completed sales: +1 unit and +20 score per quantity.
     """
     totals = Counter()
     for item in cart_items:
@@ -60,17 +64,48 @@ def increment_favourite_counts(cart_items):
 
 
 def record_wishlist_change(product, *, added):
-    """+3 when a product is wishlisted, −3 when it is removed."""
+    """+4 when a product is wishlisted, −4 when it is removed."""
     if added:
         _adjust_favourite(product.pk, score=SCORE_WISHLIST, wishlists=1)
     else:
         _adjust_favourite(product.pk, score=-SCORE_WISHLIST, wishlists=-1)
 
 
+def _visitor_key(request):
+    """Stable browser id: long-lived cookie, with session as fallback."""
+    key = request.COOKIES.get(VIEWER_COOKIE) or request.session.get(VIEWER_SESSION_KEY)
+    if not key:
+        key = uuid.uuid4().hex
+        request._new_favourite_visitor_key = True
+    request.session[VIEWER_SESSION_KEY] = key
+    if hasattr(request.session, "modified"):
+        request.session.modified = True
+    request.favourite_visitor_key = key
+    return key
+
+
+def attach_viewer_cookie(response, request):
+    """Keep the visitor key for a year so repeat views do not farm score."""
+    key = getattr(request, "favourite_visitor_key", None) or request.session.get(
+        VIEWER_SESSION_KEY
+    )
+    if not key:
+        return response
+    if getattr(request, "_new_favourite_visitor_key", False) or VIEWER_COOKIE not in request.COOKIES:
+        response.set_cookie(
+            VIEWER_COOKIE,
+            key,
+            max_age=VIEWER_COOKIE_MAX_AGE,
+            httponly=True,
+            samesite="Lax",
+        )
+    return response
+
+
 def record_product_view(request, product):
     """
-    +1 the first time this session opens the product page.
-    Staff views are ignored so admin browsing does not inflate scores.
+    +1 the first time this visitor (logged-in user or same browser) opens the page.
+    Repeat views by the same person never add more points. Staff is ignored.
     """
     user = getattr(request, "user", None)
     if user is not None and getattr(user, "is_staff", False):
@@ -78,11 +113,29 @@ def record_product_view(request, product):
     session = getattr(request, "session", None)
     if session is None:
         return False
-    viewed = {int(item) for item in session.get(VIEWED_SESSION_KEY, [])}
-    if product.pk in viewed:
+
+    visitor_key = _visitor_key(request)
+    auth_user = user if getattr(user, "is_authenticated", False) else None
+
+    if auth_user and FavouriteView.objects.filter(product=product, user=auth_user).exists():
         return False
-    viewed.add(product.pk)
-    session[VIEWED_SESSION_KEY] = list(viewed)
+
+    existing = FavouriteView.objects.filter(product=product, visitor_key=visitor_key).first()
+    if existing:
+        if auth_user and existing.user_id is None:
+            existing.user = auth_user
+            existing.save(update_fields=["user"])
+        return False
+
+    try:
+        FavouriteView.objects.create(
+            product=product,
+            user=auth_user,
+            visitor_key=visitor_key,
+        )
+    except IntegrityError:
+        return False
+
     _adjust_favourite(product.pk, score=SCORE_VIEW, views=1)
     return True
 
@@ -95,6 +148,7 @@ def build_favourites_rows():
             "product__category",
             "product__animal_type",
         )
+        .filter(product__is_active=True)
         .order_by("-score", "-purchase_count", "product__name")
     )
 

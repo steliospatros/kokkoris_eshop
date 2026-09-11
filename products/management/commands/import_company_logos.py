@@ -30,8 +30,7 @@ LOGO_MAP = {
     "EVERCLEAN": "logo_Everclean_blue.jpg",
     "Wild Side": "LOGO_WILDSIDE_FOTO.png",
     "Puro Instinto": "pienso-puro-instinto.jpg",
-    # Carnis: no client LOGOS file yet — seed_data attaches static placeholder instead.
-    # When available, add e.g. "Carnis": "LOGO_CARNIS_FOTO.png" and run with --force.
+    # Carnis logo is imported from the brand transfer by import_carnis.
 }
 
 

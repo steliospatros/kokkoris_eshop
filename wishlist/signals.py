@@ -1,7 +1,7 @@
 from django.contrib.auth.signals import user_logged_in
 from django.dispatch import receiver
 
-from products.models import Product
+from products.catalog import get_catalog_queryset
 
 from .models import WishlistItem
 from .wishlist import SessionWishlist
@@ -14,7 +14,7 @@ def merge_guest_wishlist_on_login(sender, request, user, **kwargs):
     if not guest_ids:
         return
 
-    products = Product.objects.filter(pk__in=guest_ids, is_active=True)
+    products = get_catalog_queryset().filter(pk__in=guest_ids)
     for product in products:
         WishlistItem.objects.get_or_create(user=user, product=product)
 

@@ -25,15 +25,7 @@ EXCLUDED_STATUSES = (
     Order.STATUS_FAILED,
 )
 
-PREPAID_RECEIVED_STATUSES = (
-    Order.STATUS_PAID,
-    Order.STATUS_DELIVERED,
-)
-
-EXPECTED_STATUSES = (
-    Order.STATUS_NEW,
-    Order.STATUS_PENDING,
-)
+EXPECTED_STATUSES = Order.IN_PROGRESS_STATUSES
 
 
 def period_date_bounds(period, anchor_date):
@@ -81,7 +73,6 @@ def build_payments_dashboard_context(*, period, anchor_date):
         payment_method=Order.PAYMENT_METHOD_CARD,
         stripe_payment_intent_id__gt="",
         stripe_refund_id="",
-        status__in=PREPAID_RECEIVED_STATUSES,
         **_in_period("order_date", start, end),
     )
     door_card = base.filter(

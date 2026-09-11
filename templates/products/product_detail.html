@@ -63,7 +63,9 @@
                     {% endif %}
                 </p>
 
-                <p id="pd-availability" class="mt-1 text-sm font-medium font-inter {{ selected_variant.availability_color_class }}">
+                <p id="pd-availability"
+                   class="mt-1 text-sm font-inter {{ selected_variant.availability_color_class }}"
+                   {% if not selected_variant.availability_label %}hidden{% endif %}>
                     {{ selected_variant.availability_label }}
                 </p>
 
@@ -119,11 +121,11 @@
                 </div>
 
                 <div id="pd-cart-footer"
-                     class="mt-6 rounded-full overflow-hidden text-white {% if selected_variant.is_on_order %}bg-kokkoris-blue{% elif selected_variant.can_add %}bg-kokkoris-teal-dark{% else %}bg-slate-400{% endif %}"
+                     class="mt-6 rounded-full overflow-hidden text-white {% if selected_variant.can_add %}bg-kokkoris-teal-dark{% else %}bg-slate-400{% endif %}"
                      data-variant-id="{{ selected_variant.id }}"
                      data-can-add="{{ selected_variant.can_add|yesno:'true,false' }}"
                      data-on-order="{{ selected_variant.is_on_order|yesno:'true,false' }}"
-                     data-button-label="{{ selected_variant.button_label }}"
+                     data-button-label="Αγορά"
                      {% if selected_variant.max_quantity != None %}data-max-stock="{{ selected_variant.max_quantity }}"{% endif %}>
                     {% if selected_variant.cart_qty > 0 %}
                         <div class="cart-stepper flex items-center justify-between px-6 py-3" data-variant-id="{{ selected_variant.id }}">
@@ -134,7 +136,7 @@
                         </div>
                     {% elif selected_variant.can_add %}
                         <button type="button" class="cart-add w-full py-3.5 text-sm font-poppins font-medium uppercase tracking-wider" data-variant-id="{{ selected_variant.id }}">
-                            {{ selected_variant.button_label }}
+                            {% trans "Αγορά" %}
                         </button>
                     {% else %}
                         <button type="button" disabled class="cart-add w-full py-3.5 text-sm font-poppins font-medium uppercase tracking-wider opacity-80 cursor-not-allowed">
@@ -267,8 +269,8 @@
 
 {% block extra_body %}
 <link rel="stylesheet" href="{% static 'css/product-detail.css' %}">
-<script src="{% static 'js/product-detail.js' %}"></script>
-<script src="{% static 'js/catalog.js' %}"></script>
+<script src="{% static 'js/product-detail.js' %}?v=buy-note-1"></script>
+<script src="{% static 'js/catalog.js' %}?v=buy-note-1"></script>
 <script>
 (function () {
     document.querySelectorAll(".product-detail-related, .favourites-browse-section").forEach(function (section) {

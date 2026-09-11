@@ -6,7 +6,6 @@ from django.utils import timezone
 from accounts.profile_labels import (
     DELIVERY_METHOD_LABELS,
     ORDER_STATUS_LABELS,
-    PAYMENT_METHOD_LABELS,
 )
 from orders.models import Order
 from orders.presentation import (
@@ -14,6 +13,7 @@ from orders.presentation import (
     build_delivery_maps_link,
     build_order_detail_context,
     build_order_item_rows,
+    build_payment_display,
 )
 from products.catalog import format_decimal_greek
 
@@ -31,15 +31,11 @@ PERIOD_CHOICES = (
 STATUS_UNDELIVERED = "undelivered"
 STATUS_ALL = "all"
 STATUS_COMPLETED = "completed"
-STATUS_NEW = "new"
-STATUS_PAID = "paid"
 
 STATUS_FILTER_CHOICES = (
     (STATUS_UNDELIVERED, "Ενεργές (μη παραδοθείσες)"),
     (STATUS_ALL, "Όλες οι παραγγελίες"),
     (STATUS_COMPLETED, "Ολοκληρωμένες"),
-    (STATUS_NEW, "Νέες"),
-    (STATUS_PAID, "Πληρωμένες"),
 )
 
 DELIVERY_ALL = "all"
@@ -47,17 +43,17 @@ DELIVERY_COURIER = "courier"
 DELIVERY_COMPANY = "company"
 DELIVERY_BOX_NOW = "box_now"
 
+# Company delivery is the shop default (~all Athens orders). Keep it first
+# and treat it as the implicit filter when the URL omits `delivery`.
 DELIVERY_FILTER_CHOICES = (
-    (DELIVERY_ALL, "Όλες"),
+    (DELIVERY_COMPANY, "Από υπάλληλο"),
     (DELIVERY_COURIER, "Courier"),
     (DELIVERY_BOX_NOW, "BOX NOW"),
-    (DELIVERY_COMPANY, "Υπάλληλος"),
+    (DELIVERY_ALL, "Όλες"),
 )
+VALID_DELIVERY_FILTERS = {key for key, _label in DELIVERY_FILTER_CHOICES}
 
-UNDELIVERED_STATUSES = (
-    Order.STATUS_NEW,
-    Order.STATUS_PENDING,
-    Order.STATUS_PAID,
+UNDELIVERED_STATUSES = Order.IN_PROGRESS_STATUSES + (
     Order.STATUS_CANCELLATION_REQUESTED,
 )
 
@@ -140,10 +136,6 @@ def apply_status_filter(queryset, status_filter):
         return queryset.filter(status__in=UNDELIVERED_STATUSES)
     if status_filter == STATUS_COMPLETED:
         return queryset.filter(status=Order.STATUS_DELIVERED)
-    if status_filter == STATUS_NEW:
-        return queryset.filter(status__in=(Order.STATUS_NEW, Order.STATUS_PENDING))
-    if status_filter == STATUS_PAID:
-        return queryset.filter(status=Order.STATUS_PAID)
     return queryset
 
 
@@ -169,7 +161,7 @@ def build_filter_query_params(
     use_period_filter,
 ):
     params = {"status": status_filter}
-    if delivery_filter != DELIVERY_ALL:
+    if delivery_filter != DELIVERY_COMPANY:
         params["delivery"] = delivery_filter
     if user_email:
         params["user"] = user_email
@@ -203,10 +195,7 @@ def build_order_row(order):
         "status": order.status,
         "status_label": ORDER_STATUS_LABELS.get(order.status, order.get_status_display()),
         "payment_method": order.payment_method,
-        "payment_label": PAYMENT_METHOD_LABELS.get(
-            order.payment_method,
-            order.get_payment_method_display(),
-        ),
+        **build_payment_display(order),
         "delivery_method": order.delivery_method,
         "is_courier": order.delivery_method in (
             Order.DELIVERY_METHOD_COURIER,
@@ -225,8 +214,10 @@ def build_order_row(order):
         "delivery_address_display": _delivery_address_display(order),
         "delivery_phone": order.delivery_phone_number or "",
         "delivery_notes": order.delivery_notes or "",
+        "preferred_delivery_time": order.preferred_delivery_time or "",
         "is_cancellation_request": order.status == Order.STATUS_CANCELLATION_REQUESTED,
         "cancellation_requested_at": order.cancellation_requested_at,
+        "cancellation_reason": (order.cancellation_reason or "").strip(),
         "stripe_payment_intent_id": order.stripe_payment_intent_id,
         "stripe_refund_id": order.stripe_refund_id,
         "is_refunded": bool(order.stripe_refund_id),
@@ -300,14 +291,18 @@ def build_orders_panel_context(
     anchor_date,
     user_email="",
     status_filter=STATUS_UNDELIVERED,
-    delivery_filter=DELIVERY_ALL,
+    delivery_filter=DELIVERY_COMPANY,
     use_period_filter=False,
 ):
     base_qs = Order.objects.select_related("user").order_by("-order_date")
+    request_qs = apply_delivery_filter(
+        base_qs.filter(status=Order.STATUS_CANCELLATION_REQUESTED),
+        delivery_filter,
+    )
 
     cancellation_requests = [
         build_order_row(order)
-        for order in base_qs.filter(status=Order.STATUS_CANCELLATION_REQUESTED).prefetch_related(
+        for order in request_qs.prefetch_related(
             "items__product_variant__product__company"
         )
     ]
@@ -378,7 +373,7 @@ def build_payments_panel_context(
     anchor_date,
     user_email="",
     status_filter=STATUS_ALL,
-    delivery_filter=DELIVERY_ALL,
+    delivery_filter=DELIVERY_COMPANY,
     use_period_filter=False,
 ):
     """Payment history — card and cash-on-delivery orders with amounts."""

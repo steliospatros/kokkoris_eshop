@@ -627,17 +627,15 @@ def stripe_webhook_view(request):
         return JsonResponse({"error": "Invalid payload"}, status=400)
 
     if event["type"] == "payment_intent.succeeded":
-        intent = event["data"]["object"]
-        Order.objects.filter(
-            stripe_payment_intent_id=intent["id"],
-            status__in=(Order.STATUS_PENDING, Order.STATUS_NEW),
-        ).update(status=Order.STATUS_PAID)
+        # Orders are created as registered after Stripe confirms. Payment lives
+        # on stripe_payment_intent_id, not on fulfillment status.
+        pass
     elif event["type"] == "payment_intent.payment_failed":
         intent = event["data"]["object"]
         Order.objects.filter(
             stripe_payment_intent_id=intent["id"],
-            status__in=(Order.STATUS_PENDING, Order.STATUS_NEW),
-        ).update(status=Order.STATUS_FAILED)
+            status__in=Order.IN_PROGRESS_STATUSES,
+        ).update(status=Order.STATUS_CANCELLED)
 
     return JsonResponse({"received": True})
 

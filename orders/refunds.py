@@ -18,10 +18,12 @@ class StripeRefundError(RuntimeError):
 
 
 def order_requires_stripe_refund(order: Order) -> bool:
+    if order.status in (Order.STATUS_CANCELLED, Order.STATUS_FAILED):
+        return False
     return (
         order.payment_method == Order.PAYMENT_METHOD_CARD
         and bool(order.stripe_payment_intent_id)
-        and order.status in (Order.STATUS_PAID, Order.STATUS_CANCELLATION_REQUESTED)
+        and not order.stripe_refund_id
     )
 
 

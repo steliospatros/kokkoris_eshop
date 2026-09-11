@@ -2,8 +2,18 @@
 from django.db import transaction
 from django.utils import timezone
 
-from administration.order_queries import build_order_row
+from administration.order_actions import cancel_order_by_admin
+from administration.order_queries import (
+    DELIVERY_ALL,
+    DELIVERY_BOX_NOW,
+    DELIVERY_COMPANY,
+    DELIVERY_COURIER,
+    DELIVERY_FILTER_CHOICES,
+    apply_delivery_filter,
+    build_order_row,
+)
 from orders.models import Order
+from orders.presentation import PRIORITY_CHOICES, company_delivery_priority
 
 
 SHOW_PENDING = "pending"
@@ -14,11 +24,7 @@ SHOW_CHOICES = (
     (SHOW_DELIVERED, "Παραδομένες"),
 )
 
-PENDING_STATUSES = (
-    Order.STATUS_NEW,
-    Order.STATUS_PENDING,
-    Order.STATUS_PAID,
-)
+PENDING_STATUSES = Order.IN_PROGRESS_STATUSES
 
 # Company delivery (Athens) first — highest operational priority.
 DELIVERY_GROUPS = (
@@ -55,11 +61,16 @@ def _order_rows(orders):
         row["is_prepaid_card"] = order.is_prepaid_card()
         row["needs_collection_declaration"] = order.needs_collection_declaration()
         row["collected_payment_method"] = order.collected_payment_method
+        row["payment_state"] = order.payment_state()
+        row["payment_is_settled"] = order.payment_is_settled()
+        row["priority"] = (
+            company_delivery_priority(order) if order.status != Order.STATUS_DELIVERED else ""
+        )
         rows.append(row)
     return rows
 
 
-def group_delivery_rows(rows):
+def group_delivery_rows(rows, *, priority=""):
     """Split rows into company / courier / BOX NOW. Empty groups are kept."""
     by_method = {group["method"]: [] for group in DELIVERY_GROUPS}
     leftover = []
@@ -72,12 +83,16 @@ def group_delivery_rows(rows):
 
     grouped = []
     for group in DELIVERY_GROUPS:
+        orders = by_method[group["method"]]
+        if priority and group["key"] == "company":
+            orders = [row for row in orders if row.get("priority") == priority]
         grouped.append(
             {
                 "key": group["key"],
                 "label": group["label"],
-                "orders": by_method[group["method"]],
-                "count": len(by_method[group["method"]]),
+                "method": group["method"],
+                "orders": orders,
+                "count": len(orders),
             }
         )
     if leftover:
@@ -92,11 +107,18 @@ def group_delivery_rows(rows):
     return grouped
 
 
-def build_deliveries_panel_context(*, show=SHOW_PENDING):
+def build_deliveries_panel_context(
+    *, show=SHOW_PENDING, priority="", delivery_filter=DELIVERY_COMPANY
+):
     if show not in {SHOW_PENDING, SHOW_DELIVERED}:
         show = SHOW_PENDING
+    allowed = {key for key, _label in PRIORITY_CHOICES}
+    if priority not in allowed:
+        priority = ""
+    if delivery_filter not in {key for key, _label in DELIVERY_FILTER_CHOICES}:
+        delivery_filter = DELIVERY_COMPANY
 
-    qs = _deliveries_queryset()
+    qs = apply_delivery_filter(_deliveries_queryset(), delivery_filter)
     pending_count = qs.filter(status__in=PENDING_STATUSES).count()
     delivered_count = qs.filter(status=Order.STATUS_DELIVERED).count()
 
@@ -110,33 +132,68 @@ def build_deliveries_panel_context(*, show=SHOW_PENDING):
         )
 
     rows = _order_rows(orders)
+    priority_counts = {key: 0 for key, _label in PRIORITY_CHOICES}
+    for row in rows:
+        key = row.get("priority")
+        if key in priority_counts:
+            priority_counts[key] += 1
+
+    groups = group_delivery_rows(rows, priority=priority)
+    if delivery_filter != DELIVERY_ALL:
+        wanted = {
+            DELIVERY_COMPANY: Order.DELIVERY_METHOD_COMPANY,
+            DELIVERY_COURIER: Order.DELIVERY_METHOD_COURIER,
+            DELIVERY_BOX_NOW: Order.DELIVERY_METHOD_BOX_NOW,
+        }.get(delivery_filter)
+        groups = [group for group in groups if group.get("method") == wanted]
+
     return {
         "show": show,
         "show_choices": SHOW_CHOICES,
+        "priority": priority,
+        "priority_choices": PRIORITY_CHOICES,
+        "priority_counts": priority_counts,
         "pending_count": pending_count,
         "delivered_count": delivered_count,
         "orders": rows,
-        "delivery_groups": group_delivery_rows(rows),
+        "delivery_groups": groups,
         "orders_count": len(rows),
         "is_pending_view": show == SHOW_PENDING,
+        "delivery_filter": delivery_filter,
+        "delivery_filter_choices": DELIVERY_FILTER_CHOICES,
     }
 
 
 def status_after_undeliver(order):
-    """Restore a workable status when a courier undoes a delivery mark."""
-    if (
-        order.payment_method == Order.PAYMENT_METHOD_CARD
-        and order.stripe_payment_intent_id
-    ):
-        return Order.STATUS_PAID
+    """Restore a registered order when staff undo a delivery mark."""
     return Order.STATUS_NEW
 
 
-def mark_order_delivery(order, *, delivered, collected_payment=""):
+def apply_delivery_action(order, *, action, collected_payment="", reason=""):
+    """Courier actions on the deliveries page: deliver, undo, or cancel."""
+    action = (action or "").strip()
+    if action == "deliver":
+        return mark_order_delivery(
+            order,
+            delivered=True,
+            collected_payment=collected_payment,
+        )
+    if action == "undeliver":
+        return mark_order_delivery(order, delivered=False, reason=reason)
+    if action == "cancel":
+        if order.status != Order.STATUS_DELIVERED:
+            return False, "Ακύρωση από εδώ γίνεται μόνο σε παραδομένη παραγγελία."
+        return cancel_order_by_admin(order, reason)
+    return False, "Άγνωστη ενέργεια."
+
+
+def mark_order_delivery(order, *, delivered, collected_payment="", reason=""):
     """
     Mark an order delivered or undo that mark.
 
-    Door collections require cash vs card. Uses .save() so the customer email fires.
+    Door collections require cash vs card. Undoing a delivery needs a written
+    reason so an accidental tap cannot silently rewind the order. Uses .save()
+    so the customer email fires.
     """
     if delivered:
         if order.status == Order.STATUS_DELIVERED:
@@ -166,11 +223,21 @@ def mark_order_delivery(order, *, delivered, collected_payment=""):
 
     if order.status != Order.STATUS_DELIVERED:
         return False, "Η παραγγελία δεν είναι παραδομένη."
+    reason = (reason or "").strip()
+    if len(reason) < 3:
+        return False, "Γράψε γιατί αναιρείται η παράδοση (τουλάχιστον 3 χαρακτήρες)."
+    stamp = timezone.localtime().strftime("%d/%m/%Y %H:%M")
+    note = f"Αναίρεση παράδοσης ({stamp}): {reason}"
+    order.special_notes = (
+        f"{order.special_notes.rstrip()}\n{note}" if order.special_notes else note
+    )
     order.status = status_after_undeliver(order)
-    order.collected_payment_method = ""
     order.delivered_at = None
+    update_fields = ["status", "delivered_at", "special_notes"]
+    # Stripe money stays recorded: only door collections can be un-declared.
+    if not order.payment_is_locked():
+        order.collected_payment_method = ""
+        update_fields.append("collected_payment_method")
     with transaction.atomic():
-        order.save(
-            update_fields=["status", "collected_payment_method", "delivered_at"]
-        )
+        order.save(update_fields=update_fields)
     return True, f"Η παραγγελία {order.public_code_display} επέστρεψε στις εκκρεμείς."

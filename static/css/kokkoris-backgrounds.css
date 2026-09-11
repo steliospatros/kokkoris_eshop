@@ -70,8 +70,120 @@
   background-image: url("../images/backgrounds/back2.png");
 }
 
-/* Animal category landing tiles (σκυλιά/γάτες) — tile matches image bounds;
-   white in product photos is knocked out so main-panel back1/back2 shows through. */
+/* TROFES PDF landings — full-bleed wave + circular category hotspots. */
+.animal-landing {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  line-height: 0;
+  min-height: calc(100dvh - 10.5rem);
+}
+
+.animal-landing--cat {
+  background: #ff931e;
+}
+
+.animal-landing--dog {
+  background: #4aa190;
+}
+
+.animal-landing__frame {
+  position: relative;
+  width: 100%;
+  line-height: 0;
+}
+
+.animal-landing__band {
+  display: block;
+  width: 100%;
+  height: auto;
+  vertical-align: top;
+}
+
+.animal-landing__hotspot {
+  position: absolute;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  z-index: 2;
+}
+
+.animal-landing__hotspot:hover,
+.animal-landing__hotspot:focus-visible {
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.55);
+  outline: none;
+}
+
+/* Brands landing — SEL_oles etairies.pdf, header cropped. */
+.brand-landing {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  line-height: 0;
+  min-height: calc(100dvh - 10.5rem);
+  background: #d0ece8;
+}
+
+.brand-landing__frame {
+  position: relative;
+  width: 100%;
+  line-height: 0;
+}
+
+.brand-landing__band {
+  display: block;
+  width: 100%;
+  height: auto;
+  vertical-align: top;
+}
+
+.brand-landing__hotspot {
+  position: absolute;
+  border-radius: 50%;
+  z-index: 2;
+}
+
+.brand-landing__hotspot:hover,
+.brand-landing__hotspot:focus-visible {
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.55);
+  outline: none;
+}
+
+/* Homepage about-us — PDF 2×4 brand ovals. */
+.home-brand-list__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(0.75rem, 2vw, 1.75rem) clamp(0.6rem, 1.6vw, 1.5rem);
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .home-brand-list__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.home-brand-list__link {
+  display: block;
+  line-height: 0;
+}
+
+.home-brand-list__oval {
+  display: block;
+  width: 100%;
+  height: auto;
+  transition: transform 0.2s ease;
+}
+
+.home-brand-list__link:hover .home-brand-list__oval,
+.home-brand-list__link:focus-visible .home-brand-list__oval {
+  transform: scale(1.03);
+}
+
+/* Brand landing tiles (and leftover category-tile markup). */
+
 .animal-category-tile {
   position: relative;
   display: block;
@@ -266,33 +378,52 @@
 }
 
 /* Category browse — company headers: logo OR name (not both), centered */
+/* Fixed height, not min-height: logos vary in shape, so a flexible header
+   would leave every company row sitting at a different offset. */
 .browse-company-header {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 5.5rem;
+  height: 7.5rem;
   text-align: center;
 }
 
 @media (min-width: 1024px) {
   .browse-company-header {
-    min-height: 8rem;
+    height: 10.5rem;
   }
 }
 
+.browse-company-header__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: inherit;
+}
+
+.browse-company-header__link:hover .browse-company-header__logo,
+.browse-company-header__link:focus-visible .browse-company-header__logo {
+  opacity: 0.82;
+}
+
+/* --browse-logo-height is set per company by products.catalog: every logo is
+   scaled to the same artwork area, so a square badge reads as large as a wide
+   wordmark instead of shrinking to a coin. */
 .browse-company-header__logo {
   display: block;
-  height: 5.5rem;
+  height: calc(var(--browse-logo-height, 7.5rem) * 0.7);
   width: auto;
-  max-width: 20rem;
+  max-width: min(20rem, 100%);
   object-fit: contain;
   object-position: center;
+  transition: opacity 0.2s ease;
 }
 
 @media (min-width: 1024px) {
   .browse-company-header__logo {
-    height: 7.5rem;
-    max-width: 28rem;
+    height: var(--browse-logo-height, 7.5rem);
+    max-width: min(28rem, 100%);
   }
 }
 

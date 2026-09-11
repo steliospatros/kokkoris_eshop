@@ -68,9 +68,11 @@ def build_free_shipping_promo(cart_total):
             f"Δωρεάν μεταφορικά για παραγγελίες άνω των "
             f"{format_decimal_greek(minimum)} €"
         ),
+        "strip_kicker": "Όλη η Ελλάδα",
         "strip_headline": f"Δωρεάν μεταφορικά άνω των {format_amount_short(minimum)}€",
         "message": message,
         "detail": detail,
+        "aria_label": "Προσφορά δωρεάν μεταφορικών",
     }
 
 
@@ -91,10 +93,30 @@ def build_static_free_shipping_promo():
             f"Δωρεάν μεταφορικά για παραγγελίες άνω των "
             f"{format_decimal_greek(minimum)} €"
         ),
+        "strip_kicker": "Όλη η Ελλάδα",
         "strip_headline": f"Δωρεάν μεταφορικά άνω των {format_amount_short(minimum)}€",
         "message": "Σε όλη την Ελλάδα, με courier ή BOX NOW locker.",
         "detail": (
             f"Συμπληρώστε το καλάθι σας με "
             f"{format_decimal_greek(minimum)} € και κερδίστε δωρεάν αποστολή."
         ),
+        "aria_label": "Προσφορά δωρεάν μεταφορικών",
+    }
+
+
+def build_athens_delivery_promo():
+    """Homepage offer for free company delivery inside Athens."""
+    return {
+        "qualified": True,
+        "is_static": True,
+        "progress_percent": 0,
+        "headline": "Δωρεάν παράδοση εντός Αθηνών από την εταιρία",
+        "strip_kicker": "Αθήνα",
+        "strip_headline": "Δωρεάν παράδοση εντός Αθηνών",
+        "message": "Από την εταιρία, στην πόρτα σου · έως 3 εργάσιμες ημέρες",
+        "detail": (
+            "Για διευθύνσεις εντός Αθηνών η παράδοση γίνεται δωρεάν "
+            "από υπάλληλο της εταιρίας, έως 3 εργάσιμες ημέρες."
+        ),
+        "aria_label": "Δωρεάν παράδοση εντός Αθηνών",
     }

@@ -1,7 +1,7 @@
 """Tests for smart storefront search."""
 from django.test import TestCase
 
-from products.models import AnimalType, Category, Company, Favourite, Product
+from products.models import AnimalType, Category, Company, Favourite, Product, ProductVariant
 from products.search import parse_search_query, search_products
 
 
@@ -47,6 +47,8 @@ class SmartSearchTests(TestCase):
         )
         Favourite.objects.filter(product=cls.dog_chicken).update(purchase_count=50, score=250)
         Favourite.objects.filter(product=cls.dog_dry).update(purchase_count=10, score=50)
+        for product in (cls.dog_dry, cls.dog_chicken, cls.cat_litter, cls.cat_sterile):
+            ProductVariant.objects.create(product=product, weight=2, price=10, stock=5)
 
     def test_dog_greek_returns_all_dogs_favourites_first(self):
         results = search_products("σκύλος", limit=10)
@@ -85,3 +87,11 @@ class SmartSearchTests(TestCase):
     def test_sterilized(self):
         results = search_products("στειρωμένα")
         self.assertEqual([p.id for p in results], [self.cat_sterile.id])
+
+    def test_hidden_products_are_absent_from_search(self):
+        self.dog_dry.is_active = False
+        self.dog_dry.save(update_fields=["is_active"])
+        results = search_products("σκύλος", limit=10)
+        ids = [p.id for p in results]
+        self.assertNotIn(self.dog_dry.id, ids)
+        self.assertIn(self.dog_chicken.id, ids)

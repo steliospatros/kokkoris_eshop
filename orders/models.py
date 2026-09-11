@@ -29,25 +29,30 @@ class Order(models.Model):
     ]
 
     STATUS_NEW = "new"
-    STATUS_PENDING = "pending"
-    STATUS_PAID = "paid"
     STATUS_DELIVERED = "delivered"
     STATUS_CANCELLED = "cancelled"
-    STATUS_FAILED = "failed"
     STATUS_CANCELLATION_REQUESTED = "cancel_req"
+    # Legacy values collapsed by migration 0013; kept so leftover rows still
+    # behave until that migration runs, and so older code can map them.
+    STATUS_PENDING = "pending"
+    STATUS_PAID = "paid"
+    STATUS_FAILED = "failed"
     STATUS_CHOICES = [
-        (STATUS_NEW, "New"),
-        (STATUS_PENDING, "Pending"),
-        (STATUS_PAID, "Paid"),
+        (STATUS_NEW, "Registered"),
         (STATUS_DELIVERED, "Delivered"),
         (STATUS_CANCELLED, "Cancelled"),
-        (STATUS_FAILED, "Failed"),
         (STATUS_CANCELLATION_REQUESTED, "Cancellation requested"),
     ]
-    # Immediate self-service cancel (no refund workflow).
-    CANCELLABLE_STATUSES = (STATUS_NEW, STATUS_PENDING)
-    # Paid card orders enter cancellation_requested for admin + Stripe refund.
-    REFUND_REQUEST_STATUSES = (STATUS_PAID,)
+    IN_PROGRESS_STATUSES = (STATUS_NEW, STATUS_PENDING, STATUS_PAID)
+
+    # Payment is deliberately kept out of `status`, which tracks fulfillment
+    # only. These are the settlement states the customer is told about.
+    PAYMENT_STATE_PREPAID = "prepaid"
+    PAYMENT_STATE_COLLECTED = "collected"
+    PAYMENT_STATE_DUE_ON_DELIVERY = "due_on_delivery"
+    PAYMENT_STATE_REFUNDED = "refunded"
+    PAYMENT_STATE_NOT_CHARGED = "not_charged"
+    SETTLED_PAYMENT_STATES = (PAYMENT_STATE_PREPAID, PAYMENT_STATE_COLLECTED)
 
     DELIVERY_METHOD_COMPANY = "company_delivery"
     DELIVERY_METHOD_COURIER = "courier"
@@ -100,7 +105,7 @@ class Order(models.Model):
         max_length=10,
         choices=STATUS_CHOICES,
         default=STATUS_NEW,
-        help_text="Where this order currently stands in the payment/delivery lifecycle."
+        help_text="Fulfillment only: registered, delivered, cancellation requested, or cancelled. Payment is tracked separately."
     )
 
     # --- Cost breakdown. cart_cost is just the products; courier_fee is the
@@ -145,6 +150,11 @@ class Order(models.Model):
         null=True,
         blank=True,
         help_text="When the customer submitted a cancellation/refund request.",
+    )
+    cancellation_reason = models.TextField(
+        blank=True,
+        default="",
+        help_text="Reason written by staff when cancelling. Shown to the customer.",
     )
     delivery_method = models.CharField(
         max_length=20,
@@ -255,17 +265,17 @@ class Order(models.Model):
             self.order_code = assign_unique_order_code(type(self))
         super().save(*args, **kwargs)
 
+    def is_in_progress(self):
+        """Not yet delivered or cancelled — still being prepared/shipped."""
+        return self.status in self.IN_PROGRESS_STATUSES
+
     def can_be_cancelled_by_customer(self):
-        """Immediate cancel for unpaid orders (e.g. cash on delivery / pending)."""
-        return self.status in self.CANCELLABLE_STATUSES
+        """Immediate cancel for unpaid orders (cash on delivery)."""
+        return self.is_in_progress() and not self.is_prepaid_card()
 
     def can_request_cancellation(self):
-        """Paid card orders: customer submits a refund request for admin review."""
-        return (
-            self.status in self.REFUND_REQUEST_STATUSES
-            and self.payment_method == self.PAYMENT_METHOD_CARD
-            and bool(self.stripe_payment_intent_id)
-        )
+        """Prepaid card orders: customer submits a refund request for admin review."""
+        return self.is_in_progress() and self.is_prepaid_card()
 
     def can_customer_initiate_cancel(self):
         return self.can_be_cancelled_by_customer() or self.can_request_cancellation()
@@ -280,6 +290,40 @@ class Order(models.Model):
             and bool(self.stripe_payment_intent_id)
             and not self.stripe_refund_id
         )
+
+    def payment_is_locked(self):
+        """
+        Stripe captured the money, so staff can neither re-declare the payment
+        nor clear it — not even by undoing a delivery or after a refund.
+
+        Keyed on the PaymentIntent alone, not on payment_method: only online
+        card checkout ever stores one, and the flag must still hold if the
+        method field was overwritten by hand.
+        """
+        return bool(self.stripe_payment_intent_id)
+
+    def payment_state(self):
+        """
+        Whether the money has actually arrived — separate from `status`, which
+        only says where the parcel is.
+
+        Checked most-certain-first: a refund and a Stripe capture are facts
+        about money that outrank anything the fulfillment flow says, so an
+        undelivered card order still reads as paid.
+        """
+        if self.stripe_refund_id:
+            return self.PAYMENT_STATE_REFUNDED
+        if self.stripe_payment_intent_id:
+            return self.PAYMENT_STATE_PREPAID
+        if self.status in (self.STATUS_CANCELLED, self.STATUS_FAILED):
+            return self.PAYMENT_STATE_NOT_CHARGED
+        if self.collected_payment_method:
+            return self.PAYMENT_STATE_COLLECTED
+        return self.PAYMENT_STATE_DUE_ON_DELIVERY
+
+    def payment_is_settled(self):
+        """True once the order has been paid for, by card online or at the door."""
+        return self.payment_state() in self.SETTLED_PAYMENT_STATES
 
     def needs_collection_declaration(self):
         """Staff must say cash vs card only for door collections, not BOX NOW."""

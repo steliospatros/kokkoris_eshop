@@ -145,6 +145,56 @@ class ProductDetailViewTests(TestCase):
         self.assertIn("detail_url", card)
         self.assertIn(self.product.slug, card["detail_url"])
 
+    def test_on_order_uses_same_buy_button_and_a_note(self):
+        from products.catalog import build_catalog_card, get_catalog_queryset, get_stock_display
+
+        display = get_stock_display(self.variant_small)
+        self.assertEqual(display.get("button_label", "Αγορά"), "Αγορά")
+        self.assertEqual(display["label"], "")
+
+        self.variant_small.availability = ProductVariant.AVAILABILITY_ON_ORDER
+        self.variant_small.save(update_fields=["availability"])
+        on_order = get_stock_display(self.variant_small)
+        self.assertEqual(on_order["button_label"], "Αγορά")
+        self.assertEqual(on_order["label"], "Κατόπιν παραγγελίας")
+        self.assertTrue(on_order["can_add"])
+
+        self.product.variants.update(
+            availability=ProductVariant.AVAILABILITY_ON_ORDER
+        )
+        card = build_catalog_card(get_catalog_queryset().get(pk=self.product.pk))
+        self.assertEqual(card["button_label"], "Αγορά")
+        self.assertEqual(card["availability_label"], "Κατόπιν παραγγελίας")
+        listing = self.client.get(reverse("products:all"))
+        self.assertContains(listing, "Αγορά")
+        self.assertContains(listing, "Κατόπιν παραγγελίας")
+        self.assertNotContains(listing, "bg-kokkoris-blue")
+
+    def test_hidden_and_unavailable_products_leave_the_shop(self):
+        from products.catalog import get_catalog_queryset, get_product_detail_queryset
+
+        self.product.is_active = False
+        self.product.save(update_fields=["is_active"])
+        self.assertFalse(get_catalog_queryset().filter(pk=self.product.pk).exists())
+        self.assertFalse(get_product_detail_queryset().filter(pk=self.product.pk).exists())
+        listing = self.client.get(reverse("products:all"))
+        self.assertNotContains(listing, self.product.name)
+        detail = self.client.get(
+            reverse("products:detail", kwargs={"slug": self.product.slug})
+        )
+        self.assertEqual(detail.status_code, 404)
+
+        self.product.is_active = True
+        self.product.save(update_fields=["is_active"])
+        self.product.variants.update(
+            availability=ProductVariant.AVAILABILITY_OUT_OF_STOCK
+        )
+        self.assertFalse(get_catalog_queryset().filter(pk=self.product.pk).exists())
+        response = self.client.get(
+            reverse("products:detail", kwargs={"slug": self.product.slug})
+        )
+        self.assertEqual(response.status_code, 404)
+
     def test_unit_price_shown_only_for_dry_food(self):
         from products.catalog import build_catalog_card, build_variant_option, get_catalog_queryset
 
@@ -216,24 +266,79 @@ class FrozenEmptyCompanyTests(TestCase):
         cls.visible = Company.objects.create(name="Visible Brand", code="VIS")
         animal = AnimalType.objects.create(name="Dog", slug="dog")
         category = Category.objects.create(name="Dry Food", slug="dry-food")
-        Product.objects.create(
+        visible_product = Product.objects.create(
             name="Visible Food",
             company=cls.visible,
             animal_type=animal,
             category=category,
             is_active=True,
         )
+        ProductVariant.objects.create(
+            product=visible_product, weight=2, price=10, stock=5
+        )
 
     def test_empty_company_hidden_from_brand_tiles(self):
-        from products.catalog import build_brand_tiles
+        from products.catalog import build_brand_landing_page, build_brand_tiles
 
         labels = [tile["label"] for tile in build_brand_tiles()]
         self.assertIn("Visible Brand", labels)
         self.assertNotIn("Empty Brand", labels)
 
+        landing_labels = [spot["label"] for spot in build_brand_landing_page()["landing_hotspots"]]
+        self.assertNotIn("Empty Brand", landing_labels)
+
+        from products.catalog import build_homepage_brand_list
+
+        home_labels = [brand["label"] for brand in build_homepage_brand_list()]
+        self.assertNotIn("Empty Brand", home_labels)
+
+    def test_browse_company_logo_links_to_brand_page(self):
+        company = Company.objects.create(name="Core", code="COR")
+        animal = AnimalType.objects.get(slug="dog")
+        category = Category.objects.get(slug="dry-food")
+        product = Product.objects.create(
+            name="Core Adult",
+            company=company,
+            animal_type=animal,
+            category=category,
+            is_active=True,
+        )
+        ProductVariant.objects.create(product=product, weight=2, price=10, stock=5)
+
+        response = self.client.get(
+            reverse("products:browse"),
+            {"animal": "dog", "category": "dry-food"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("products:company", args=["COR"]))
+        self.assertContains(response, "browse-company-header__link")
+
     def test_empty_company_page_redirects(self):
         response = self.client.get(
             reverse("products:company", kwargs={"company_code": "EMP"})
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("products:brands"))
+
+    def test_hidden_only_company_leaves_the_shop(self):
+        from products.catalog import build_brand_tiles
+
+        animal = AnimalType.objects.get(slug="dog")
+        category = Category.objects.get(slug="dry-food")
+        hidden_brand = Company.objects.create(name="Hidden Brand", code="HID")
+        product = Product.objects.create(
+            name="Secret Food",
+            company=hidden_brand,
+            animal_type=animal,
+            category=category,
+            is_active=False,
+        )
+        ProductVariant.objects.create(product=product, weight=2, price=10, stock=5)
+
+        labels = [tile["label"] for tile in build_brand_tiles()]
+        self.assertNotIn("Hidden Brand", labels)
+        response = self.client.get(
+            reverse("products:company", kwargs={"company_code": "HID"})
         )
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("products:brands"))

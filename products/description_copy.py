@@ -14,23 +14,27 @@ FLAVOR_PATTERNS = [
     (r"lamb|αρν[ιί]", "αρνί", "αρνιού"),
     (r"beef|βοδιν|μοσχ[αά]ρ", "μοσχάρι", "μοσχαριού"),
     (r"salmon|σολομ", "σολομό", "σολομού"),
+    (r"tuna|τον[οό]", "τόνο", "τόνου"),
     (r"fish|ψ[αά]ρ", "ψάρι", "ψαριού"),
     (r"duck|π[αά]πι", "πάπια", "πάπιας"),
     (r"rabbit|κουν[εέ]λ", "κουνέλι", "κουνελιού"),
     (r"mackerel|σκουμπρ", "σκουμπρί", "σκουμπριού"),
     (r"venison|ελαφ", "ελάφι", "ελαφιού"),
+    (r"goat|κατσικ", "κατσίκι", "κατσικιού"),
+    (r"boar|αγριοχοιρ", "αγριόχοιρο", "αγριόχοιρου"),
 ]
 
 STAGE_PATTERNS = [
-    (r"kitten|γατακ", "kitten"),
-    (r"puppy|puppies|κουταβ|junior", "puppy"),
+    (r"kitten|γατ[αά]κ", "kitten"),
+    (r"puppy|puppies|κουτ[αά]β|junior", "puppy"),
     (r"senior|ageing|aging|ηλικιωμ|mature", "senior"),
     (r"steriliz|στειρωμ", "sterilized"),
     (r"light|weight|β[αά]ρουσ|ελεγχο βαρ", "light"),
-    (r"energy|δραστηρ", "energy"),
-    (r"hairball|τριχομπ", "hairball"),
-    (r"sensitive|ευαισθητ|derma|δ[εέ]ρμα", "sensitive"),
-    (r"adult|ενηλικ", "adult"),
+    (r"energy|δραστηρ|active life", "energy"),
+    (r"hairball|τριχ[οό]μπ", "hairball"),
+    (r"sensitive|ευαισθη|derma", "sensitive"),
+    (r"young|νεαρ", "young"),
+    (r"adult|εν[ηή]λικ", "adult"),
 ]
 
 BREED_PATTERNS = [
@@ -75,9 +79,9 @@ def _flavor_phrase(flavor_genitive: str | None) -> str:
 
 def _stage_opening(stage: str | None, forms: dict, breed: str | None) -> str:
     breed_bit = {
-        "small": " μικρόσωμων φυλών",
-        "large": " μεγαλόσωμων φυλών",
-        "medium": " μεσαίων φυλών",
+        "small": " μικρόσωμων ρατσών",
+        "large": " μεγαλόσωμων ρατσών",
+        "medium": " μεσαίων ρατσών",
     }.get(breed or "", "")
 
     mapping = {
@@ -102,6 +106,9 @@ def _stage_opening(stage: str | None, forms: dict, breed: str | None) -> str:
             f"ενεργειακή φόρμουλα για {forms['active_acc']}{breed_bit} "
             f"με υψηλές απαιτήσεις"
         ),
+        "young": f"πλήρη καθημερινή διατροφή για νεαρές {forms['pl_acc']}"
+        if "γάτες" in forms["pl_acc"]
+        else f"πλήρη καθημερινή διατροφή για νεαρούς {forms['pl_acc']}",
         "hairball": (
             "ιδανική επιλογή για καθημερινό έλεγχο των τριχόμπαλων, "
             "με σύνθεση φιλική για ευαίσθητο πεπτικό"
@@ -179,6 +186,10 @@ def _brand_close(company: str) -> str:
             "Η Puro Instinto ακολουθεί μια πιο φυσική προσέγγιση στη διατροφή "
             "του κατοικίδιου σας."
         ),
+        "Carnis": (
+            "Η Carnis συμπιέζεται σε χαμηλή θερμοκρασία, κρατώντας φυσικά "
+            "θρεπτικά συστατικά σε κάθε γεύμα."
+        ),
     }
     return closes.get(
         company,
@@ -196,6 +207,32 @@ def _is_catalogue_tagline(seed: str) -> bool:
     if upper_ratio >= 0.55 and len(seed) < 100:
         return True
     if re.match(r"^Μ[ΕE]\s+.+\s*[—\-]\s*ΓΙΑ\s+", seed, re.IGNORECASE):
+        return True
+    return False
+
+
+def needs_description_rewrite(text: str) -> bool:
+    """True when storefront copy is missing, catalogue residue, or too thin."""
+    seed = (text or "").strip()
+    if not seed:
+        return True
+    if _is_catalogue_tagline(seed):
+        return True
+    if seed.startswith("Κρέας ως Νο1"):
+        return True
+    if seed.startswith("Βοηθά "):
+        return True
+    if seed.startswith("Με πρεβιοτικά"):
+        return True
+    if "INTEGRAMIX" in seed and "«" not in seed:
+        return True
+    if seed.startswith("95%"):
+        return True
+    if "\u00b5" in seed:
+        return True
+    if re.search(r"\b\d{2}C\d{3,4}\b", seed):
+        return True
+    if len(seed) < 80:
         return True
     return False
 
@@ -228,7 +265,8 @@ def generate_product_description(
     bundle_contents: str = "",
 ) -> str:
     forms = _animal_forms(animal)
-    haystack = f"{name} {seed_description} {bundle_contents}"
+    seed = _clean_seed(seed_description)
+    haystack = f"{name} {seed} {bundle_contents}"
     flavor_match = _match_first(haystack, FLAVOR_PATTERNS)
     if flavor_match:
         flavor_acc, flavor_gen = flavor_match
@@ -240,7 +278,6 @@ def generate_product_description(
     opening = _stage_opening(stage, forms, breed)
     body = _category_body(category, flavor_acc, flavor_gen, forms["possessive"])
     brand = _brand_close(company)
-    seed = _clean_seed(seed_description)
 
     parts = [
         f"Το {company} «{name}» αποτελεί {opening}.",

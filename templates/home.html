@@ -9,14 +9,15 @@
     <div class="home-hero-stage">
         {% include "partials/hero.html" %}
         <div class="home-hero-chrome">
-            {% include "partials/free-shipping-strip.html" with promo=homepage_free_shipping_promo %}
-            {% if user.is_authenticated %}
             <p class="home-hero-welcome">
-                {% trans "Καλωσήρθατε στην σελίδα μας" %}{% if user.first_name or user.last_name %},
+                {% trans "Καλωσήρθατε στην σελίδα μας" %}{% if user.is_authenticated and user.first_name or user.is_authenticated and user.last_name %},
                     <span class="home-hero-welcome__name">{{ user.first_name }}{% if user.first_name and user.last_name %} {% endif %}{{ user.last_name }}</span>
                 {% endif %}
             </p>
-            {% endif %}
+            <div class="home-hero-promos">
+                {% include "partials/free-shipping-strip.html" with promo=homepage_athens_delivery_promo kind="athens" %}
+                {% include "partials/free-shipping-strip.html" with promo=homepage_free_shipping_promo kind="courier" %}
+            </div>
         </div>
     </div>
     {% include "partials/hero-about.html" %}
@@ -29,7 +30,7 @@
 {% block content %}{% endblock %}
 
 {% block extra_body %}
-<script src="{% static 'js/catalog.js' %}"></script>
+<script src="{% static 'js/catalog.js' %}?v=buy-note-1"></script>
 <script>
 (function () {
     document.querySelectorAll(".favourites-browse-section").forEach(function (section) {

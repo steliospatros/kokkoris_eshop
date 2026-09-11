@@ -11,7 +11,7 @@
     {% if page_sections %}
         {% for section in page_sections %}
             {% if section.type == "story" %}
-                {% include "products/company/partials/story_band.html" with story_band_static=section.static section_class=section.section_class %}
+                {% include "products/company/partials/story_band.html" with story_band_static=section.static section_class=section.section_class story_cache=section.cache %}
             {% elif section.type == "products" %}
                 {% include "products/company/partials/company_products_row.html" with product_cards=section.product_cards products_row_class=section.products_row_class %}
             {% endif %}
@@ -22,7 +22,7 @@
                 {% include "products/company/partials/story_band.html" with story_band_static=band.static section_class=band.section_class %}
             {% endfor %}
         {% elif story_band_static %}
-            {% include "products/company/partials/story_band.html" %}
+            {% include "products/company/partials/story_band.html" with section_class="brand-story-band--orange brand-story-band--full" %}
         {% endif %}
         {% if show_products_row %}
             {% include "products/company/partials/company_products_row.html" %}
@@ -36,7 +36,7 @@
 
 {% block extra_body %}
 {% if page_sections or show_products_row %}
-<script src="{% static 'js/catalog.js' %}"></script>
+<script src="{% static 'js/catalog.js' %}?v=buy-note-1"></script>
 <script>
 (function () {
     document.querySelectorAll(".brand-products__row").forEach(function (row) {

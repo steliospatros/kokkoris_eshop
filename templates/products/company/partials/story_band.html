@@ -1,7 +1,7 @@
 {% load i18n static %}
 <section class="brand-story-band{% if section_class %} {{ section_class }}{% endif %}"
          aria-label="{% blocktrans with brand=page_title %}{{ brand }} story{% endblocktrans %}">
-    <img src="{% static story_band_static %}"
+    <img src="{% static story_band_static %}?v={{ story_cache|default:'orange-join' }}"
          alt=""
          class="brand-story-band__slice">
 </section>

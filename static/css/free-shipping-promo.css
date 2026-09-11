@@ -10,6 +10,14 @@
 .home-hero-stage {
     position: relative;
     width: 100%;
+    /* Extra teal above the artwork so the promo cards sit here, not on the cats. */
+    background-color: #4aa190;
+    background-image: radial-gradient(
+        ellipse 70% 140% at 50% 100%,
+        #57a697 0%,
+        #4aa190 58%
+    );
+    padding-top: 10.5rem;
 }
 
 .home-hero-chrome {
@@ -22,54 +30,113 @@
     pointer-events: none;
 }
 
-.home-hero-chrome .freeship-strip {
+.home-hero-promos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.65rem;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0.45rem 1rem 0;
+}
+
+.home-hero-chrome .freeship-strip,
+.home-hero-chrome .freeship-strip--qualified {
     pointer-events: auto;
     overflow: hidden;
     color: #fff;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    box-shadow: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    min-height: 100%;
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: rgba(18, 48, 44, 0.32);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 10px 28px rgba(18, 48, 44, 0.22);
 }
 
 .home-hero-chrome .freeship-strip::after {
-    display: none;
+    display: block;
+    background: linear-gradient(
+        110deg,
+        transparent 32%,
+        rgba(255, 255, 255, 0.16) 42%,
+        rgba(255, 255, 255, 0.48) 50%,
+        rgba(255, 255, 255, 0.16) 58%,
+        transparent 68%
+    );
+    animation: freeship-shimmer 4.5s ease-in-out 0.6s infinite;
+}
+
+.home-hero-chrome .freeship-strip--courier::after {
+    animation-delay: 2.85s;
+}
+
+.home-hero-chrome .freeship-strip__inner {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    justify-content: flex-start;
+    text-align: left;
+    gap: 0.7rem;
+    padding: 0.7rem 0.95rem;
+}
+
+.home-hero-chrome .freeship-strip__copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.home-hero-chrome .freeship-strip__kicker {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+    font-family: Inter, sans-serif;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.92);
 }
 
 .home-hero-chrome .freeship-strip__headline {
-    font-weight: 500;
+    font-weight: 600;
 }
 
 .home-hero-chrome .freeship-strip__message {
     color: rgba(255, 255, 255, 0.82);
 }
 
-.home-hero-chrome .freeship-strip__sep {
-    background: rgba(255, 255, 255, 0.4);
+.home-hero-chrome .freeship-strip__bar {
+    width: 100%;
+    max-width: 10rem;
 }
 
 .home-hero-welcome {
-    margin: 0.65rem 1.25rem 0;
+    margin: 0.7rem 1.25rem 0.15rem;
     padding: 0;
     background: none;
     border: none;
     box-shadow: none;
     text-align: center;
     font-family: Poppins, sans-serif;
-    font-weight: 300;
-    font-size: clamp(1rem, 1.65vw, 1.375rem);
-    letter-spacing: 0.08em;
-    line-height: 1.35;
+    font-weight: 500;
+    font-size: clamp(1.25rem, 2vw, 1.7rem);
+    letter-spacing: 0.045em;
+    line-height: 1.3;
     color: #ffffff;
     text-shadow:
-        0 1px 0 rgba(18, 48, 44, 0.28),
-        0 2px 12px rgba(18, 48, 44, 0.38);
+        0 1px 0 rgba(18, 48, 44, 0.22),
+        0 4px 18px rgba(18, 48, 44, 0.35);
 }
 
 .home-hero-welcome__name {
-    font-weight: 500;
-    letter-spacing: 0.06em;
+    font-weight: 700;
+    letter-spacing: 0.03em;
 }
 
 /* --- Full-bleed marketing strip ------------------------------------------ */
@@ -134,11 +201,27 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.14);
 }
 
 .freeship-strip__icon svg {
-    width: 1.375rem;
-    height: 1.375rem;
+    width: 1.125rem;
+    height: 1.125rem;
+}
+
+.freeship-strip__copy {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem 0.65rem;
+}
+
+.freeship-strip__kicker {
+    display: none;
 }
 
 .freeship-strip__headline {
@@ -147,14 +230,6 @@
     font-size: clamp(0.875rem, 1.15vw, 1.0625rem);
     letter-spacing: 0.03em;
     line-height: 1.25;
-}
-
-.freeship-strip__sep {
-    width: 5px;
-    height: 5px;
-    border-radius: 9999px;
-    background: rgba(255, 255, 255, 0.7);
-    flex-shrink: 0;
 }
 
 .freeship-strip__message {
@@ -182,9 +257,21 @@
     transition: width 0.25s ease;
 }
 
-@media (max-width: 639px) {
-    .freeship-strip__sep {
-        display: none;
+@media (max-width: 767px) {
+    .home-hero-stage {
+        padding-top: 17.5rem;
+    }
+
+    .home-hero-promos {
+        grid-template-columns: 1fr;
+        gap: 0.55rem;
+        padding: 0.7rem 0.85rem 0;
+    }
+
+    .home-hero-chrome .freeship-strip__inner {
+        flex-direction: row;
+        align-items: flex-start;
+        padding: 0.75rem 0.85rem;
     }
 
     .freeship-strip__inner {
@@ -193,9 +280,9 @@
     }
 
     .home-hero-welcome {
-        margin-top: 0.55rem;
-        font-size: 0.9375rem;
-        letter-spacing: 0.05em;
+        margin: 0.55rem 0.85rem 0.1rem;
+        font-size: 1.2rem;
+        letter-spacing: 0.035em;
     }
 }
 

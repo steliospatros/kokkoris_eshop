@@ -10,10 +10,24 @@ from accounts.profile_labels import (
     DELIVERY_METHOD_LABELS,
     ORDER_STATUS_LABELS,
     PAYMENT_METHOD_LABELS,
+    PAYMENT_STATE_LABELS,
 )
 from orders.models import Order
 from products.catalog import format_decimal_greek, format_weight
 from checkout.boxnow_webhooks import BOXNOW_EVENT_LABELS
+
+
+MAX_DELIVERY_BUSINESS_DAYS = 3
+COMPANY_PRIORITY_ORANGE_DAY = 2
+DELIVERY_WINDOW_PHRASE = "έως 3 εργάσιμες ημέρες"
+PRIORITY_GREEN = "green"
+PRIORITY_ORANGE = "orange"
+PRIORITY_RED = "red"
+PRIORITY_CHOICES = (
+    (PRIORITY_GREEN, "Πράσινες"),
+    (PRIORITY_ORANGE, "Πορτοκαλί"),
+    (PRIORITY_RED, "Κόκκινες"),
+)
 
 
 def add_business_days(start_day: date, business_days: int) -> date:
@@ -27,18 +41,51 @@ def add_business_days(start_day: date, business_days: int) -> date:
     return current
 
 
+def business_days_elapsed(start_day: date, today: date) -> int:
+    """Count weekdays from the day after start_day through today."""
+    if today <= start_day:
+        return 0
+    elapsed = 0
+    current = start_day
+    while current < today:
+        current += timedelta(days=1)
+        if current.weekday() < 5:
+            elapsed += 1
+    return elapsed
+
+
+def company_delivery_priority(order, today=None):
+    """
+    Age color for company (Athens) deliveries only.
+
+    Green on days 0–1, orange on days 2–3, red after the 3rd business day.
+    Courier and BOX NOW stay uncolored.
+    """
+    if getattr(order, "delivery_method", None) != Order.DELIVERY_METHOD_COMPANY:
+        return ""
+    if today is None:
+        today = timezone.localdate()
+    start = timezone.localtime(order.order_date).date()
+    elapsed = business_days_elapsed(start, today)
+    if elapsed > MAX_DELIVERY_BUSINESS_DAYS:
+        return PRIORITY_RED
+    if elapsed >= COMPANY_PRIORITY_ORANGE_DAY:
+        return PRIORITY_ORANGE
+    return PRIORITY_GREEN
+
+
 def build_delivery_eta_message(order: Order) -> str:
     """Customer-facing ETA text based on order registration time."""
     registered_at = timezone.localtime(order.order_date)
     registered_label = registered_at.strftime("%d/%m/%Y στις %H:%M")
-    eta_from = add_business_days(registered_at.date(), 3)
-    eta_to = add_business_days(registered_at.date(), 4)
+    eta_from = add_business_days(registered_at.date(), 1)
+    eta_to = add_business_days(registered_at.date(), MAX_DELIVERY_BUSINESS_DAYS)
     eta_range = f"{eta_from.strftime('%d/%m/%Y')} – {eta_to.strftime('%d/%m/%Y')}"
 
     if order.delivery_method == Order.DELIVERY_METHOD_COMPANY:
         return (
             f"Δεδομένης της καταχώρησης στις {registered_label}, η παραγγελία σας "
-            f"θα παραδοθεί εκτιμώμενες {eta_range} (3–4 εργάσιμες ημέρες)."
+            f"θα παραδοθεί εκτιμώμενες {eta_range} ({DELIVERY_WINDOW_PHRASE})."
         )
 
     if order.delivery_method == Order.DELIVERY_METHOD_BOX_NOW:
@@ -53,13 +100,13 @@ def build_delivery_eta_message(order: Order) -> str:
         return (
             f"Δεδομένης της καταχώρησης στις {registered_label}, η παραγγελία σας "
             f"θα παραδοθεί στο BOX NOW locker «{locker}». Εκτιμώμενη παράδοση: "
-            f"{eta_range} (2–4 εργάσιμες ημέρες).{status_note}{pin_note}"
+            f"{eta_range} ({DELIVERY_WINDOW_PHRASE}).{status_note}{pin_note}"
         )
 
     return (
         f"Δεδομένης της καταχώρησης στις {registered_label}, μπορείτε να "
         f"παρακολουθήσετε την αποστολή μέσω courier. Εκτιμώμενη παράδοση: "
-        f"{eta_range} (3–4 εργάσιμες ημέρες)."
+        f"{eta_range} ({DELIVERY_WINDOW_PHRASE})."
     )
 
 
@@ -97,6 +144,17 @@ def build_order_item_rows(order: Order):
         variant = item.product_variant
         company_name = product.company.name if product.company_id else ""
         display_name = f"{company_name} {product.name}".strip() if company_name else product.name
+        image_url = None
+        image_path = None
+        if product.image:
+            try:
+                image_url = product.image.url
+            except ValueError:
+                image_url = None
+            try:
+                image_path = product.image.path
+            except (ValueError, OSError):
+                image_path = None
         rows.append(
             {
                 "quantity": item.quantity,
@@ -107,10 +165,30 @@ def build_order_item_rows(order: Order):
                 "unit_price_display": format_decimal_greek(item.price_at_purchase),
                 "line_total": item.line_total,
                 "line_total_display": format_decimal_greek(item.line_total),
-                "image_url": product.image.url if product.image else None,
+                "image_url": image_url,
+                "image_path": image_path,
+                "image_cid": "",
             }
         )
     return rows
+
+
+def build_payment_display(order: Order):
+    """
+    How the customer pays and whether they still owe anything.
+
+    Shared by the order list, the detail/confirmation pages and the emails so
+    all four can never disagree about whether an order is settled.
+    """
+    state = order.payment_state()
+    return {
+        "payment_label": PAYMENT_METHOD_LABELS.get(
+            order.payment_method, order.get_payment_method_display()
+        ),
+        "payment_state": state,
+        "payment_state_label": PAYMENT_STATE_LABELS.get(state, ""),
+        "payment_is_settled": order.payment_is_settled(),
+    }
 
 
 def build_order_detail_context(order: Order, *, show_success_banner=False):
@@ -138,9 +216,7 @@ def build_order_detail_context(order: Order, *, show_success_banner=False):
         "status_label": ORDER_STATUS_LABELS.get(
             order.status, order.get_status_display()
         ),
-        "payment_label": PAYMENT_METHOD_LABELS.get(
-            order.payment_method, order.get_payment_method_display()
-        ),
+        **build_payment_display(order),
         "delivery_label": DELIVERY_METHOD_LABELS.get(
             order.delivery_method, order.get_delivery_method_display()
         ),
@@ -167,6 +243,7 @@ def build_order_detail_context(order: Order, *, show_success_banner=False):
             if order.can_request_cancellation()
             else "Ακύρωση παραγγελίας"
         ),
+        "cancellation_reason": (order.cancellation_reason or "").strip(),
         "cancel_confirm_message": (
             "Η ακύρωση θα εξεταστεί από την ομάδα μας. Μετά την επιβεβαίωση, "
             "θα επιστραφούν τα χρήματα στην κάρτα σου. Να συνεχίσω;"

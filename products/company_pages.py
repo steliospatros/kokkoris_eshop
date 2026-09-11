@@ -148,44 +148,47 @@ def _build_puro_context(company):
         "company": company,
         "page_title": "Puro Instinto",
         "hero_band_static": "images/brand-page/puro-instinto/benefits-hero-clean.png",
+        "hero_section_class": "brand-hero-white brand-hero-flush",
         "story_band_static": "images/brand-page/puro-instinto/story-section-clean.png",
         "product_detail_static": "images/brand-page/puro-instinto/product-detail-clean.png",
         "story_blocks": PURO_STORY_BLOCKS,
         "brand_accent": PURO_BRAND_ACCENT,
         "show_products_row": True,
-        "products_row_class": "brand-products--white brand-products--panel",
+        "products_row_class": "brand-products--orange brand-products--panel",
         "show_product_detail": True,
     }
 
 
 def _build_carnis_context(company):
-    """PDF page 3 — hero, teal dog story, dog products, white cat story, cat products."""
+    """PAGE_BRAND.pdf — teal dog story, dog list on teal, white cat story, cat list on white."""
     return {
         "company": company,
         "page_title": "Carnis",
         "hero_band_static": "images/brand-page/carnis/benefits-hero-clean.png",
+        "hero_section_class": "brand-hero-white brand-hero-flush",
         "page_sections": (
             {
                 "type": "story",
                 "static": "images/brand-page/carnis/story-teal-dog.png",
-                "section_class": "brand-story-band--teal",
+                "section_class": "brand-story-band--teal brand-story-band--full",
             },
             {
                 "type": "products",
                 "animal_type": "Dog",
                 "category": "Dry Food",
-                "products_row_class": "brand-products--teal brand-products--panel",
+                "products_row_class": "brand-products--carnis-dogs brand-products--panel",
             },
             {
                 "type": "story",
                 "static": "images/brand-page/carnis/story-white-cat.png",
-                "section_class": "brand-story-band--white",
+                "section_class": "brand-story-band--white brand-story-band--full",
+                "cache": "flush-cat",
             },
             {
                 "type": "products",
                 "animal_type": "Cat",
                 "category": "Dry Food",
-                "products_row_class": "brand-products--teal brand-products--panel",
+                "products_row_class": "brand-products--white brand-products--panel brand-products--carnis-cats brand-products--pad-bottom",
             },
         ),
         "brand_accent": CARNIS_BRAND_ACCENT,
@@ -194,13 +197,19 @@ def _build_carnis_context(company):
 
 
 def _build_wild_side_context(company):
-    """PDF page 4 — orange/white dog half, teal cat half, live product panels."""
+    """PAGE_BRAND.pdf — orange hero, white dog story, dog products, teal cat half + cat products."""
     return {
         "company": company,
         "page_title": "Wild Side",
         "hero_band_static": "images/brand-page/wild-side/hero-dogs.png",
         "hero_section_class": "brand-hero-orange brand-hero-flush",
         "page_sections": (
+            {
+                "type": "story",
+                "static": "images/brand-page/wild-side/story-white-dog.png",
+                "section_class": "brand-story-band--white brand-story-band--full",
+                "cache": "white-frame",
+            },
             {
                 "type": "products",
                 "animal_type": "Dog",
@@ -209,12 +218,12 @@ def _build_wild_side_context(company):
             {
                 "type": "story",
                 "static": "images/brand-page/wild-side/story-cats.png",
-                "section_class": "brand-story-band--teal brand-story-band--full",
+                "section_class": "brand-story-band--wild-teal brand-story-band--full",
             },
             {
                 "type": "products",
                 "animal_type": "Cat",
-                "products_row_class": "brand-products--wild-cats brand-products--panel",
+                "products_row_class": "brand-products--wild-cats brand-products--panel brand-products--pad-bottom",
             },
         ),
         "brand_accent": WILD_SIDE_BRAND_ACCENT,
@@ -272,12 +281,19 @@ def _build_club4paws_context(company):
             {
                 "type": "story",
                 "static": "images/brand-page/club4paws/story-cats-intro.png",
-                "section_class": "brand-story-band--teal brand-story-band--full",
+                "section_class": "brand-story-band--c4p-teal brand-story-band--full",
+                "cache": "c4p-glow",
             },
             {
                 "type": "products",
                 "animal_type": "Cat",
                 "products_row_class": "brand-products--club4paws-cats brand-products--panel",
+            },
+            {
+                "type": "story",
+                "static": "images/brand-page/club4paws/story-cats-outro.png",
+                "section_class": "brand-story-band--c4p-teal brand-story-band--full",
+                "cache": "c4p-glow",
             },
         ),
         "brand_accent": CLUB4PAWS_BRAND_ACCENT,

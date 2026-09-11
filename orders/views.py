@@ -6,7 +6,6 @@ from django.views.decorators.http import require_POST
 
 from .models import Order
 from .presentation import build_order_detail_context
-from .stock import release_stock_for_order
 
 
 @login_required
@@ -34,7 +33,6 @@ def cancel_order_view(request, order_id):
     order = get_object_or_404(Order, id=order_id, user=request.user)
 
     if order.can_be_cancelled_by_customer():
-        release_stock_for_order(order)
         order.status = Order.STATUS_CANCELLED
         order.save(update_fields=["status"])
         messages.success(request, "Η παραγγελία ακυρώθηκε.")

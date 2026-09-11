@@ -76,6 +76,7 @@ class BreadcrumbTrailTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["breadcrumbs"], [])
         self.assertNotContains(response, "site-breadcrumbs")
+        self.assertContains(response, "kokkorisofficial@gmail.com")
 
     def test_browse_renders_hierarchical_path(self):
         response = self.client.get(
@@ -113,18 +114,19 @@ class BreadcrumbTrailTests(TestCase):
         self.assertEqual(breadcrumbs[1]["label"], "Επικοινωνία")
 
     def test_core_brand_page_tints_breadcrumb_to_hero(self):
-        from products.models import AnimalType, Category, Company, Product
+        from products.models import AnimalType, Category, Company, Product, ProductVariant
 
         company = Company.objects.create(name="Core", code="COR")
         animal = AnimalType.objects.create(name="Dog", slug="dog")
         category = Category.objects.create(name="Dry Food", slug="dry-food")
-        Product.objects.create(
+        product = Product.objects.create(
             name="Core Adult",
             company=company,
             animal_type=animal,
             category=category,
             is_active=True,
         )
+        ProductVariant.objects.create(product=product, weight=2, price=10, stock=5)
         response = self.client.get(reverse("products:company", kwargs={"company_code": "COR"}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["breadcrumb_theme"], "teal")

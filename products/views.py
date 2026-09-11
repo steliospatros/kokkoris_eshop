@@ -8,9 +8,9 @@ from products.catalog import (
     apply_catalog_filters,
     apply_catalog_sort,
     catalog_mix_seed,
-    build_animal_category_tiles,
-    chunk_animal_category_rows,
-    build_brand_tiles,
+    build_animal_landing_page,
+    build_brand_landing_page,
+    build_homepage_brand_list,
     build_browse_company_sections,
     build_catalog_cards,
     build_catalog_filter_context,
@@ -34,10 +34,14 @@ from products.catalog import (
     SORT_DEFAULT,
 )
 from products.company_pages import build_company_page_context, has_brand_page
-from products.favourites import build_favourites_browse_cards, record_product_view
+from products.favourites import attach_viewer_cookie, build_favourites_browse_cards, record_product_view
 from products.models import Company, Product
 from products.search import SEARCH_SUGGESTION_LIMIT, search_products
-from products.shipping_promo import build_free_shipping_promo, build_static_free_shipping_promo
+from products.shipping_promo import (
+    build_athens_delivery_promo,
+    build_free_shipping_promo,
+    build_static_free_shipping_promo,
+)
 
 
 def _catalog_filter_hidden_fields(sort, per_page):
@@ -54,16 +58,9 @@ def _catalog_filter_hidden_fields(sort, per_page):
 def home(request):
     """
     Homepage: full-bleed hero/about/brands/animals sections.
-    The brand carousel lists public companies (those with products) that have a logo.
+    The about-us brand list follows the PDF oval order.
     Empty brands stay frozen and hidden.
     """
-    companies = (
-        Company.objects.public()
-        .exclude(logo="")
-        .exclude(logo__isnull=True)
-        .order_by("name")
-    )
-
     cart = get_cart(request)
     cart_promo = (
         build_free_shipping_promo(cart.total)
@@ -75,10 +72,11 @@ def home(request):
         request,
         "home.html",
         {
-            "companies": companies,
+            "homepage_brands": build_homepage_brand_list(),
             "favourite_cards": build_favourites_browse_cards(request, limit=12),
             "user_is_authenticated": request.user.is_authenticated,
             "homepage_free_shipping_promo": cart_promo,
+            "homepage_athens_delivery_promo": build_athens_delivery_promo(),
         },
     )
 
@@ -202,12 +200,7 @@ def _catalog_browse_page(request, animal_slug, category_slug):
 
 
 def _animal_categories_page(animal_slug):
-    tiles = build_animal_category_tiles(animal_slug)
-    return {
-        "page_title": ANIMAL_SLUG_LABELS.get(animal_slug, ""),
-        "animal_slug": animal_slug,
-        "category_tile_rows": chunk_animal_category_rows(tiles),
-    }
+    return build_animal_landing_page(animal_slug)
 
 
 @ensure_csrf_cookie
@@ -274,7 +267,7 @@ def _build_brand_page_product_cards(request, queryset):
 @ensure_csrf_cookie
 def company_page(request, company_code):
     company = get_object_or_404(Company, code__iexact=company_code)
-    if not company.products.exists():
+    if not get_catalog_queryset().filter(company=company).exists():
         return redirect(reverse("products:brands"))
     context = build_company_page_context(company)
     if context is None:
@@ -323,10 +316,7 @@ def catalog_brands(request):
     return render(
         request,
         "products/brands.html",
-        {
-            "page_title": "Brands",
-            "brand_tiles": build_brand_tiles(),
-        },
+        build_brand_landing_page(),
     )
 
 
@@ -351,7 +341,8 @@ def product_detail(request, slug):
         raise Http404("Product has no purchasable variants.")
 
     record_product_view(request, product)
-    return render(request, "products/product_detail.html", context)
+    response = render(request, "products/product_detail.html", context)
+    return attach_viewer_cookie(response, request)
 
 
 def search_suggestions(request):

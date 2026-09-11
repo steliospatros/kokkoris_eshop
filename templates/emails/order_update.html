@@ -2,113 +2,156 @@
 <html lang="el">
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ order_code_display }}</title>
 </head>
-<body style="margin:0;padding:0;background:#f8fafc;font-family:Inter,Arial,sans-serif;color:#1e293b;">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f8fafc;padding:24px 12px;">
+<body style="margin:0;padding:0;background:#f4f7f6;font-family:Inter,Arial,sans-serif;color:#1e293b;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f7f6;padding:24px 12px;">
         <tr>
             <td align="center">
-                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border:1px solid #d7ebe6;border-radius:16px;overflow:hidden;">
                     <tr>
-                        <td style="background:#42746c;color:#ffffff;padding:20px 24px;">
-                            <p style="margin:0;font-size:13px;opacity:0.9;">{{ site_name }}</p>
-                            <h1 style="margin:8px 0 0;font-size:20px;font-weight:600;">
-                                {% if is_new_order %}Η παραγγελία σου καταχωρήθηκε{% elif is_delivered_order %}Η παραγγελία σου παραδόθηκε{% else %}Ενημέρωση παραγγελίας{% endif %}
+                        <td style="background:#42746c;color:#ffffff;padding:28px 28px 24px;">
+                            <p style="margin:0;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;opacity:0.85;">{{ site_name }}</p>
+                            <h1 style="margin:10px 0 0;font-size:24px;line-height:1.3;font-weight:700;">
+                                {% if is_new_order %}Η παραγγελία σας καταχωρήθηκε με επιτυχία{% elif is_delivered_order %}Η παραγγελία σας παραδόθηκε{% else %}Ενημέρωση παραγγελίας{% endif %}
                             </h1>
                         </td>
                     </tr>
                     <tr>
-                        <td style="padding:24px;">
-                            <p style="margin:0 0 16px;font-size:15px;line-height:1.55;">{{ status_intro }}</p>
+                        <td style="padding:28px;">
+                            <p style="margin:0 0 8px;font-size:16px;line-height:1.5;">
+                                Αγαπητέ/ή{% if greeting_name %} {{ greeting_name }}{% endif %},
+                            </p>
+                            <p style="margin:0 0 22px;font-size:16px;line-height:1.6;color:#334155;">
+                                {{ status_intro }}
+                            </p>
 
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:20px;">
+                            {% if cancellation_reason %}
+                            <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:16px;margin-bottom:22px;">
+                                <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#991b1b;">Λόγος ακύρωσης</p>
+                                <p style="margin:0;font-size:14px;line-height:1.55;color:#7f1d1d;">{{ cancellation_reason }}</p>
+                            </div>
+                            {% endif %}
+
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:22px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;">
                                 <tr>
-                                    <td style="padding:8px 0;border-bottom:1px solid #f1f5f9;">
-                                        <strong>Παραγγελία</strong>
+                                    <td style="padding:14px 16px;width:33%;vertical-align:top;">
+                                        <p style="margin:0 0 4px;font-size:12px;color:#64748b;">Παραγγελία</p>
+                                        <p style="margin:0;font-size:15px;font-weight:700;">{{ order_code_display }}</p>
                                     </td>
-                                    <td align="right" style="padding:8px 0;border-bottom:1px solid #f1f5f9;">
-                                        {{ order_code_display }}
+                                    <td style="padding:14px 16px;width:33%;vertical-align:top;border-left:1px solid #e2e8f0;">
+                                        <p style="margin:0 0 4px;font-size:12px;color:#64748b;">Καταχώρηση</p>
+                                        <p style="margin:0;font-size:15px;font-weight:600;">{{ order_date_display }}</p>
+                                    </td>
+                                    <td style="padding:14px 16px;width:33%;vertical-align:top;border-left:1px solid #e2e8f0;">
+                                        <p style="margin:0 0 4px;font-size:12px;color:#64748b;">Κατάσταση</p>
+                                        <p style="margin:0;font-size:15px;font-weight:600;color:#42746c;">{{ status_label }}</p>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td style="padding:8px 0;border-bottom:1px solid #f1f5f9;">
-                                        <strong>Κατάσταση</strong>
+                                    <td style="padding:14px 16px;vertical-align:top;border-top:1px solid #e2e8f0;">
+                                        <p style="margin:0 0 4px;font-size:12px;color:#64748b;">Τρόπος πληρωμής</p>
+                                        <p style="margin:0;font-size:15px;font-weight:600;">{{ payment_label }}</p>
                                     </td>
-                                    <td align="right" style="padding:8px 0;border-bottom:1px solid #f1f5f9;">
-                                        {{ status_label }}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td style="padding:8px 0;">
-                                        <strong>Καταχώρηση</strong>
-                                    </td>
-                                    <td align="right" style="padding:8px 0;">
-                                        {{ order_date_display }}
+                                    <td colspan="2" style="padding:14px 16px;vertical-align:top;border-top:1px solid #e2e8f0;border-left:1px solid #e2e8f0;">
+                                        <p style="margin:0 0 4px;font-size:12px;color:#64748b;">Κατάσταση πληρωμής</p>
+                                        <p style="margin:0;font-size:15px;font-weight:700;color:{% if payment_is_settled %}#047857{% elif payment_state == "due_on_delivery" %}#b45309{% else %}#475569{% endif %};">{{ payment_state_label }}</p>
                                     </td>
                                 </tr>
                             </table>
 
-                            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin-bottom:20px;">
-                                <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#42746c;">Ενημέρωση παράδοσης</p>
-                                <p style="margin:0;font-size:14px;line-height:1.55;">{{ eta_message }}</p>
+                            <h2 style="margin:0 0 10px;font-size:15px;letter-spacing:0.04em;text-transform:uppercase;color:#42746c;">Παράδοση</h2>
+                            <div style="background:#f4faf8;border:1px solid #cfe5df;border-radius:12px;padding:16px;margin-bottom:24px;">
+                                <p style="margin:0;font-size:14px;line-height:1.6;">{{ eta_message }}</p>
                             </div>
 
-                            <h2 style="margin:0 0 12px;font-size:16px;">Προϊόντα</h2>
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:20px;">
+                            <h2 style="margin:0 0 12px;font-size:15px;letter-spacing:0.04em;text-transform:uppercase;color:#42746c;">Προϊόντα</h2>
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:24px;">
                                 {% for row in item_rows %}
                                 <tr>
-                                    <td style="padding:10px 0;border-bottom:1px solid #f1f5f9;vertical-align:top;">
-                                        <strong>{{ row.name }}</strong><br>
-                                        <span style="font-size:13px;color:#64748b;">
-                                            {{ row.quantity }}× {{ row.size_label }} · {{ row.unit_price_display }} €
-                                        </span>
+                                    <td style="padding:12px 0;border-bottom:1px solid #f1f5f9;width:72px;vertical-align:top;">
+                                        {% if row.image_cid %}
+                                        <img src="cid:{{ row.image_cid }}" alt="" width="64" height="64" style="display:block;width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid #e2e8f0;background:#f8fafc;">
+                                        {% elif row.image_url %}
+                                        <img src="{{ row.image_url }}" alt="" width="64" height="64" style="display:block;width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid #e2e8f0;background:#f8fafc;">
+                                        {% else %}
+                                        <div style="width:64px;height:64px;border-radius:10px;background:#eaf5f3;border:1px solid #d7ebe6;"></div>
+                                        {% endif %}
                                     </td>
-                                    <td align="right" style="padding:10px 0;border-bottom:1px solid #f1f5f9;white-space:nowrap;">
+                                    <td style="padding:12px 12px 12px 0;border-bottom:1px solid #f1f5f9;vertical-align:top;">
+                                        <p style="margin:0 0 4px;font-size:15px;font-weight:700;line-height:1.35;">{{ row.name }}</p>
+                                        <p style="margin:0;font-size:13px;color:#64748b;">
+                                            {{ row.quantity }}× {{ row.size_label }} · {{ row.unit_price_display }} €
+                                        </p>
+                                    </td>
+                                    <td align="right" style="padding:12px 0;border-bottom:1px solid #f1f5f9;white-space:nowrap;vertical-align:top;font-size:15px;font-weight:700;">
                                         {{ row.line_total_display }} €
                                     </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="2" style="padding:10px 0;color:#64748b;">Χωρίς προϊόντα</td>
+                                    <td style="padding:10px 0;color:#64748b;">Χωρίς προϊόντα</td>
                                 </tr>
                                 {% endfor %}
                             </table>
 
-                            <h2 style="margin:0 0 12px;font-size:16px;">Κόστος παραγγελίας</h2>
-                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:20px;">
+                            <h2 style="margin:0 0 12px;font-size:15px;letter-spacing:0.04em;text-transform:uppercase;color:#42746c;">Κόστος</h2>
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:24px;">
                                 <tr>
-                                    <td style="padding:6px 0;">Τιμή προϊόντων</td>
+                                    <td style="padding:6px 0;color:#475569;">Προϊόντα</td>
                                     <td align="right" style="padding:6px 0;">{{ cart_cost_display }} €</td>
                                 </tr>
                                 <tr>
-                                    <td style="padding:6px 0;">Αποστολή</td>
+                                    <td style="padding:6px 0;color:#475569;">Αποστολή</td>
                                     <td align="right" style="padding:6px 0;">
                                         {% if courier_fee_is_free %}Δωρεάν{% else %}{{ courier_fee_display }} €{% endif %}
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td style="padding:10px 0 0;font-size:16px;font-weight:700;border-top:1px solid #e2e8f0;">Σύνολο</td>
-                                    <td align="right" style="padding:10px 0 0;font-size:16px;font-weight:700;border-top:1px solid #e2e8f0;">{{ total_cost_display }} €</td>
+                                    <td style="padding:12px 0 0;font-size:17px;font-weight:700;border-top:1px solid #e2e8f0;">Σύνολο πληρωμής</td>
+                                    <td align="right" style="padding:12px 0 0;font-size:17px;font-weight:700;border-top:1px solid #e2e8f0;">{{ total_cost_display }} €</td>
                                 </tr>
                             </table>
 
-                            <h2 style="margin:0 0 12px;font-size:16px;">Διεύθυνση παράδοσης</h2>
-                            {% if customer_name %}
-                            <p style="margin:0 0 8px;font-size:14px;line-height:1.5;">{{ customer_name }}</p>
-                            {% endif %}
-                            <p style="margin:0 0 8px;font-size:14px;line-height:1.5;">{{ delivery_address_display }}</p>
-                            <p style="margin:0 0 8px;font-size:14px;color:#64748b;">Τηλέφωνο: {{ order.delivery_phone_number }}</p>
-                            <p style="margin:0 0 8px;font-size:14px;color:#64748b;">Πληρωμή: {{ payment_label }}</p>
-                            <p style="margin:0 0 8px;font-size:14px;color:#64748b;">Παράδοση: {{ delivery_label }}</p>
-                            {% if order.delivery_notes %}
-                            <p style="margin:0;font-size:14px;color:#64748b;">Σημειώσεις: {{ order.delivery_notes }}</p>
-                            {% endif %}
+                            <h2 style="margin:0 0 12px;font-size:15px;letter-spacing:0.04em;text-transform:uppercase;color:#42746c;">Στοιχεία παράδοσης</h2>
+                            <div style="margin-bottom:24px;font-size:14px;line-height:1.6;color:#334155;">
+                                {% if customer_name %}<p style="margin:0 0 6px;"><strong>{{ customer_name }}</strong></p>{% endif %}
+                                {% if is_boxnow_delivery and boxnow_locker_display %}
+                                <p style="margin:0 0 6px;">{{ boxnow_locker_display }}</p>
+                                {% else %}
+                                <p style="margin:0 0 6px;">{{ delivery_address_display }}</p>
+                                {% endif %}
+                                <p style="margin:0 0 4px;">Τηλέφωνο: {{ order.delivery_phone_number }}</p>
+                                <p style="margin:0 0 4px;">Τρόπος: {{ delivery_label }}</p>
+                                {% if order.delivery_notes %}
+                                <p style="margin:8px 0 0;">Σημειώσεις: {{ order.delivery_notes }}</p>
+                                {% endif %}
+                            </div>
 
-                            <p style="margin:24px 0 0;text-align:center;">
+                            <p style="margin:0 0 28px;text-align:center;">
                                 <a href="{{ detail_url }}"
-                                   style="display:inline-block;background:#42746c;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:999px;font-weight:600;">
-                                    Λεπτομέρειες παραγγελίας
+                                   style="display:inline-block;background:#42746c;color:#ffffff;text-decoration:none;padding:13px 26px;border-radius:999px;font-weight:700;font-size:15px;">
+                                    Προβολή παραγγελίας
                                 </a>
+                            </p>
+
+                            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:22px;">
+                                <p style="margin:0 0 10px;font-size:14px;line-height:1.65;color:#334155;">
+                                    Για οποιαδήποτε ακύρωση ή μετατροπή της παραγγελίας σας, παρακαλούμε επικοινωνήστε μαζί μας στα τηλέφωνα της εταιρίας:
+                                </p>
+                                <p style="margin:0;font-size:15px;line-height:1.7;font-weight:600;color:#1e4f48;">
+                                    <a href="tel:+302106038727" style="color:#42746c;text-decoration:none;">210 6038727</a><br>
+                                    <a href="tel:+306977927008" style="color:#42746c;text-decoration:none;">697 7927008</a>
+                                </p>
+                                <p style="margin:10px 0 0;font-size:14px;line-height:1.6;color:#475569;">
+                                    ή μέσω email στο
+                                    <a href="mailto:{{ brand_contact_email }}" style="color:#42746c;">{{ brand_contact_email }}</a>.
+                                </p>
+                            </div>
+                            <p style="margin:0;font-size:14px;line-height:1.6;color:#334155;">
+                                Με εκτίμηση,<br>
+                                <strong>Η ομάδα του Kokkoris Pet Food</strong>
                             </p>
                         </td>
                     </tr>

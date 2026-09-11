@@ -124,5 +124,5 @@ def find_order_for_payment_intent(payment_intent_id: str, *, user):
 
 
 def card_order_status():
-    """Orders paid online are marked paid immediately after Stripe confirms."""
-    return Order.STATUS_PAID
+    """Card checkout creates a registered order; Stripe fields record the payment."""
+    return Order.STATUS_NEW

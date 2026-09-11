@@ -16,19 +16,30 @@
                             <h2 class="font-inter font-semibold text-slate-800">
                                 {% trans "Παραγγελία" %} {{ row.order_code_display }}
                             </h2>
-                            <p class="text-sm text-slate-500 font-inter mt-0.5">
+                            <p class="mt-1 font-inter text-sm font-semibold text-slate-800">
                                 {% trans "Καταχώρηση" %}: {{ row.order_date_display }}
                             </p>
                         </div>
-                        <span class="order-detail-status order-detail-status--{{ row.order.status }}">
-                            {{ row.status_label }}
-                        </span>
+                        <div class="order-detail-status-group">
+                            <span class="order-detail-status order-detail-status--{{ row.order.status }}">
+                                {{ row.status_label }}
+                            </span>
+                            <span class="order-detail-payment order-detail-payment--{{ row.payment_state }}">
+                                {{ row.payment_state_label }}
+                            </span>
+                        </div>
                     </div>
+
+                    {% if row.order.status == "cancelled" and row.order.cancellation_reason %}
+                        <p class="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 font-inter text-sm text-red-900">
+                            {% trans "Λόγος ακύρωσης" %}: {{ row.order.cancellation_reason }}
+                        </p>
+                    {% endif %}
 
                     <dl class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm font-inter mt-4">
                         <div>
                             <dt class="text-slate-400">{% trans "Πληρωμή" %}</dt>
-                            <dd class="text-slate-800">{{ row.payment_label }}</dd>
+                            <dd class="text-slate-800">{{ row.payment_label }} — {{ row.payment_state_label }}</dd>
                         </div>
                         <div>
                             <dt class="text-slate-400">{% trans "Παράδοση" %}</dt>

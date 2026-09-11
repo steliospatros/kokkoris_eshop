@@ -187,7 +187,7 @@ def build_boxnow_option_copy(cart_items, *, too_heavy, fee, free_minimum):
             f"{format_decimal_greek(free_minimum)} €."
         )
     description = (
-        f"Παράλαβε από αυτόματο locker BOX NOW. "
+        f"Παράλαβε από αυτόματο locker BOX NOW, έως 3 εργάσιμες ημέρες. "
         f"Θήκη {size_label} ({dim_label}) · βάρος {weight_label} kg "
         f"(όριο {max_label} kg). {price_bit} "
         "Επίλεξε σημείο παραλαβής στον χάρτη."

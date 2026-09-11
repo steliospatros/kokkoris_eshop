@@ -102,6 +102,12 @@ class AdministrationInventoryTests(TestCase):
         self.assertContains(response, "12")
         self.assertContains(response, "3")
 
+    def test_inventory_uses_full_product_name_and_image_slot(self):
+        self.client.force_login(self.admin_user)
+        response = self.client.get(reverse("administration:inventory"))
+        self.assertContains(response, "Alpha Co Adult Mix 2 kg")
+        self.assertContains(response, "inventory-row__photo")
+
     def test_favourites_page_lists_products_by_score(self):
         product = Product.objects.get(name="Adult Mix")
         from products.models import Favourite
@@ -126,14 +132,14 @@ class AdministrationInventoryTests(TestCase):
 
         self.client.post(
             reverse("administration:adjust_stock", args=[variant.pk]),
-            {"delta": "5"},
+            {"stock": "10"},
         )
         variant.refresh_from_db()
         self.assertEqual(variant.stock, 10)
 
         self.client.post(
             reverse("administration:adjust_stock", args=[variant.pk]),
-            {"delta": "-3"},
+            {"stock": "7"},
         )
         variant.refresh_from_db()
         self.assertEqual(variant.stock, 7)
@@ -147,14 +153,63 @@ class AdministrationInventoryTests(TestCase):
 
         self.client.post(
             reverse("administration:adjust_stock", args=[variant.pk]),
-            {"delta": "-2"},
+            {"stock": "0"},
         )
         variant.refresh_from_db()
         self.assertEqual(variant.stock, 0)
         self.assertEqual(variant.availability, ProductVariant.AVAILABILITY_OUT_OF_STOCK)
 
+        self.client.post(
+            reverse("administration:adjust_stock", args=[variant.pk]),
+            {"stock": "6"},
+        )
+        variant.refresh_from_db()
+        self.assertEqual(variant.stock, 6)
+        self.assertEqual(variant.availability, ProductVariant.AVAILABILITY_AVAILABLE_NOW)
+
+    def test_status_buttons_set_on_order_and_unavailable(self):
+        variant = ProductVariant.objects.get(product__name="Adult Mix", weight=2)
+        self.client.force_login(self.admin_user)
+
+        self.client.post(
+            reverse("administration:adjust_stock", args=[variant.pk]),
+            {"stock": str(variant.stock), "availability": "on_order"},
+        )
+        variant.refresh_from_db()
+        self.assertEqual(variant.availability, ProductVariant.AVAILABILITY_ON_ORDER)
+        self.assertEqual(variant.stock, 0)
+
+        self.client.post(
+            reverse("administration:adjust_stock", args=[variant.pk]),
+            {"stock": "4", "availability": "out_of_stock"},
+        )
+        variant.refresh_from_db()
+        self.assertEqual(variant.stock, 4)
+        self.assertEqual(variant.availability, ProductVariant.AVAILABILITY_OUT_OF_STOCK)
+
+        self.client.post(
+            reverse("administration:adjust_stock", args=[variant.pk]),
+            {"stock": "4", "availability": "available_now"},
+        )
+        variant.refresh_from_db()
+        self.assertEqual(variant.availability, ProductVariant.AVAILABILITY_AVAILABLE_NOW)
+
+    def test_inventory_page_has_status_controls(self):
+        self.client.force_login(self.admin_user)
+        response = self.client.get(reverse("administration:inventory"))
+        self.assertContains(response, "Άμεσα διαθέσιμο")
+        self.assertContains(response, "Κατόπιν παραγγελίας")
+        self.assertContains(response, "Προσωρινά μη διαθέσιμο")
+        self.assertContains(response, "Τεμάχια καταστήματος")
+        self.assertContains(response, "απόθεμα προμηθευτή")
+        self.assertContains(response, 'name="stock"')
+
     def test_product_pause_hides_from_storefront(self):
+        from products.catalog import get_catalog_queryset
+
         product = Product.objects.get(name="Adult Mix")
+        adult_variant = ProductVariant.objects.get(product=product, weight=2)
+        kitten_variant = ProductVariant.objects.get(product__name="Kitten Mix")
         self.client.force_login(self.admin_user)
 
         self.client.post(
@@ -163,6 +218,21 @@ class AdministrationInventoryTests(TestCase):
         )
         product.refresh_from_db()
         self.assertFalse(product.is_active)
+        self.assertFalse(get_catalog_queryset().filter(pk=product.pk).exists())
+
+        inventory = self.client.get(reverse("administration:inventory"))
+        self.assertContains(inventory, "Adult Mix")
+        self.assertContains(inventory, "Κρυφά από το e-shop")
+        self.assertContains(inventory, "Εμφάνιση ξανά στο e-shop")
+        html = inventory.content.decode()
+        self.assertLess(
+            html.find(f'id="variant-{kitten_variant.pk}"'),
+            html.find("Κρυφά από το e-shop"),
+        )
+        self.assertLess(
+            html.find("Κρυφά από το e-shop"),
+            html.find(f'id="variant-{adult_variant.pk}"'),
+        )
 
         self.client.post(
             reverse("administration:toggle_product_pause", args=[product.pk]),
@@ -170,6 +240,10 @@ class AdministrationInventoryTests(TestCase):
         )
         product.refresh_from_db()
         self.assertTrue(product.is_active)
+        self.assertTrue(get_catalog_queryset().filter(pk=product.pk).exists())
+        restored = self.client.get(reverse("administration:inventory"))
+        self.assertNotContains(restored, "Κρυφά από το e-shop")
+        self.assertContains(restored, "Απόκρυψη από το e-shop")
 
     def test_non_admin_cannot_adjust_stock(self):
         User = get_user_model()
@@ -178,7 +252,7 @@ class AdministrationInventoryTests(TestCase):
         self.client.force_login(other)
         response = self.client.post(
             reverse("administration:adjust_stock", args=[variant.pk]),
-            {"delta": "10"},
+            {"stock": "10"},
         )
         self.assertEqual(response.status_code, 403)
 
@@ -204,7 +278,7 @@ class AdministrationOrdersPanelTests(TestCase):
             status=Order.STATUS_CANCELLATION_REQUESTED,
             cart_cost=10,
             total_cost=10,
-            delivery_method=Order.DELIVERY_METHOD_COURIER,
+            delivery_method=Order.DELIVERY_METHOD_COMPANY,
             delivery_phone_number="6912345678",
             delivery_city="Αθήνα",
             delivery_address="Οδός 1",
@@ -221,6 +295,29 @@ class AdministrationOrdersPanelTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Αιτήματα ακύρωσης")
         self.assertContains(response, "customer@example.com")
+        self.assertEqual(response.context["delivery_filter"], "company")
+
+    def test_orders_default_hides_courier_orders(self):
+        Order.objects.create(
+            user=self.customer,
+            payment_method=Order.PAYMENT_METHOD_COD,
+            status=Order.STATUS_NEW,
+            cart_cost=8,
+            total_cost=8,
+            delivery_method=Order.DELIVERY_METHOD_COURIER,
+            delivery_phone_number="6912345678",
+            delivery_city="Αθήνα",
+            delivery_address="Courier Street 9",
+            delivery_postal_code="11111",
+        )
+        self.client.force_login(self.admin_user)
+        default_view = self.client.get(reverse("administration:orders"))
+        self.assertNotContains(default_view, "Courier Street 9")
+        all_view = self.client.get(
+            reverse("administration:orders"),
+            {"delivery": "all"},
+        )
+        self.assertContains(all_view, "Courier Street 9")
 
     def test_payments_page_loads(self):
         self.client.force_login(self.admin_user)
@@ -239,6 +336,164 @@ class AdministrationOrdersPanelTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "customer@example.com")
+
+    def test_orders_page_has_admin_actions(self):
+        self.client.force_login(self.admin_user)
+        response = self.client.get(reverse("administration:orders"))
+        self.assertContains(response, "Καταχώρηση είσπραξης")
+        self.assertContains(response, "Ακύρωση παραγγελίας")
+        self.assertContains(response, "Λόγος ακύρωσης")
+        self.assertContains(response, "Καταχώρηση")
+
+    def test_admin_cancel_requires_reason(self):
+        order = Order.objects.filter(user=self.customer).first()
+        self.client.force_login(self.admin_user)
+        response = self.client.post(
+            reverse("administration:update_order", args=[order.pk]),
+            {"action": "cancel", "cancellation_reason": "  "},
+        )
+        self.assertRedirects(response, reverse("administration:orders"))
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.STATUS_CANCELLATION_REQUESTED)
+        self.assertEqual(order.cancellation_reason, "")
+
+    def test_admin_cancel_saves_reason_emails_and_shows_on_history(self):
+        from django.core import mail
+        from django.test import override_settings
+
+        order = Order.objects.create(
+            user=self.customer,
+            payment_method=Order.PAYMENT_METHOD_COD,
+            status=Order.STATUS_NEW,
+            cart_cost=10,
+            total_cost=10,
+            delivery_method=Order.DELIVERY_METHOD_COMPANY,
+            delivery_phone_number="6912345678",
+            delivery_city="Αθήνα",
+            delivery_address="Σταδίου 8",
+            delivery_postal_code="10564",
+        )
+        reason = "Το προϊόν δεν είναι διαθέσιμο στο απόθεμα."
+        with override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend"):
+            mail.outbox.clear()
+            self.client.force_login(self.admin_user)
+            self.client.post(
+                reverse("administration:update_order", args=[order.pk]),
+                {"action": "cancel", "cancellation_reason": reason},
+            )
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.STATUS_CANCELLED)
+        self.assertEqual(order.cancellation_reason, reason)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("ακυρώθηκε", mail.outbox[0].subject)
+        self.assertIn(reason, mail.outbox[0].body)
+
+        self.client.force_login(self.customer)
+        history = self.client.get(reverse("accounts:orders"))
+        self.assertContains(history, reason)
+        detail = self.client.get(reverse("orders:detail", args=[order.pk]))
+        self.assertContains(detail, reason)
+
+    def test_admin_cancel_returns_items_to_stock(self):
+        company = Company.objects.create(name="Stock Co", code="STK")
+        animal = AnimalType.objects.create(name="Dog", slug="dog-cancel-stock")
+        category = Category.objects.create(name="Dry", slug="dry-cancel-stock")
+        product = Product.objects.create(
+            name="Stock Food",
+            company=company,
+            animal_type=animal,
+            category=category,
+            is_active=True,
+        )
+        variant = ProductVariant.objects.create(
+            product=product,
+            weight=2,
+            price=10,
+            stock=3,
+            availability=ProductVariant.AVAILABILITY_AVAILABLE_NOW,
+        )
+        order = Order.objects.create(
+            user=self.customer,
+            payment_method=Order.PAYMENT_METHOD_COD,
+            status=Order.STATUS_NEW,
+            cart_cost=20,
+            total_cost=20,
+            delivery_method=Order.DELIVERY_METHOD_COMPANY,
+            delivery_phone_number="6912345678",
+            delivery_city="Αθήνα",
+            delivery_address="Πατησίων 20",
+            delivery_postal_code="10432",
+        )
+        from orders.models import OrderItem
+
+        OrderItem.objects.create(
+            order=order,
+            product_variant=variant,
+            quantity=2,
+            price_at_purchase=10,
+        )
+        self.client.force_login(self.admin_user)
+        self.client.post(
+            reverse("administration:update_order", args=[order.pk]),
+            {"action": "cancel", "cancellation_reason": "Έλλειψη αποθέματος προμηθευτή."},
+        )
+        variant.refresh_from_db()
+        self.assertEqual(variant.stock, 5)
+
+    def test_admin_can_mark_paid_and_change_status(self):
+        order = Order.objects.create(
+            user=self.customer,
+            payment_method=Order.PAYMENT_METHOD_COD,
+            status=Order.STATUS_NEW,
+            cart_cost=10,
+            total_cost=10,
+            delivery_method=Order.DELIVERY_METHOD_COMPANY,
+            delivery_phone_number="6912345678",
+            delivery_city="Αθήνα",
+            delivery_address="Ακαδημίας 5",
+            delivery_postal_code="10671",
+        )
+        self.client.force_login(self.admin_user)
+        self.client.post(
+            reverse("administration:update_order", args=[order.pk]),
+            {"action": "mark_paid", "payment_method": "card"},
+        )
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.STATUS_NEW)
+        # Collected by card at the door, but still an αντικαταβολή order.
+        self.assertEqual(order.payment_method, Order.PAYMENT_METHOD_COD)
+        self.assertEqual(order.collected_payment_method, Order.PAYMENT_METHOD_CARD)
+
+        self.client.post(
+            reverse("administration:update_order", args=[order.pk]),
+            {"action": "set_status", "status": "delivered"},
+        )
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.STATUS_DELIVERED)
+
+    def test_stripe_paid_order_cannot_be_re_declared_as_unpaid(self):
+        order = Order.objects.create(
+            user=self.customer,
+            payment_method=Order.PAYMENT_METHOD_CARD,
+            status=Order.STATUS_NEW,
+            cart_cost=10,
+            total_cost=10,
+            delivery_method=Order.DELIVERY_METHOD_COURIER,
+            delivery_phone_number="6912345678",
+            delivery_city="Αθήνα",
+            delivery_address="Ακαδημίας 5",
+            delivery_postal_code="10671",
+            stripe_payment_intent_id="pi_locked",
+            collected_payment_method=Order.PAYMENT_METHOD_CARD,
+        )
+        self.client.force_login(self.admin_user)
+        self.client.post(
+            reverse("administration:update_order", args=[order.pk]),
+            {"action": "mark_paid", "payment_method": "cash_on_delivery"},
+        )
+        order.refresh_from_db()
+        self.assertEqual(order.payment_method, Order.PAYMENT_METHOD_CARD)
+        self.assertEqual(order.collected_payment_method, Order.PAYMENT_METHOD_CARD)
 
 
 class AdministrationDeliveriesPanelTests(TestCase):
@@ -310,11 +565,26 @@ class AdministrationDeliveriesPanelTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Παραδόσεις")
 
-    def test_pending_queue_groups_company_first(self):
+    def test_pending_queue_defaults_to_company_delivery(self):
         self.client.force_login(self.admin_user)
         response = self.client.get(reverse("administration:deliveries"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Παραδόθηκε")
+        self.assertEqual(response.context["delivery_filter"], "company")
+        groups = response.context["delivery_groups"]
+        self.assertEqual([group["key"] for group in groups], ["company"])
+        self.assertContains(response, "Σταδίου 10")
+        self.assertNotContains(response, "Ερμού 1")
+        self.assertContains(response, "Από υπάλληλο")
+
+    def test_pending_queue_groups_company_first(self):
+        self.client.force_login(self.admin_user)
+        response = self.client.get(
+            reverse("administration:deliveries"),
+            {"delivery": "all"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Μετρητά")
+        self.assertContains(response, "Κάρτα")
         self.assertContains(response, "Παράδοση από την εταιρία (εντός Αθηνών)")
         self.assertContains(response, "BOX NOW")
         groups = response.context["delivery_groups"]
@@ -328,24 +598,26 @@ class AdministrationDeliveriesPanelTests(TestCase):
         self.assertTrue(any("Σταδίου 10" in address for address in company_addresses))
         self.assertTrue(any("Ερμού 1" in address for address in courier_addresses))
 
-    def test_delivered_orders_use_red_button(self):
+    def test_delivered_orders_are_quiet_gray(self):
         self.old_order.status = Order.STATUS_DELIVERED
         self.old_order.save(update_fields=["status"])
         self.client.force_login(self.admin_user)
         response = self.client.get(
             reverse("administration:deliveries"),
-            {"show": "delivered"},
+            {"show": "delivered", "delivery": "all"},
         )
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "bg-red-700")
-        self.assertContains(response, "Δεν παραδόθηκε")
-        self.assertContains(response, "bg-red-50")
+        self.assertContains(response, "delivery-row--delivered")
+        self.assertContains(response, "Αλλαγή κατάστασης")
+        self.assertContains(response, "bg-slate-600")
+        self.assertNotContains(response, "bg-red-700")
+        self.assertNotContains(response, "bg-red-50")
 
     def test_mark_delivered_and_undo(self):
         self.client.force_login(self.admin_user)
         response = self.client.post(
             reverse("administration:mark_delivery", args=[self.old_order.pk]),
-            {"delivered": "1", "show": "pending", "collected_payment": "cash_on_delivery"},
+            {"action": "deliver", "show": "pending", "collected_payment": "cash_on_delivery"},
         )
         self.assertRedirects(
             response,
@@ -354,12 +626,52 @@ class AdministrationDeliveriesPanelTests(TestCase):
         self.old_order.refresh_from_db()
         self.assertEqual(self.old_order.status, Order.STATUS_DELIVERED)
 
+        blocked = self.client.post(
+            reverse("administration:mark_delivery", args=[self.old_order.pk]),
+            {"action": "undeliver", "show": "delivered"},
+        )
+        self.assertRedirects(
+            blocked,
+            reverse("administration:deliveries") + "?show=delivered",
+        )
+        self.old_order.refresh_from_db()
+        self.assertEqual(self.old_order.status, Order.STATUS_DELIVERED)
+
         self.client.post(
             reverse("administration:mark_delivery", args=[self.old_order.pk]),
-            {"delivered": "0", "show": "delivered"},
+            {
+                "action": "undeliver",
+                "show": "delivered",
+                "reason": "Πάτησα λάθος το κουμπί παράδοσης.",
+            },
         )
         self.old_order.refresh_from_db()
         self.assertEqual(self.old_order.status, Order.STATUS_NEW)
+        self.assertIn("Πάτησα λάθος", self.old_order.special_notes)
+
+    def test_courier_can_cancel_a_delivered_order_with_reason(self):
+        self.old_order.status = Order.STATUS_DELIVERED
+        self.old_order.collected_payment_method = Order.PAYMENT_METHOD_COD
+        self.old_order.save(update_fields=["status", "collected_payment_method"])
+        self.client.force_login(self.courier_user)
+        response = self.client.post(
+            reverse("administration:mark_delivery", args=[self.old_order.pk]),
+            {
+                "action": "cancel",
+                "show": "delivered",
+                "reason": "Ο πελάτης αρνήθηκε την παραλαβή.",
+            },
+        )
+        self.assertRedirects(
+            response,
+            reverse("administration:deliveries") + "?show=delivered",
+        )
+        self.old_order.refresh_from_db()
+        self.assertEqual(self.old_order.status, Order.STATUS_CANCELLED)
+        self.assertEqual(
+            self.old_order.cancellation_reason,
+            "Ο πελάτης αρνήθηκε την παραλαβή.",
+        )
 
     def test_courier_can_open_deliveries_but_not_orders(self):
         self.client.force_login(self.courier_user)
@@ -402,15 +714,21 @@ class AdministrationDeliveriesPanelTests(TestCase):
         self.assertContains(response, "popovertarget")
         self.assertContains(response, "google.com/maps?q=")
 
+    def test_pending_rows_stay_compact_until_hover(self):
+        self.client.force_login(self.admin_user)
+        response = self.client.get(reverse("administration:deliveries"))
+        self.assertContains(response, "data-delivery-row")
+        self.assertContains(response, "delivery-detail")
+        self.assertContains(response, 'name="collected_payment"')
+        self.assertContains(response, "Πράσινες")
+        self.assertContains(response, "Πορτοκαλί")
+        self.assertContains(response, "Κόκκινες")
+
     def test_cod_delivery_requires_cash_or_card(self):
         self.client.force_login(self.admin_user)
-        response = self.client.post(
+        self.client.post(
             reverse("administration:mark_delivery", args=[self.old_order.pk]),
             {"delivered": "1", "show": "pending"},
-        )
-        self.assertRedirects(
-            response,
-            reverse("administration:deliveries") + "?show=pending",
         )
         self.old_order.refresh_from_db()
         self.assertEqual(self.old_order.status, Order.STATUS_NEW)
@@ -420,7 +738,7 @@ class AdministrationDeliveriesPanelTests(TestCase):
         boxnow = Order.objects.create(
             user=self.customer,
             payment_method=Order.PAYMENT_METHOD_CARD,
-            status=Order.STATUS_PAID,
+            status=Order.STATUS_NEW,
             cart_cost=15,
             total_cost=15,
             courier_fee=0,
@@ -440,6 +758,52 @@ class AdministrationDeliveriesPanelTests(TestCase):
         boxnow.refresh_from_db()
         self.assertEqual(boxnow.status, Order.STATUS_DELIVERED)
         self.assertEqual(boxnow.collected_payment_method, Order.PAYMENT_METHOD_CARD)
+
+        # Undoing the delivery must not erase a payment Stripe already took.
+        self.client.post(
+            reverse("administration:mark_delivery", args=[boxnow.pk]),
+            {
+                "action": "undeliver",
+                "show": "delivered",
+                "reason": "Ο πελάτης δεν ήταν στο locker.",
+            },
+        )
+        boxnow.refresh_from_db()
+        self.assertEqual(boxnow.status, Order.STATUS_NEW)
+        self.assertEqual(boxnow.payment_method, Order.PAYMENT_METHOD_CARD)
+        self.assertEqual(boxnow.collected_payment_method, Order.PAYMENT_METHOD_CARD)
+
+    def test_company_orders_use_age_colors_and_filters(self):
+        from datetime import date, datetime
+        from unittest.mock import patch
+
+        from orders.presentation import company_delivery_priority
+
+        today = date(2026, 9, 4)  # Friday
+        Order.objects.filter(pk=self.new_order.pk).update(
+            order_date=timezone.make_aware(datetime(2026, 8, 28, 10, 0))
+        )
+        self.new_order.refresh_from_db()
+        with patch("orders.presentation.timezone.localdate", return_value=today):
+            self.assertEqual(company_delivery_priority(self.new_order), "red")
+            self.assertEqual(company_delivery_priority(self.old_order), "")
+            self.client.force_login(self.admin_user)
+            response = self.client.get(reverse("administration:deliveries"))
+        self.assertContains(response, "delivery-row--priority-red")
+        self.assertContains(response, 'data-priority="red"')
+        self.assertNotContains(response, 'data-priority="green"')
+
+        with patch("orders.presentation.timezone.localdate", return_value=today):
+            filtered = self.client.get(
+                reverse("administration:deliveries"),
+                {"priority": "red", "delivery": "all"},
+            )
+        company_rows = filtered.context["delivery_groups"][0]["orders"]
+        courier_rows = filtered.context["delivery_groups"][1]["orders"]
+        self.assertTrue(all(row.get("priority") == "red" for row in company_rows))
+        self.assertTrue(any("Σταδίου 10" in row["delivery_address_display"] for row in company_rows))
+        self.assertTrue(any("Ερμού 1" in row["delivery_address_display"] for row in courier_rows))
+        self.assertTrue(all(not row.get("priority") for row in courier_rows))
 
 
 class PaymentsDashboardTests(TestCase):
@@ -488,7 +852,7 @@ class PaymentsDashboardTests(TestCase):
         Order.objects.create(
             **defaults,
             payment_method=Order.PAYMENT_METHOD_CARD,
-            status=Order.STATUS_PAID,
+            status=Order.STATUS_NEW,
             cart_cost=30,
             courier_fee=0,
             total_cost=30,

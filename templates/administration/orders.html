@@ -17,6 +17,16 @@
         {% trans "Διαχείριση παραγγελιών" %}
     </h1>
 
+    {% if messages %}
+        <ul class="mb-6 space-y-2">
+            {% for message in messages %}
+                <li class="rounded-lg px-4 py-3 font-inter text-sm {% if message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200{% elif message.tags == 'success' %}bg-emerald-50 text-emerald-800 border border-emerald-200{% else %}bg-slate-50 text-slate-700 border border-slate-200{% endif %}">
+                    {{ message }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
     {% include "administration/partials/admin_panel_filters.html" %}
 
     {% if cancellation_requests %}

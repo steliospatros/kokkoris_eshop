@@ -12,28 +12,70 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 from decimal import Decimal
+from urllib.parse import unquote, urlparse
 
 import os
 
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load local secrets from .env (gitignored). See .env.example for required keys.
-load_dotenv(BASE_DIR / ".env")
+# override=True so an edited .env wins over values the runserver autoreloader
+# inherited from its parent process — otherwise key changes need a full restart.
+load_dotenv(BASE_DIR / ".env", override=True)
+
+
+def _env_bool(name, default=False):
+    raw = os.environ.get(name)
+    if raw is None or not str(raw).strip():
+        return default
+    return str(raw).strip().lower() in ("true", "1", "yes")
+
+
+def _env_list(name):
+    return [
+        item.strip()
+        for item in os.environ.get(name, "").split(",")
+        if item.strip()
+    ]
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-ac3v7p+%56#4x_ds_nw5fyy=igyxg$&2e%ew!#76$!uz0%m^f)'
+# Local default stays True so runserver keeps working. Set DEBUG=false on the server.
+DEBUG = _env_bool("DEBUG", default=True)
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+_DEFAULT_INSECURE_KEY = (
+    "django-insecure-ac3v7p+%56#4x_ds_nw5fyy=igyxg$&2e%ew!#76$!uz0%m^f)"
+)
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", _DEFAULT_INSECURE_KEY).strip() or (
+    _DEFAULT_INSECURE_KEY
+)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = _env_list("ALLOWED_HOSTS")
+CSRF_TRUSTED_ORIGINS = _env_list("CSRF_TRUSTED_ORIGINS")
+
+if not DEBUG:
+    if not SECRET_KEY or SECRET_KEY.startswith("django-insecure-"):
+        raise ImproperlyConfigured(
+            "Set DJANGO_SECRET_KEY to a unique value before running with DEBUG=false."
+        )
+    if not ALLOWED_HOSTS:
+        raise ImproperlyConfigured(
+            "Set ALLOWED_HOSTS (e.g. www.kokkorispetfood.gr,kokkorispetfood.gr) "
+            "before running with DEBUG=false."
+        )
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = _env_bool("SECURE_SSL_REDIRECT", default=True)
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "31536000"))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
 
 
 # Application definition
@@ -105,6 +147,7 @@ TEMPLATES = [
                 'accounts.context_processors.auth_helpers',
                 'wishlist.context_processors.wishlist_state',
                 'core.context_processors.breadcrumbs',
+                'core.context_processors.brand',
                 'administration.context_processors.administration_access',
             ],
         },
@@ -116,13 +159,28 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
+# Local default: sqlite. Production: set DATABASE_URL=postgres://...
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+_DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
+if _DATABASE_URL:
+    _db = urlparse(_DATABASE_URL)
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": unquote(_db.path.lstrip("/")),
+            "USER": unquote(_db.username or ""),
+            "PASSWORD": unquote(_db.password or ""),
+            "HOST": _db.hostname or "",
+            "PORT": str(_db.port or "5432"),
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 
 # Password validation
@@ -155,6 +213,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Project-level static files (design assets shared across templates - logos,
 # hand-extracted background/design tokens from the site mockup, etc.), as
@@ -245,9 +304,13 @@ EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "").strip()
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "").strip()
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "true").lower() in ("true", "1", "yes")
+BRAND_CONTACT_EMAIL = os.environ.get(
+    "BRAND_CONTACT_EMAIL",
+    "kokkorisofficial@gmail.com",
+).strip()
 DEFAULT_FROM_EMAIL = os.environ.get(
     "DEFAULT_FROM_EMAIL",
-    "Kokkoris Pet Food <noreply@kokkorispetfood.gr>",
+    f"Kokkoris Pet Food <{BRAND_CONTACT_EMAIL}>",
 ).strip()
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 SITE_BASE_URL = os.environ.get("SITE_BASE_URL", "http://127.0.0.1:8000").strip()
@@ -317,7 +380,10 @@ BOXNOW_ORIGIN_LOCATION_ID = os.environ.get("BOXNOW_ORIGIN_LOCATION_ID", "").stri
 BOXNOW_NOTIFY_EMAIL = os.environ.get("BOXNOW_NOTIFY_EMAIL", "").strip()
 BOXNOW_ORIGIN_CONTACT_NAME = os.environ.get("BOXNOW_ORIGIN_CONTACT_NAME", "").strip()
 BOXNOW_ORIGIN_CONTACT_PHONE = os.environ.get("BOXNOW_ORIGIN_CONTACT_PHONE", "").strip()
-BOXNOW_ORIGIN_CONTACT_EMAIL = os.environ.get("BOXNOW_ORIGIN_CONTACT_EMAIL", "").strip()
+BOXNOW_ORIGIN_CONTACT_EMAIL = (
+    os.environ.get("BOXNOW_ORIGIN_CONTACT_EMAIL", "").strip()
+    or BRAND_CONTACT_EMAIL
+)
 BOXNOW_FEE_SMALL = Decimal(os.environ.get("BOXNOW_FEE_SMALL", "1.80"))
 BOXNOW_FEE_MEDIUM = Decimal(os.environ.get("BOXNOW_FEE_MEDIUM", "2.50"))
 BOXNOW_FEE_LARGE = Decimal(os.environ.get("BOXNOW_FEE_LARGE", "3.50"))

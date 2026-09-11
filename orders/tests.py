@@ -1,15 +1,21 @@
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from cart.cart import DBCart
 from checkout.helpers import SESSION_KEY
 from checkout.views import _create_order_from_checkout
 from orders.models import Order
-from orders.presentation import add_business_days, build_delivery_eta_message
+from orders.presentation import (
+    add_business_days,
+    build_delivery_eta_message,
+    business_days_elapsed,
+    company_delivery_priority,
+)
 from orders.stock import release_stock_for_order, reserve_stock_for_cart
 from products.models import AnimalType, Category, Company, Product, ProductVariant
 
@@ -149,7 +155,37 @@ class OrderPresentationTests(TestCase):
         )
         message = build_delivery_eta_message(order)
         self.assertIn("καταχώρησης", message)
-        self.assertIn("3–4 εργάσιμες", message)
+        self.assertIn("έως 3 εργάσιμες", message)
+
+    def test_company_priority_turns_orange_then_red(self):
+        user = User.objects.create_user(email="prio@example.com", password="x")
+        order = Order.objects.create(
+            user=user,
+            payment_method=Order.PAYMENT_METHOD_COD,
+            status=Order.STATUS_NEW,
+            cart_cost=Decimal("10.00"),
+            courier_fee=Decimal("0.00"),
+            total_cost=Decimal("10.00"),
+            delivery_method=Order.DELIVERY_METHOD_COMPANY,
+            delivery_phone_number="+306900000000",
+            delivery_city="Αθήνα",
+            delivery_address="Ερμού 1",
+            delivery_postal_code="10563",
+        )
+        start = date(2026, 8, 31)  # Monday
+        self.assertEqual(business_days_elapsed(start, date(2026, 8, 31)), 0)
+        self.assertEqual(business_days_elapsed(start, date(2026, 9, 2)), 2)
+        self.assertEqual(business_days_elapsed(start, date(2026, 9, 3)), 3)
+        self.assertEqual(business_days_elapsed(start, date(2026, 9, 4)), 4)
+        self.assertEqual(business_days_elapsed(start, date(2026, 9, 7)), 5)
+        order.order_date = timezone.make_aware(datetime(2026, 8, 31, 9, 0))
+        self.assertEqual(company_delivery_priority(order, today=date(2026, 9, 1)), "green")
+        self.assertEqual(company_delivery_priority(order, today=date(2026, 9, 2)), "orange")
+        self.assertEqual(company_delivery_priority(order, today=date(2026, 9, 3)), "orange")
+        self.assertEqual(company_delivery_priority(order, today=date(2026, 9, 4)), "red")
+        self.assertEqual(company_delivery_priority(order, today=date(2026, 9, 7)), "red")
+        order.delivery_method = Order.DELIVERY_METHOD_COURIER
+        self.assertEqual(company_delivery_priority(order, today=date(2026, 9, 7)), "")
 
 
 class OrderDetailViewTests(TestCase):
@@ -193,3 +229,90 @@ class OrderDetailViewTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Κόστος παραγγελίας")
+
+    def test_detail_page_shows_cod_payment_is_still_due(self):
+        response = self.client.get(
+            reverse("orders:detail", kwargs={"order_id": self.order.id})
+        )
+        self.assertContains(response, "Αντικαταβολή")
+        self.assertContains(response, "Αναμένεται πληρωμή κατά την παράδοση")
+        self.assertNotContains(response, "Εξοφλήθηκε")
+
+    def test_detail_page_shows_stripe_order_as_paid(self):
+        self.order.payment_method = Order.PAYMENT_METHOD_CARD
+        self.order.stripe_payment_intent_id = "pi_test_detail"
+        self.order.save(update_fields=["payment_method", "stripe_payment_intent_id"])
+        response = self.client.get(
+            reverse("orders:detail", kwargs={"order_id": self.order.id})
+        )
+        self.assertContains(response, "Εξοφλήθηκε με κάρτα")
+        self.assertNotContains(response, "Αναμένεται πληρωμή")
+
+    def test_orders_list_shows_payment_state(self):
+        response = self.client.get(reverse("accounts:orders"))
+        self.assertContains(response, "Αναμένεται πληρωμή κατά την παράδοση")
+
+
+class OrderPaymentStateTests(TestCase):
+    """Settlement is independent of fulfillment — see Order.payment_state()."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = User.objects.create_user(
+            email="paystate@example.com",
+            password="testpass123",
+        )
+
+    def _order(self, **kwargs):
+        defaults = {
+            "user": self.user,
+            "payment_method": Order.PAYMENT_METHOD_COD,
+            "status": Order.STATUS_NEW,
+            "cart_cost": Decimal("10.00"),
+            "courier_fee": Decimal("2.00"),
+            "total_cost": Decimal("12.00"),
+            "delivery_method": Order.DELIVERY_METHOD_COURIER,
+            "delivery_phone_number": "+306900000000",
+            "delivery_city": "Αθήνα",
+            "delivery_address": "Ερμού 1",
+            "delivery_postal_code": "10563",
+            "delivery_latitude": Decimal("37.9755"),
+            "delivery_longitude": Decimal("23.7348"),
+        }
+        defaults.update(kwargs)
+        return Order.objects.create(**defaults)
+
+    def test_cod_order_awaits_payment_on_delivery(self):
+        order = self._order()
+        self.assertEqual(order.payment_state(), Order.PAYMENT_STATE_DUE_ON_DELIVERY)
+        self.assertFalse(order.payment_is_settled())
+
+    def test_undelivered_stripe_order_is_already_paid(self):
+        order = self._order(
+            payment_method=Order.PAYMENT_METHOD_CARD,
+            stripe_payment_intent_id="pi_test_state",
+        )
+        self.assertEqual(order.payment_state(), Order.PAYMENT_STATE_PREPAID)
+        self.assertTrue(order.payment_is_settled())
+
+    def test_door_collection_settles_a_cod_order(self):
+        order = self._order(
+            status=Order.STATUS_DELIVERED,
+            collected_payment_method=Order.PAYMENT_METHOD_CARD,
+        )
+        # Collected by card at the door, but it stays an αντικαταβολή order.
+        self.assertEqual(order.payment_method, Order.PAYMENT_METHOD_COD)
+        self.assertEqual(order.payment_state(), Order.PAYMENT_STATE_COLLECTED)
+
+    def test_refund_outranks_the_stripe_capture(self):
+        order = self._order(
+            payment_method=Order.PAYMENT_METHOD_CARD,
+            stripe_payment_intent_id="pi_test_state",
+            stripe_refund_id="re_test_state",
+        )
+        self.assertEqual(order.payment_state(), Order.PAYMENT_STATE_REFUNDED)
+        self.assertFalse(order.payment_is_settled())
+
+    def test_cancelled_cod_order_was_never_charged(self):
+        order = self._order(status=Order.STATUS_CANCELLED)
+        self.assertEqual(order.payment_state(), Order.PAYMENT_STATE_NOT_CHARGED)

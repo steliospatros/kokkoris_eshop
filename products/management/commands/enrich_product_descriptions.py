@@ -9,7 +9,7 @@ Usage:
 """
 from django.core.management.base import BaseCommand
 
-from products.description_copy import generate_product_description
+from products.description_copy import generate_product_description, needs_description_rewrite
 from products.models import Product
 
 # Phrases unique to products/description_copy.py — used to find prior AI rewrites.
@@ -20,6 +20,8 @@ GENERATED_MARKERS = (
     "σέβονται τις πραγματικές ανάγκες του κατοικίδιου σας",
     "δελεάζει ακόμη και τους πιο απαιτητικούς ουρανίσκους",
     "χωρίς συμβιβασμούς στην ποιότητα",
+    "υγρή, πλούσια σε κρέας υφή",
+    "καθαρές, υψηλής διατροφικής αξίας συνθέσεις",
 )
 
 
@@ -66,10 +68,11 @@ class Command(BaseCommand):
         for product in qs:
             current = (product.description or "").strip()
             is_generated = _looks_generated(current)
-            if not force and not rewrite_generated and len(current) >= max_len:
+            poor = needs_description_rewrite(current)
+            if not force and not rewrite_generated and not poor and len(current) >= max_len:
                 skipped += 1
                 continue
-            if rewrite_generated and not force and not is_generated and len(current) >= max_len:
+            if rewrite_generated and not force and not is_generated and not poor and len(current) >= max_len:
                 skipped += 1
                 continue
 

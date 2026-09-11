@@ -92,6 +92,53 @@
     color: #c2410c;
 }
 
+.order-detail-status-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Settlement badge (Order.payment_state()). Outlined rather than filled so it
+   never reads as a second fulfillment status next to the one above. */
+.order-detail-payment {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid currentColor;
+    border-radius: 9999px;
+    padding: 0.3rem 0.7rem;
+    background: #fff;
+    font-family: Inter, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.order-detail-payment::before {
+    content: "";
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: currentColor;
+}
+
+.order-detail-payment--prepaid,
+.order-detail-payment--collected {
+    color: #047857;
+}
+
+.order-detail-payment--due_on_delivery {
+    color: #b45309;
+}
+
+.order-detail-payment--refunded {
+    color: #1d4ed8;
+}
+
+.order-detail-payment--not_charged {
+    color: #475569;
+}
+
 .order-detail-card--notice {
     border-color: #fed7aa;
     background: #fff7ed;

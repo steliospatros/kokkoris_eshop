@@ -197,15 +197,10 @@ def _products_trail(request: HttpRequest) -> list[dict[str, str]] | None:
         return crumbs
 
     if url_name == "detail":
-        from products.models import Product
+        from products.catalog import get_product_detail_queryset
 
         slug = match.kwargs.get("slug")
-        product = (
-            Product.objects.filter(slug=slug, is_active=True)
-            .select_related("animal_type", "category", "company")
-            .only("name", "animal_type__slug", "category__slug", "company__name")
-            .first()
-        )
+        product = get_product_detail_queryset().filter(slug=slug).first()
         if not product:
             return crumbs
 

@@ -163,6 +163,8 @@ class DeliveryOptionsTests(TestCase):
         self.assertEqual(len(options), 3)
         self.assertEqual(options[0]["value"], Order.DELIVERY_METHOD_COMPANY)
         self.assertFalse(options[0]["disabled"])
+        self.assertIn("έως 3 εργάσιμες", options[0]["description"])
+        self.assertIn("έως 3 εργάσιμες", options[1]["description"])
 
     def test_outlying_area_company_disabled_courier_only_selectable(self):
         options, within = build_delivery_options(
@@ -282,7 +284,7 @@ class StripeServiceTests(TestCase):
         order = Order.objects.create(
             user=self.user,
             payment_method=Order.PAYMENT_METHOD_CARD,
-            status=Order.STATUS_PAID,
+            status=Order.STATUS_NEW,
             cart_cost=Decimal("10.00"),
             courier_fee=Decimal("2.00"),
             total_cost=Decimal("12.00"),
@@ -297,6 +299,11 @@ class StripeServiceTests(TestCase):
         )
         found = find_order_for_payment_intent("pi_existing", user=self.user)
         self.assertEqual(found, order)
+
+    def test_card_order_status_is_registered(self):
+        from checkout.stripe_service import card_order_status
+
+        self.assertEqual(card_order_status(), Order.STATUS_NEW)
 
     def test_decimal_to_stripe_cents(self):
         self.assertEqual(decimal_to_stripe_cents(Decimal("12.34")), 1234)
@@ -380,7 +387,13 @@ class CardCheckoutViewTests(CheckoutDeliveryViewTests):
         body = mail.outbox[0].body
         self.assertIn("καταχωρήθηκε", mail.outbox[0].subject)
         self.assertIn("Test Product", body)
-        self.assertIn("Παρακάτω θα βρεις όλα τα στοιχεία", body)
+        self.assertIn("Παρακάτω θα βρείτε όλα τα στοιχεία", body)
+        self.assertIn("Σας ευχαριστούμε θερμά που προτιμήσατε", body)
+        self.assertIn("210 6038727", body)
+        self.assertIn("ακύρωση ή μετατροπή", body)
+        self.assertIn("Καταχωρήθηκε", body)
+        self.assertNotIn("Πληρωμένη", body)
+        self.assertIn("αντικαταβολή", body.lower())
 
     def test_card_post_without_intent_stays_on_payment(self):
         response = self.client.post(

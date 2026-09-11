@@ -73,9 +73,72 @@ class OrderEmailTests(TestCase):
         send_order_status_email(order, is_new=True)
         self.assertEqual(len(mail.outbox), 1)
         body = mail.outbox[0].body
-        self.assertIn("ΕΝΗΜΕΡΩΣΗ ΠΑΡΑΔΟΣΗΣ", body)
+        self.assertIn("ΠΑΡΑΔΟΣΗ", body)
         self.assertIn("Σύνολο πληρωμής", body)
-        self.assertIn("Παρακάτω θα βρεις όλα τα στοιχεία", body)
+        self.assertIn("Παρακάτω θα βρείτε όλα τα στοιχεία", body)
+        self.assertIn("Σας ευχαριστούμε θερμά που προτιμήσατε", body)
+        self.assertIn("210 6038727", body)
+        self.assertIn("697 7927008", body)
+        self.assertIn("ακύρωση ή μετατροπή", body)
+
+    def test_new_cod_email_status_is_registered_not_paid(self):
+        order = self._make_order()
+        mail.outbox.clear()
+        send_order_status_email(order, is_new=True)
+        body = mail.outbox[0].body
+        self.assertIn("Καταχωρήθηκε", body)
+        self.assertNotIn("Πληρωμένη", body)
+        self.assertIn("αντικαταβολή", body)
+
+    def test_new_cod_email_states_payment_is_due_on_delivery(self):
+        order = self._make_order()
+        mail.outbox.clear()
+        send_order_status_email(order, is_new=True)
+        body = mail.outbox[0].body
+        self.assertIn("Τρόπος πληρωμής: Αντικαταβολή", body)
+        self.assertIn("Κατάσταση πληρωμής: Αναμένεται πληρωμή κατά την παράδοση", body)
+
+    def test_new_card_email_states_the_order_is_already_paid(self):
+        order = self._make_order(
+            payment_method=Order.PAYMENT_METHOD_CARD,
+            stripe_payment_intent_id="pi_test_email",
+        )
+        mail.outbox.clear()
+        send_order_status_email(order, is_new=True)
+        body = mail.outbox[0].body
+        self.assertIn("Τρόπος πληρωμής: Κάρτα", body)
+        self.assertIn("Κατάσταση πληρωμής: Εξοφλήθηκε με κάρτα", body)
+        self.assertNotIn("Αναμένεται πληρωμή", body)
+
+    def test_delivered_cod_email_reports_the_money_as_collected(self):
+        order = self._make_order()
+        mail.outbox.clear()
+        order.status = Order.STATUS_DELIVERED
+        order.collected_payment_method = Order.PAYMENT_METHOD_CARD
+        order.save()
+        body = mail.outbox[0].body
+        # Collected by card at the door, still recorded as αντικαταβολή.
+        self.assertIn("Τρόπος πληρωμής: Αντικαταβολή", body)
+        self.assertIn("Κατάσταση πληρωμής: Εξοφλήθηκε", body)
+
+    def test_cancellation_request_email_keeps_the_payment_visible(self):
+        order = self._make_order(
+            payment_method=Order.PAYMENT_METHOD_CARD,
+            stripe_payment_intent_id="pi_test_cancel",
+        )
+        mail.outbox.clear()
+        order.status = Order.STATUS_CANCELLATION_REQUESTED
+        order.save()
+        body = mail.outbox[0].body
+        self.assertIn("Αίτημα ακύρωσης", body)
+        self.assertIn("Κατάσταση πληρωμής: Εξοφλήθηκε με κάρτα", body)
+
+    def test_in_progress_alias_does_not_email(self):
+        order = self._make_order(status=Order.STATUS_NEW)
+        mail.outbox.clear()
+        order.status = Order.STATUS_PAID
+        order.save()
+        self.assertEqual(len(mail.outbox), 0)
 
     def test_delivered_email_uses_delivered_subject_and_items(self):
         from orders.models import OrderItem

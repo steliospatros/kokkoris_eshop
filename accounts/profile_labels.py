@@ -18,18 +18,27 @@ PROFILE_EDITABLE_FIELDS = (
 )
 
 ORDER_STATUS_LABELS = {
-    "new": _("Νέα"),
-    "pending": _("Σε εκκρεμότητα"),
-    "paid": _("Πληρωμένη"),
+    "new": _("Καταχωρήθηκε"),
+    "pending": _("Καταχωρήθηκε"),
+    "paid": _("Καταχωρήθηκε"),
     "delivered": _("Παραδόθηκε"),
     "cancelled": _("Ακυρωμένη"),
-    "failed": _("Αποτυχία"),
+    "failed": _("Ακυρωμένη"),
     "cancel_req": _("Αίτημα ακύρωσης"),
 }
 
 PAYMENT_METHOD_LABELS = {
     "card": _("Κάρτα"),
     "cash_on_delivery": _("Αντικαταβολή"),
+}
+
+# Settlement, not fulfillment: see Order.payment_state().
+PAYMENT_STATE_LABELS = {
+    "prepaid": _("Εξοφλήθηκε με κάρτα"),
+    "collected": _("Εξοφλήθηκε"),
+    "due_on_delivery": _("Αναμένεται πληρωμή κατά την παράδοση"),
+    "refunded": _("Επιστροφή χρημάτων"),
+    "not_charged": _("Δεν χρεώθηκε"),
 }
 
 DELIVERY_METHOD_LABELS = {

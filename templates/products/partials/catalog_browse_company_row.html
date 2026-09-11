@@ -3,17 +3,22 @@
 <section class="browse-company-section mb-10 lg:mb-14"
          aria-labelledby="browse-company-{{ section.company.id }}">
     <header class="browse-company-header mb-4 lg:mb-5">
-        {% if section.company.logo_url %}
-            <img src="{{ section.company.logo_url }}"
-                 alt="{{ section.company.name }}"
-                 class="browse-company-header__logo"
-                 id="browse-company-{{ section.company.id }}">
-        {% else %}
-            <h2 id="browse-company-{{ section.company.id }}"
-                class="browse-company-header__title font-poppins font-light text-xl lg:text-2xl text-kokkoris-teal-dark tracking-wide uppercase">
-                {{ section.company.name }}
-            </h2>
-        {% endif %}
+        <a href="{{ section.company.url }}"
+           class="browse-company-header__link"
+           aria-label="{{ section.company.name }}">
+            {% if section.company.logo_url %}
+                <img src="{{ section.company.logo_url }}"
+                     alt="{{ section.company.name }}"
+                     class="browse-company-header__logo"
+                     style="--browse-logo-height: {{ section.company.logo_height_rem }}rem"
+                     id="browse-company-{{ section.company.id }}">
+            {% else %}
+                <h2 id="browse-company-{{ section.company.id }}"
+                    class="browse-company-header__title font-poppins font-light text-xl lg:text-2xl text-kokkoris-teal-dark tracking-wide uppercase">
+                    {{ section.company.name }}
+                </h2>
+            {% endif %}
+        </a>
     </header>
 
     <div class="brand-products brand-products--white brand-products--panel">

@@ -75,20 +75,9 @@
         return card.dataset.canAdd === "true";
     }
 
-    function cardIsOnOrder(card) {
-        return card.dataset.onOrder === "true";
-    }
-
-    function cardButtonLabel(card) {
-        return card.dataset.buttonLabel || "Αγορά";
-    }
-
     function footerBgClass(card) {
         if (!cardCanAdd(card)) {
             return "bg-slate-400";
-        }
-        if (cardIsOnOrder(card)) {
-            return "bg-kokkoris-blue";
         }
         return "bg-kokkoris-teal-dark";
     }
@@ -147,15 +136,10 @@
             return;
         }
         setFooterBg(card, footer);
-        var hoverClass = cardIsOnOrder(card) ? "hover:bg-blue-900" : "hover:bg-kokkoris-teal-mid";
         footer.innerHTML =
-            '<button type="button" class="cart-add w-full py-2 text-sm font-poppins font-medium uppercase tracking-wider transition-colors ' +
-            hoverClass +
-            '" data-variant-id="' +
+            '<button type="button" class="cart-add w-full py-2 text-sm font-poppins font-medium uppercase tracking-wider transition-colors hover:bg-kokkoris-teal-mid" data-variant-id="' +
             variantId +
-            '">' +
-            cardButtonLabel(card) +
-            "</button>";
+            '">Αγορά</button>';
     }
 
     function handleCartError(error) {

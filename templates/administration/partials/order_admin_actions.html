@@ -1,0 +1,103 @@
+{% load i18n %}
+<div class="mt-4 rounded-xl border border-slate-200 bg-white p-4 space-y-4">
+    <h4 class="font-medium text-slate-800">{% trans "Ενέργειες διαχείρισης" %}</h4>
+
+    {% if order.status != "cancelled" %}
+        <form method="post"
+              action="{% url 'administration:update_order' order.id %}"
+              class="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-2">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="set_status">
+            <input type="hidden" name="next" value="{{ order_next }}">
+            <label class="block min-w-[10rem]">
+                <span class="block text-xs text-slate-500 mb-1">{% trans "Κατάσταση" %}</span>
+                <select name="status"
+                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    {% for value, label in admin_status_choices %}
+                        {% if value != "cancelled" %}
+                            <option value="{{ value }}"{% if order.status == value %} selected{% endif %}>{{ label }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </label>
+            <button type="submit"
+                    class="min-h-10 rounded-lg bg-slate-800 px-3 py-2 font-inter text-sm font-semibold text-white hover:bg-slate-700">
+                {% trans "Αλλαγή κατάστασης" %}
+            </button>
+        </form>
+
+        <form method="post"
+              action="{% url 'administration:update_order' order.id %}"
+              class="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-2">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="mark_paid">
+            <input type="hidden" name="next" value="{{ order_next }}">
+            <fieldset class="min-w-0">
+                <legend class="text-xs text-slate-500 mb-1">{% trans "Τρόπος πληρωμής" %}</legend>
+                <div class="flex flex-wrap gap-3">
+                    <label class="inline-flex items-center gap-1.5 text-sm text-slate-800">
+                        <input type="radio" name="payment_method" value="cash_on_delivery" required
+                               {% if order.payment_method == "cash_on_delivery" %}checked{% endif %}>
+                        {% trans "Μετρητά" %}
+                    </label>
+                    <label class="inline-flex items-center gap-1.5 text-sm text-slate-800">
+                        <input type="radio" name="payment_method" value="card" required
+                               {% if order.payment_method == "card" %}checked{% endif %}>
+                        {% trans "Κάρτα" %}
+                    </label>
+                </div>
+            </fieldset>
+            <button type="submit"
+                    class="min-h-10 rounded-lg bg-kokkoris-teal-dark px-3 py-2 font-inter text-sm font-semibold text-white hover:bg-kokkoris-teal-dark/90">
+                {% trans "Καταχώρηση είσπραξης" %}
+            </button>
+        </form>
+
+        <form method="post"
+              action="{% url 'administration:update_order' order.id %}"
+              class="space-y-2">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="cancel">
+            <input type="hidden" name="next" value="{{ order_next }}">
+            <label class="block">
+                <span class="block text-xs text-slate-500 mb-1">{% trans "Λόγος ακύρωσης (υποχρεωτικός)" %}</span>
+                <textarea name="cancellation_reason"
+                          required
+                          minlength="3"
+                          rows="3"
+                          class="w-full rounded-lg border border-red-200 px-3 py-2 text-sm"
+                          placeholder="{% trans 'Γράψε γιατί ακυρώνεται η παραγγελία. Το κείμενο θα σταλεί στον πελάτη.' %}"></textarea>
+            </label>
+            <button type="submit"
+                    class="min-h-10 rounded-lg bg-red-700 px-3 py-2 font-inter text-sm font-semibold text-white hover:bg-red-800">
+                {% trans "Ακύρωση παραγγελίας" %}
+            </button>
+        </form>
+    {% else %}
+        {% if order.cancellation_reason %}
+            <p class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900">
+                {% trans "Λόγος ακύρωσης" %}: {{ order.cancellation_reason }}
+            </p>
+        {% endif %}
+        <form method="post"
+              action="{% url 'administration:update_order' order.id %}"
+              class="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-2">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="set_status">
+            <input type="hidden" name="next" value="{{ order_next }}">
+            <label class="block min-w-[10rem]">
+                <span class="block text-xs text-slate-500 mb-1">{% trans "Κατάσταση" %}</span>
+                <select name="status"
+                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    {% for value, label in admin_status_choices %}
+                        <option value="{{ value }}"{% if order.status == value %} selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <button type="submit"
+                    class="min-h-10 rounded-lg bg-slate-800 px-3 py-2 font-inter text-sm font-semibold text-white hover:bg-slate-700">
+                {% trans "Αλλαγή κατάστασης" %}
+            </button>
+        </form>
+    {% endif %}
+</div>

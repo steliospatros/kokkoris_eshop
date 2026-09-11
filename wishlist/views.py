@@ -37,7 +37,7 @@ def toggle(request):
         return JsonResponse({"ok": False, "error": "Μη έγκυρο προϊόν."}, status=400)
 
     try:
-        product = Product.objects.get(pk=product_id, is_active=True)
+        product = get_catalog_queryset().get(pk=product_id)
     except Product.DoesNotExist:
         return JsonResponse({"ok": False, "error": "Το προϊόν δεν βρέθηκε."}, status=404)
 

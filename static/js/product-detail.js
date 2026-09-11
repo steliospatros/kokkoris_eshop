@@ -50,10 +50,6 @@
         return cartFooter && cartFooter.dataset.canAdd === "true";
     }
 
-    function footerOnOrder() {
-        return cartFooter && cartFooter.dataset.onOrder === "true";
-    }
-
     function footerMaxStock() {
         if (!cartFooter || !cartFooter.dataset.maxStock) {
             return null;
@@ -68,15 +64,11 @@
         }
 
         var canAdd = footerCanAdd();
-        var onOrder = footerOnOrder();
-        var buttonLabel = cartFooter.dataset.buttonLabel || "Αγορά";
         var maxStock = footerMaxStock();
 
         cartFooter.classList.remove("bg-slate-400", "bg-kokkoris-teal-dark", "bg-kokkoris-blue");
         if (!canAdd) {
             cartFooter.classList.add("bg-slate-400");
-        } else if (onOrder) {
-            cartFooter.classList.add("bg-kokkoris-blue");
         } else {
             cartFooter.classList.add("bg-kokkoris-teal-dark");
         }
@@ -102,9 +94,7 @@
             cartFooter.innerHTML =
                 '<button type="button" class="cart-add w-full py-3.5 text-sm font-poppins font-medium uppercase tracking-wider" data-variant-id="' +
                 variantId +
-                '">' +
-                buttonLabel +
-                "</button>";
+                '">Αγορά</button>';
             return;
         }
 
@@ -120,7 +110,7 @@
         cartFooter.dataset.variantId = btn.dataset.variantId;
         cartFooter.dataset.canAdd = btn.dataset.canAdd;
         cartFooter.dataset.onOrder = btn.dataset.onOrder;
-        cartFooter.dataset.buttonLabel = btn.dataset.buttonLabel || "Αγορά";
+        cartFooter.dataset.buttonLabel = "Αγορά";
         if (btn.dataset.maxStock) {
             cartFooter.dataset.maxStock = btn.dataset.maxStock;
         } else {
@@ -168,9 +158,11 @@
         }
 
         if (availabilityEl) {
-            availabilityEl.textContent = btn.dataset.availabilityLabel || "";
+            var label = btn.dataset.availabilityLabel || "";
+            availabilityEl.textContent = label;
+            availabilityEl.hidden = !label;
             availabilityEl.className =
-                "mt-1 text-sm font-medium font-inter " + (btn.dataset.availabilityClass || "");
+                "mt-1 text-sm font-inter " + (btn.dataset.availabilityClass || "text-slate-500");
         }
 
         if (priceEl) {

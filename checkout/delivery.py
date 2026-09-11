@@ -99,7 +99,7 @@ def build_delivery_options(*, cart_total, postal_code, cart=None):
         {
             "value": Order.DELIVERY_METHOD_COMPANY,
             "label": "Παράδοση από υπάλληλο",
-            "description": "Παράδοση στην πόρτα σου σε 3–4 εργάσιμες ημέρες.",
+            "description": "Δωρεάν παράδοση στην πόρτα σου, έως 3 εργάσιμες ημέρες.",
             "fee": Decimal("0.00"),
             "fee_display": "Δωρεάν",
             "total": cart_total,
@@ -129,9 +129,9 @@ def build_delivery_options(*, cart_total, postal_code, cart=None):
         else ""
     )
     courier_desc_base = (
-        "Αποστολή με courier σε όλη την Ελλάδα"
+        "Αποστολή με courier σε όλη την Ελλάδα, έως 3 εργάσιμες ημέρες"
         if not within_urban_area
-        else "Εναλλακτικά, αποστολή με courier"
+        else "Εναλλακτικά, αποστολή με courier, έως 3 εργάσιμες ημέρες"
     )
     options.append(
         {

@@ -1,11 +1,12 @@
 {% extends "page.html" %}
-{% load i18n %}
+{% load i18n static %}
 
 {% block title %}{{ page_title }} — Kokkoris Eshop{% endblock %}
 
 {% block main_class %}w-full max-w-none min-h-[60vh]{% endblock %}
 
 {% block content %}
+<link rel="stylesheet" href="{% static 'css/deliveries.css' %}">
 <section class="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 pb-20">
     <p class="mb-6">
         {% if is_shop_admin %}
@@ -23,21 +24,64 @@
         {% trans "Παραδόσεις" %}
     </h1>
     <p class="font-inter text-slate-600 mb-6">
-        {% trans "Πρώτα η παράδοση από την εταιρία (εντός Αθηνών). Μέσα σε κάθε ομάδα οι παλαιότερες είναι πρώτες." %}
+        {% trans "Από τη συλλογή στην αποθήκη μέχρι την παράδοση. Για αντικαταβολή πάτα Μετρητά ή Κάρτα — η παραγγελία σημειώνεται παραδομένη αμέσως. Προπληρωμένη κάρτα έχει ένα κουμπί Παραδόθηκε." %}
     </p>
 
+    {% if messages %}
+        <ul class="mb-6 space-y-2">
+            {% for message in messages %}
+                <li class="rounded-lg px-4 py-3 font-inter text-sm {% if message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200{% elif message.tags == 'success' %}bg-emerald-50 text-emerald-800 border border-emerald-200{% else %}bg-slate-50 text-slate-700 border border-slate-200{% endif %}">
+                    {{ message }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <nav class="mb-4 flex flex-wrap gap-2" aria-label="{% trans 'Τρόπος παράδοσης' %}">
+        {% for value, label in delivery_filter_choices %}
+            <a href="{% url 'administration:deliveries' %}?show={{ show }}{% if value != 'company' %}&delivery={{ value }}{% endif %}{% if is_pending_view and priority %}&priority={{ priority }}{% endif %}"
+               class="rounded-full px-4 py-2 text-sm font-inter transition-colors {% if delivery_filter == value %}bg-kokkoris-teal-dark text-white{% else %}bg-slate-100 text-slate-700 hover:bg-slate-200{% endif %}">
+                {{ label }}
+            </a>
+        {% endfor %}
+    </nav>
+
     <nav class="mb-8 flex flex-wrap gap-2" aria-label="{% trans 'Φίλτρο παραδόσεων' %}">
-        <a href="{% url 'administration:deliveries' %}?show=pending"
+        <a href="{% url 'administration:deliveries' %}?show=pending{% if delivery_filter != 'company' %}&delivery={{ delivery_filter }}{% endif %}{% if priority %}&priority={{ priority }}{% endif %}"
            class="rounded-full px-4 py-2 text-sm font-inter transition-colors {% if is_pending_view %}bg-kokkoris-teal-dark text-white{% else %}bg-slate-100 text-slate-700 hover:bg-slate-200{% endif %}">
             {% trans "Προς παράδοση" %}
             <span class="ml-1 opacity-80">({{ pending_count }})</span>
         </a>
-        <a href="{% url 'administration:deliveries' %}?show=delivered"
-           class="rounded-full px-4 py-2 text-sm font-inter transition-colors {% if not is_pending_view %}bg-red-700 text-white{% else %}bg-slate-100 text-slate-700 hover:bg-slate-200{% endif %}">
+        <a href="{% url 'administration:deliveries' %}?show=delivered{% if delivery_filter != 'company' %}&delivery={{ delivery_filter }}{% endif %}"
+           class="rounded-full px-4 py-2 text-sm font-inter transition-colors {% if not is_pending_view %}bg-slate-600 text-white{% else %}bg-slate-100 text-slate-700 hover:bg-slate-200{% endif %}">
             {% trans "Παραδομένες" %}
             <span class="ml-1 opacity-80">({{ delivered_count }})</span>
         </a>
     </nav>
+
+    {% if is_pending_view %}
+        <nav class="mb-8 flex flex-wrap gap-2" aria-label="{% trans 'Προτεραιότητα παράδοσης' %}">
+            <a href="{% url 'administration:deliveries' %}?show=pending{% if delivery_filter != 'company' %}&delivery={{ delivery_filter }}{% endif %}"
+               class="rounded-full px-4 py-2 text-sm font-inter transition-colors {% if not priority %}bg-slate-800 text-white{% else %}bg-slate-100 text-slate-700 hover:bg-slate-200{% endif %}">
+                {% trans "Όλες" %}
+            </a>
+            <a href="{% url 'administration:deliveries' %}?show=pending&priority=green{% if delivery_filter != 'company' %}&delivery={{ delivery_filter }}{% endif %}"
+               class="rounded-full px-4 py-2 text-sm font-inter transition-colors {% if priority == 'green' %}bg-emerald-700 text-white{% else %}bg-emerald-50 text-emerald-900 hover:bg-emerald-100{% endif %}">
+                {% trans "Πράσινες" %}
+                <span class="ml-1 opacity-80">({{ priority_counts.green }})</span>
+            </a>
+            <a href="{% url 'administration:deliveries' %}?show=pending&priority=orange{% if delivery_filter != 'company' %}&delivery={{ delivery_filter }}{% endif %}"
+               class="rounded-full px-4 py-2 text-sm font-inter transition-colors {% if priority == 'orange' %}bg-orange-600 text-white{% else %}bg-orange-50 text-orange-900 hover:bg-orange-100{% endif %}">
+                {% trans "Πορτοκαλί" %}
+                <span class="ml-1 opacity-80">({{ priority_counts.orange }})</span>
+            </a>
+            <a href="{% url 'administration:deliveries' %}?show=pending&priority=red{% if delivery_filter != 'company' %}&delivery={{ delivery_filter }}{% endif %}"
+               class="rounded-full px-4 py-2 text-sm font-inter transition-colors {% if priority == 'red' %}bg-red-700 text-white{% else %}bg-red-50 text-red-900 hover:bg-red-100{% endif %}">
+                {% trans "Κόκκινες" %}
+                <span class="ml-1 opacity-80">({{ priority_counts.red }})</span>
+            </a>
+        </nav>
+    {% endif %}
 
     <div class="space-y-10">
         {% for group in delivery_groups %}
@@ -48,7 +92,7 @@
                     <span class="text-sm font-inter text-slate-500">({{ group.count }})</span>
                 </h2>
                 {% if group.orders %}
-                    <ul class="space-y-4">
+                    <ul class="space-y-2">
                         {% for order in group.orders %}
                             {% include "administration/partials/delivery_row.html" %}
                         {% endfor %}
@@ -62,4 +106,8 @@
         {% endfor %}
     </div>
 </section>
+{% endblock %}
+
+{% block extra_body %}
+<script src="{% static 'js/deliveries.js' %}"></script>
 {% endblock %}

@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 
 from django.db.models import Q, QuerySet
 
-from products.catalog import annotate_purchase_count
+from products.catalog import get_catalog_queryset
 from products.models import Product
 
 # Live dropdown size — broad queries (e.g. «σκύλος») need a useful list.
@@ -388,6 +388,11 @@ _ALIAS_ROWS: list[tuple[tuple[str, ...], dict]] = [
     (("everclean", "ever clean", "εβερκλιν"), {"companies": {"EVERCLEAN"}}),
     (("core", "κορ"), {"companies": {"Core"}}),
     (("wild side", "wildside", "γουαιλντ"), {"companies": {"Wild Side"}}),
+    (("carnis", "καρνις", "καρνισ"), {"companies": {"Carnis"}}),
+    (
+        ("puro instinto", "puroinstinto", "πούρο", "instinto"),
+        {"companies": {"Puro Instinto"}},
+    ),
     # Popular brands users type even if not stocked
     (
         ("royal canin", "ρογιαλ κανιν", "ρογιαλ", "royal"),
@@ -525,9 +530,7 @@ def build_search_queryset(query: str) -> QuerySet[Product]:
     SQLite cannot case-fold Greek letters reliably.
     """
     intent = parse_search_query(query)
-    qs = Product.objects.filter(is_active=True).select_related(
-        "company", "category", "animal_type"
-    )
+    qs = get_catalog_queryset()
 
     if intent.animals:
         qs = qs.filter(animal_type__slug__in=intent.animals)
@@ -548,7 +551,7 @@ def build_search_queryset(query: str) -> QuerySet[Product]:
     ):
         return qs.none()
 
-    return annotate_purchase_count(qs).order_by("-score", "name")
+    return qs.order_by("-score", "name")
 
 
 def search_products(query: str, limit: int = SEARCH_SUGGESTION_LIMIT) -> list[Product]:

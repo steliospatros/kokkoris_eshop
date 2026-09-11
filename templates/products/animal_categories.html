@@ -3,39 +3,25 @@
 
 {% block title %}{{ page_title }} — Kokkoris Eshop{% endblock %}
 
-{% block main_class %}w-full max-w-none min-h-[60vh]{% endblock %}
+{% block main_class %}w-full max-w-none p-0 m-0{% endblock %}
 
 {% block content %}
-<section class="animal-category-grid max-w-[960px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 pb-20 sm:pb-24 lg:pb-28">
-    {% if category_tile_rows %}
-        <div class="space-y-5 lg:space-y-8">
-            {% for row in category_tile_rows %}
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 lg:gap-8">
-                    {% for tile in row %}
-                        <a href="{{ tile.url }}"
-                           aria-label="{{ tile.label }}"
-                           class="animal-category-tile animal-category-tile--{{ tile.slug }} group {{ tile.col_class }}">
-                            {% if tile.image %}
-                                <img src="{% static tile.image %}"
-                                     alt="{{ tile.label }}"
-                                     class="animal-category-tile__img"
-                                     width="1024"
-                                     height="1024"
-                                     loading="lazy"
-                                     decoding="async">
-                            {% endif %}
-                            <span class="animal-category-tile__label font-poppins font-light text-2xl sm:text-3xl lg:text-4xl leading-snug">
-                                {{ tile.label }}
-                            </span>
-                        </a>
-                    {% endfor %}
-                </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <p class="text-center text-slate-500 font-inter py-16">
-            {% trans "Δεν βρέθηκαν κατηγορίες." %}
-        </p>
-    {% endif %}
+<section class="animal-landing animal-landing--{{ animal_slug }}" aria-label="{{ page_title }}">
+    <div class="animal-landing__frame">
+        <img src="{% static landing_band %}"
+             alt=""
+             class="animal-landing__band"
+             width="{{ landing_band_w }}"
+             height="{{ landing_band_h }}"
+             decoding="async">
+        {% for spot in landing_hotspots %}
+            <a href="{{ spot.url }}"
+               class="animal-landing__hotspot"
+               style="left: {{ spot.left }}%; top: {{ spot.top }}%; width: {{ spot.size }}%;"
+               aria-label="{{ spot.label }}">
+                <span class="sr-only">{{ spot.label }}</span>
+            </a>
+        {% endfor %}
+    </div>
 </section>
 {% endblock %}

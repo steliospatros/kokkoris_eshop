@@ -77,6 +77,12 @@
                 <h3 class="font-inter text-xl lg:text-2xl">
                     {% trans "Εγγραφείτε στο newsletter μας:" %}
                 </h3>
+                <p class="font-inter text-sm lg:text-base text-gray-400 mt-2">
+                    {% trans "Τα νέα στέλνονται από" %}
+                    <a href="mailto:{{ brand_contact_email }}" class="underline hover:text-gray-300">
+                        {{ brand_contact_email }}
+                    </a>
+                </p>
 
                 <form id="newsletter-form"
                       class="mt-7 lg:mt-9 flex w-full max-w-[560px]"
@@ -145,7 +151,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 mt-16 lg:mt-20">
             <div></div>
             <div class="flex flex-wrap items-center gap-5 lg:gap-6 lg:justify-end">
-                <a href="mailto:prolamprou@gmail.com" aria-label="Email" class="hover:opacity-70 transition-opacity">
+                <a href="mailto:{{ brand_contact_email }}" aria-label="Email {{ brand_contact_email }}" class="hover:opacity-70 transition-opacity">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
                         <path d="M1.5 6.75A2.25 2.25 0 0 1 3.75 4.5h16.5a2.25 2.25 0 0 1 2.25 2.25v10.5A2.25 2.25 0 0 1 20.25 19.5H3.75A2.25 2.25 0 0 1 1.5 17.25V6.75Zm2.4-.75 8.1 6.15L20.1 6h-16.2ZM21 8.03l-8.55 6.49a.75.75 0 0 1-.9 0L3 8.03v9.22c0 .414.336.75.75.75h16.5a.75.75 0 0 0 .75-.75V8.03Z"/>
                     </svg>

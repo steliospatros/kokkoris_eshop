@@ -8,7 +8,6 @@ from django.utils import timezone
 
 from orders.models import Order
 from orders.refunds import order_requires_stripe_refund
-from orders.stock import release_stock_for_order
 
 User = get_user_model()
 
@@ -23,7 +22,7 @@ class CancellationRequestTests(TestCase):
         cls.paid_card_order = Order.objects.create(
             user=cls.user,
             payment_method=Order.PAYMENT_METHOD_CARD,
-            status=Order.STATUS_PAID,
+            status=Order.STATUS_NEW,
             cart_cost=Decimal("10.00"),
             courier_fee=Decimal("2.00"),
             total_cost=Decimal("12.00"),
@@ -75,7 +74,7 @@ class CancellationRequestTests(TestCase):
         self.assertIsNotNone(self.paid_card_order.cancellation_requested_at)
 
     def test_cod_order_cancels_immediately(self):
-        with patch("orders.views.release_stock_for_order") as mock_release:
+        with patch("orders.signals.release_stock_for_order") as mock_release:
             response = self.client.post(
                 reverse("orders:cancel_order", kwargs={"order_id": self.cod_order.id})
             )
@@ -91,7 +90,7 @@ class CancellationRequestTests(TestCase):
         self.assertTrue(order_requires_stripe_refund(self.paid_card_order))
 
     @patch("orders.admin.create_stripe_refund_for_order")
-    @patch("orders.admin.release_stock_for_order")
+    @patch("orders.signals.release_stock_for_order")
     def test_admin_refund_action_cancels_order(self, mock_release, mock_refund):
         from orders.admin import process_stripe_refund_and_cancel
 

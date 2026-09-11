@@ -16,22 +16,24 @@
 {# shadow measured from the mockup), a single account icon replacing the   #}
 {# old Σύνδεση/Εγγραφή text links, and a redesigned solid-fill cart icon   #}
 {# (the mockup's cart is a flat silhouette, not a thin outline).           #}
-<nav class="site-chrome site-chrome--header relative bg-kokkoris-teal-dark text-white overflow-visible z-30 shadow-[0_2px_0_0_rgba(0,0,0,0.15)]">
-    {# Butterfly 1: peeks in from the very top-left corner, clipped by the  #}
-    {# page edge in the original artwork — so it's pinned flush to x:0.     #}
-    <img src="{% static 'images/butterfly-corner.png' %}"
-         alt=""
-         aria-hidden="true"
-         class="hidden lg:block absolute left-0 top-[6px] w-[39px] h-auto pointer-events-none select-none z-10">
+<nav class="site-chrome site-chrome--header relative bg-kokkoris-teal-dark text-white z-30 shadow-[0_2px_0_0_rgba(0,0,0,0.15)]">
+    {# The butterflies get their own clipped layer: the bar itself must not   #}
+    {# clip, or the cart panel and search results are cut off at its edge.    #}
+    <div class="absolute inset-0 overflow-hidden pointer-events-none z-10" aria-hidden="true">
+        {# Butterfly 1: peeks in from the very top-left corner, clipped by the  #}
+        {# page edge in the original artwork — so it's pinned flush to x:0.     #}
+        <img src="{% static 'images/butterfly-corner.png' %}"
+             alt=""
+             class="hidden lg:block absolute left-0 top-[6px] w-[39px] h-auto select-none">
 
-    {# Swallowtail sits low in the header bar — its top edge aligned so the   #}
-    {# image rests on the nav's bottom (116px mockup). It used to straddle    #}
-    {# the nav/hero seam on the homepage, but the free-shipping strip now     #}
-    {# occupies that seam, so it stays inside the bar on every page.          #}
-    <img src="{% static 'images/butterfly-flying.png' %}"
-         alt=""
-         aria-hidden="true"
-         class="hidden lg:block absolute left-[500px] lg:top-[43px] w-[68px] h-auto pointer-events-none select-none z-10">
+        {# Swallowtail sits low in the header bar — its top edge aligned so the   #}
+        {# image rests on the nav's bottom (116px mockup). It used to straddle    #}
+        {# the nav/hero seam on the homepage, but the free-shipping strip now     #}
+        {# occupies that seam, so it stays inside the bar on every page.          #}
+        <img src="{% static 'images/butterfly-flying.png' %}"
+             alt=""
+             class="hidden lg:block absolute left-[500px] lg:top-[43px] w-[68px] h-auto select-none">
+    </div>
 
     <div class="nav-toolbar max-w-[1920px] mx-auto h-16 lg:h-[116px] pl-6 pr-2 lg:pl-[129px] lg:pr-3 font-inter relative">
         {# Company logo lockup: paw-print icon + "KOKKORIS / PET FOOD" wordmark. #}
