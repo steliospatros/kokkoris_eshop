@@ -2,6 +2,8 @@ from django.contrib import messages
 from django.shortcuts import redirect
 from django.views.decorators.http import require_POST
 
+from core import user_text
+
 from .forms import NewsletterSubscribeForm
 from .models import NewsletterSubscriber
 from .recaptcha import verify_recaptcha
@@ -14,17 +16,14 @@ def subscribe(request):
     """
     form = NewsletterSubscribeForm(request.POST)
     if not form.is_valid():
-        messages.error(request, "Παρακαλώ εισάγετε έγκυρο email.")
+        messages.error(request, user_text.NEWSLETTER_BAD_EMAIL)
         return redirect(request.POST.get("next") or "home")
 
     if not verify_recaptcha(
         form.cleaned_data.get("g_recaptcha_response"),
         remote_ip=request.META.get("REMOTE_ADDR"),
     ):
-        messages.error(
-            request,
-            "Η εγγραφή δεν ολοκληρώθηκε. Παρακαλώ δοκιμάστε ξανά.",
-        )
+        messages.error(request, user_text.NEWSLETTER_RETRY)
         return redirect(request.POST.get("next") or "home")
 
     email = form.cleaned_data["email"].lower().strip()
@@ -34,7 +33,7 @@ def subscribe(request):
     )
 
     if created:
-        messages.success(request, "Ευχαριστούμε! Η εγγραφή σας στο newsletter ολοκληρώθηκε.")
+        messages.success(request, user_text.NEWSLETTER_THANKS)
         return redirect(request.POST.get("next") or "home")
 
     if not subscriber.is_active:
@@ -42,8 +41,8 @@ def subscribe(request):
         if request.user.is_authenticated and not subscriber.user_id:
             subscriber.user = request.user
             subscriber.save(update_fields=["user"])
-        messages.success(request, "Η εγγραφή σας στο newsletter ενεργοποιήθηκε ξανά.")
+        messages.success(request, user_text.NEWSLETTER_AGAIN)
         return redirect(request.POST.get("next") or "home")
 
-    messages.info(request, "Αυτό το email είναι ήδη εγγεγραμμένο στο newsletter μας.")
+    messages.info(request, user_text.NEWSLETTER_ALREADY)
     return redirect(request.POST.get("next") or "home")

@@ -5,6 +5,8 @@ from django.views.decorators.http import require_GET, require_POST
 
 from cart.cart import CartError, get_cart
 from cart.presentation import build_cart_summary
+from core import user_text
+from core.http import json_error, json_safe
 from products.models import ProductVariant
 
 
@@ -27,7 +29,7 @@ def _parse_quantity(request, default=1):
             raw = request.POST.get("quantity", default)
         return int(raw)
     except (TypeError, ValueError, json.JSONDecodeError):
-        return default
+        return None
 
 
 def _cart_payload(cart):
@@ -42,6 +44,7 @@ def _cart_payload(cart):
 
 
 @require_GET
+@json_safe
 def status(request):
     """Return current cart totals and per-variant quantities for the catalog UI."""
     cart = get_cart(request)
@@ -49,6 +52,7 @@ def status(request):
 
 
 @require_GET
+@json_safe
 def preview(request):
     """Return cart lines with product details for the nav mini-panel and cart page."""
     cart = get_cart(request)
@@ -58,6 +62,7 @@ def preview(request):
 
 
 @require_POST
+@json_safe
 def clear(request):
     """Remove every line from the cart."""
     cart = get_cart(request)
@@ -67,22 +72,23 @@ def clear(request):
 
 
 @require_POST
+@json_safe
 def add(request):
     """Add one unit of a variant (or merge into existing line)."""
     variant_id = _parse_variant_id(request)
     if not variant_id:
-        return JsonResponse({"ok": False, "error": "Μη έγκυρη παραλλαγή."}, status=400)
+        return json_error(user_text.CART_PRODUCT_UNKNOWN)
 
     try:
         variant = ProductVariant.objects.select_related("product").get(pk=variant_id)
     except ProductVariant.DoesNotExist:
-        return JsonResponse({"ok": False, "error": "Η παραλλαγή δεν βρέθηκε."}, status=404)
+        return json_error(user_text.CART_SIZE_GONE, status=404)
 
     cart = get_cart(request)
     try:
         cart.add_item(variant, quantity=1)
     except CartError as exc:
-        return JsonResponse({"ok": False, "error": str(exc)}, status=400)
+        return json_error(str(exc))
 
     payload = _cart_payload(cart)
     payload["variant_id"] = variant_id
@@ -94,19 +100,20 @@ def add(request):
 
 
 @require_POST
+@json_safe
 def update(request):
     """Set exact quantity for a variant (0 removes the line)."""
     variant_id = _parse_variant_id(request)
     quantity = _parse_quantity(request, default=0)
     if not variant_id:
-        return JsonResponse({"ok": False, "error": "Μη έγκυρη παραλλαγή."}, status=400)
-    if quantity < 0:
-        return JsonResponse({"ok": False, "error": "Μη έγκυρη ποσότητα."}, status=400)
+        return json_error(user_text.CART_PRODUCT_UNKNOWN)
+    if quantity is None or quantity < 0:
+        return json_error(user_text.CART_QTY_INVALID)
 
     try:
         variant = ProductVariant.objects.get(pk=variant_id)
     except ProductVariant.DoesNotExist:
-        return JsonResponse({"ok": False, "error": "Η παραλλαγή δεν βρέθηκε."}, status=404)
+        return json_error(user_text.CART_SIZE_GONE, status=404)
 
     cart = get_cart(request)
     try:
@@ -115,7 +122,7 @@ def update(request):
         else:
             cart.update_item(variant, new_quantity=quantity)
     except CartError as exc:
-        return JsonResponse({"ok": False, "error": str(exc)}, status=400)
+        return json_error(str(exc))
 
     payload = _cart_payload(cart)
     payload["variant_id"] = variant_id

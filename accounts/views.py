@@ -19,6 +19,9 @@ from newsletter.services import subscribe_newsletter
 from orders.presentation import build_order_item_rows, build_payment_display
 from products.catalog import format_decimal_greek
 
+from core import user_text
+from core.http import json_safe
+
 from .forms import KokkorisSignupForm, ProfileForm
 from .password_help import form_errors_el
 from .address_utils import resolve_greek_city
@@ -50,10 +53,11 @@ def _validation_message(exc: ValidationError) -> str:
         return str(exc.messages[0])
     if getattr(exc, "message", None):
         return str(exc.message)
-    return "Μη έγκυρο αίτημα."
+    return user_text.AUTH_GENERIC
 
 
 @require_POST
+@json_safe
 def api_login(request):
     if request.user.is_authenticated:
         return JsonResponse({"ok": True, "redirect": reverse("home")})
@@ -76,7 +80,7 @@ def api_login(request):
             {
                 "ok": False,
                 "errors": {
-                    "__all__": ["Η σύνδεση δεν ολοκληρώθηκε. Έλεγξε το email σου."]
+                    "__all__": [user_text.AUTH_LOGIN_FAILED]
                 },
             },
             status=400,
@@ -90,6 +94,7 @@ def api_login(request):
 
 
 @require_POST
+@json_safe
 def api_signup(request):
     if request.user.is_authenticated:
         return JsonResponse({"ok": True, "redirect": reverse("home")})
@@ -118,7 +123,7 @@ def api_signup(request):
             {
                 "ok": False,
                 "errors": {
-                    "__all__": ["Η εγγραφή δεν ολοκληρώθηκε. Δοκίμασε ξανά."]
+                    "__all__": [user_text.AUTH_SIGNUP_FAILED]
                 },
             },
             status=400,
@@ -139,9 +144,10 @@ def api_signup(request):
 
 @login_required
 @require_POST
+@json_safe
 def api_phone_send_otp(request):
     if not phone_verification_enabled():
-        return JsonResponse({"ok": False, "error": "Η επιβεβαίωση κινητού δεν είναι ενεργή."}, status=503)
+        return JsonResponse({"ok": False, "error": user_text.PHONE_VERIFY_OFF}, status=503)
 
     from accounts.phone_verification import send_otp
     from accounts.sms import SMSDeliveryError
@@ -153,7 +159,10 @@ def api_phone_send_otp(request):
     except ValidationError as exc:
         return JsonResponse({"ok": False, "error": _validation_message(exc)}, status=400)
     except SMSDeliveryError as exc:
-        return JsonResponse({"ok": False, "error": str(exc)}, status=503)
+        return JsonResponse(
+            {"ok": False, "error": str(exc) or user_text.SMS_UNAVAILABLE},
+            status=503,
+        )
 
     return JsonResponse({
         "ok": True,
@@ -164,9 +173,10 @@ def api_phone_send_otp(request):
 
 @login_required
 @require_POST
+@json_safe
 def api_phone_verify_otp(request):
     if not phone_verification_enabled():
-        return JsonResponse({"ok": False, "error": "Η επιβεβαίωση κινητού δεν είναι ενεργή."}, status=503)
+        return JsonResponse({"ok": False, "error": user_text.PHONE_VERIFY_OFF}, status=503)
 
     from django.utils import timezone
 
@@ -188,6 +198,7 @@ def api_phone_verify_otp(request):
 
 @login_required
 @require_POST
+@json_safe
 def api_phone_reset_verification(request):
     request.user.phone_verified_at = None
     request.user.save(update_fields=["phone_verified_at"])
@@ -195,6 +206,7 @@ def api_phone_reset_verification(request):
 
 
 @require_POST
+@json_safe
 def api_password_reset(request):
     if request.user.is_authenticated:
         return JsonResponse({"ok": True})
@@ -216,7 +228,7 @@ def api_password_reset(request):
             {
                 "ok": False,
                 "errors": {
-                    "__all__": ["Πάρα πολλά αιτήματα. Δοκίμασε ξανά σε λίγο."]
+                    "__all__": [user_text.AUTH_RATE_LIMIT]
                 },
             },
             status=429,
@@ -297,9 +309,9 @@ def account_details_view(request):
         form = ProfileForm(request.POST, instance=request.user)
         if form.is_valid():
             form.save()
-            messages.success(request, "Οι αλλαγές σου αποθηκεύτηκαν.")
+            messages.success(request, user_text.PROFILE_SAVED)
             return redirect("accounts:details")
-        messages.error(request, "Διόρθωσε τα σφάλματα και δοκίμασε ξανά.")
+        messages.error(request, user_text.PROFILE_FIX)
     else:
         form = ProfileForm(instance=request.user)
 

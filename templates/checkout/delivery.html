@@ -153,7 +153,11 @@
             var selected = document.querySelector(".delivery-option:checked");
             if (selected && selected.dataset.requiresLocker === "true" && !lockerIdInput.value) {
                 event.preventDefault();
-                alert("{% trans 'Επίλεξε σημείο παραλαβής BOX NOW από τον χάρτη.' %}");
+                if (window.KokkorisNotice) {
+                    window.KokkorisNotice.error("{% trans 'Επίλεξε σημείο παραλαβής BOX NOW από τον χάρτη.' %}");
+                } else {
+                    window.alert("{% trans 'Επίλεξε σημείο παραλαβής BOX NOW από τον χάρτη.' %}");
+                }
             }
         });
     }

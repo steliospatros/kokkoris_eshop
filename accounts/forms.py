@@ -12,6 +12,8 @@ from .address_utils import (
     parse_address_from_place_id,
     resolve_greek_city,
 )
+from core import user_text
+
 from .models import CustomUser
 from .password_help import translate_form_error
 from .phone_validation import validate_greek_mobile
@@ -114,6 +116,8 @@ class ProfileForm(forms.ModelForm):
             "focus:ring-2 focus:ring-kokkoris-teal-dark/25"
         )
         for name, field in self.fields.items():
+            field.error_messages.setdefault("required", "Αυτό το πεδίο είναι υποχρεωτικό.")
+            field.error_messages.setdefault("invalid", "Αυτό το πεδίο δεν είναι έγκυρο.")
             if name in {
                 "address_place_id",
                 "address_components_json",
@@ -231,38 +235,20 @@ class ProfileForm(forms.ModelForm):
                         cleaned_data[name] = parsed_dict[name]
                     current = self._structured_values(cleaned_data)
                 else:
-                    self.add_error(
-                        "address_search",
-                        "Επίλεξε έγκυρη διεύθυνση από τη λίστα ή τον χάρτη.",
-                    )
+                    self.add_error("address_search", user_text.ADDRESS_PICK)
 
                 if not (cleaned_data.get("address_place_id") or "").strip():
                     if not self._coords_present(cleaned_data):
-                        self.add_error(
-                            "address_search",
-                            "Επίλεξε έγκυρη διεύθυνση από τη λίστα ή τον χάρτη.",
-                        )
+                        self.add_error("address_search", user_text.ADDRESS_PICK)
                 if not self._coords_present(cleaned_data):
-                    self.add_error(
-                        "address_search",
-                        "Επιβεβαίωσε την τοποθεσία στον χάρτη (κουκίδα ή αναζήτηση).",
-                    )
+                    self.add_error("address_search", user_text.ADDRESS_MAP)
                 if not current["postal_code"]:
-                    self.add_error(
-                        "address_search",
-                        "Επίλεξε πιο συγκεκριμένη διεύθυνση — δεν βρέθηκε Τ.Κ.",
-                    )
+                    self.add_error("address_search", user_text.ADDRESS_POSTAL)
                 if not current["street"]:
-                    self.add_error(
-                        "address_search",
-                        "Δεν βρέθηκε δρόμος — επίλεξε πιο συγκεκριμένη διεύθυνση.",
-                    )
+                    self.add_error("address_search", user_text.ADDRESS_STREET)
 
         if has_any and not current["city"]:
-            self.add_error(
-                "address_search",
-                "Η πόλη λείπει — επίλεξε διεύθυνση από τη λίστα ή τον χάρτη.",
-            )
+            self.add_error("address_search", user_text.ADDRESS_CITY)
 
         if current["postal_code"]:
             cleaned_data["city"] = resolve_greek_city(

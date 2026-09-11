@@ -24,9 +24,9 @@
             var contentType = response.headers.get("content-type") || "";
             if (contentType.indexOf("application/json") === -1) {
                 if (response.status === 403) {
-                    throw new Error("Η συνεδρία έληξε.");
+                    throw new Error("Η συνεδρία έληξε. Ανανέωσε τη σελίδα και δοκίμασε ξανά.");
                 }
-                throw new Error("Προσωρινό σφάλμα. Δοκίμασε ξανά.");
+                throw new Error("Κάτι πήγε στραβά. Δοκίμασε ξανά σε λίγο.");
             }
             return response.json().then(function (data) {
                 return { ok: response.ok, status: response.status, data: data };
@@ -258,7 +258,7 @@
                     showOtpStep(result.data.phone_number);
                 })
                 .catch(function (err) {
-                    showPhoneError(err.message || "Σφάλμα δικτύου.");
+                    showPhoneError(err.message || "Η σύνδεση διακόπηκε. Έλεγξε το δίκτυό σου και δοκίμασε ξανά.");
                 })
                 .finally(function () {
                     setLoading(sendBtn, prefix + "-send-spinner", prefix + "-send-label", false);
@@ -303,7 +303,7 @@
                     }
                 })
                 .catch(function (err) {
-                    showOtpError(err.message || "Σφάλμα δικτύου.");
+                    showOtpError(err.message || "Η σύνδεση διακόπηκε. Έλεγξε το δίκτυό σου και δοκίμασε ξανά.");
                 })
                 .finally(function () {
                     verifying = false;

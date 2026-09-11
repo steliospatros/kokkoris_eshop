@@ -1,0 +1,69 @@
+{% load i18n static %}
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ error_title }} — Kokkoris Pet Food</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Poppins:wght@300;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --teal: #42746c;
+            --ink: #334155;
+            --muted: #94a3b8;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1.25rem;
+            background: #fff;
+            color: var(--ink);
+            font-family: Inter, sans-serif;
+        }
+        .wrap { max-width: 36rem; text-align: center; }
+        .eyebrow {
+            margin: 0 0 0.75rem;
+            font-size: 0.78rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        h1 {
+            margin: 0 0 1rem;
+            font-family: Poppins, sans-serif;
+            font-weight: 300;
+            font-size: clamp(1.6rem, 4vw, 2rem);
+            color: var(--teal);
+        }
+        p { margin: 0 0 2rem; line-height: 1.6; }
+        a {
+            display: inline-flex;
+            min-height: 2.75rem;
+            align-items: center;
+            justify-content: center;
+            padding: 0.65rem 1.5rem;
+            border-radius: 999px;
+            background: var(--teal);
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+        }
+        a:hover { opacity: 0.92; }
+    </style>
+</head>
+<body>
+    <section class="wrap">
+        <p class="eyebrow">{% trans "Kokkoris Pet Food" %}</p>
+        <h1>{{ error_title }}</h1>
+        <p>{{ error_lead }}</p>
+        <a href="{% url 'home' %}">{{ home_link_label }}</a>
+    </section>
+</body>
+</html>

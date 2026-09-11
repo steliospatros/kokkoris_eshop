@@ -27,7 +27,7 @@
         }).then(function (response) {
             return response.json().then(function (data) {
                 if (!response.ok) {
-                    throw new Error(data.error || "Σφάλμα δικτύου.");
+                    throw new Error(data.error || (window.KokkorisNotice && window.KokkorisNotice.NETWORK) || "Η σύνδεση διακόπηκε. Έλεγξε το δίκτυό σου και δοκίμασε ξανά.");
                 }
                 return data;
             });
@@ -143,7 +143,12 @@
     }
 
     function handleCartError(error) {
-        window.alert(error.message || "Δεν ήταν δυνατή η ενημέρωση του καλαθιού.");
+        var fallback = "Δεν μπορέσαμε να ενημερώσουμε το καλάθι. Δοκίμασε ξανά.";
+        if (window.KokkorisNotice) {
+            window.KokkorisNotice.fromError(error, fallback);
+            return;
+        }
+        window.alert((error && error.message) || fallback);
     }
 
     function addToCart(card, variantId) {
@@ -161,7 +166,7 @@
     function updateQuantity(card, variantId, quantity) {
         var maxStock = cardMaxStock(card);
         if (maxStock !== null && quantity > maxStock) {
-            handleCartError(new Error("Μόνο " + maxStock + " τεμάχια διαθέσιμα."));
+            handleCartError(new Error("Μπορείς να βάλεις έως " + maxStock + " τεμάχια."));
             return;
         }
         postJson("/cart/update/", {

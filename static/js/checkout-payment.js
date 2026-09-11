@@ -107,7 +107,7 @@
             mountNode.innerHTML = "";
         }
         stripe = Stripe(publishableKey);
-        elements = stripe.elements({ clientSecret: clientSecret });
+        elements = stripe.elements({ clientSecret: clientSecret, locale: "el" });
         paymentElement = elements.create("payment");
         paymentElement.mount("#stripe-card-element");
         activePaymentIntentId = paymentIntentId;
@@ -128,7 +128,7 @@
         }).then(function (response) {
             return response.json().then(function (data) {
                 if (!response.ok) {
-                    throw new Error(data.error || "Δεν ήταν δυνατή η φόρτωση της πληρωμής.");
+                    throw new Error(data.error || "Δεν μπορέσαμε να ξεκινήσουμε την πληρωμή με κάρτα.");
                 }
                 return data;
             });
@@ -147,7 +147,7 @@
         return fetchPaymentIntent().then(function (data) {
             mountStripeElement(data.clientSecret, data.paymentIntentId);
         }).catch(function (error) {
-            showStripeError(error.message || "Δεν ήταν δυνατή η φόρτωση της πληρωμής.");
+            showStripeError(error.message || "Δεν μπορέσαμε να ξεκινήσουμε την πληρωμή με κάρτα.");
         }).finally(function () {
             cardPaymentLoading = false;
         });
@@ -194,7 +194,7 @@
         }).then(function (result) {
             if (result.error) {
                 setSubmitLoading(false);
-                showStripeError(result.error.message || "Η πληρωμή με κάρτα απέτυχε.");
+                showStripeError(result.error.message || "Η πληρωμή με κάρτα δεν ολοκληρώθηκε. Δοκίμασε ξανά ή επίλεξε αντικαταβολή.");
                 return;
             }
             if (intentInput) {

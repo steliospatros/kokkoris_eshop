@@ -35,7 +35,7 @@ class SignupPhoneApiTests(TestCase):
     def test_signup_rejects_letters_in_phone(self):
         response = self._signup(phone_number="69abc12345")
         self.assertEqual(response.status_code, 400)
-        self.assertIn("Μόνο αριθμοί", response.json()["errors"]["phone_number"][0])
+        self.assertIn("αριθμ", response.json()["errors"]["phone_number"][0].lower())
 
     def test_signup_rejects_invalid_mobile_prefix(self):
         response = self._signup(phone_number="6812345678")

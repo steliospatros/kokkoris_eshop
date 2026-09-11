@@ -400,3 +400,41 @@ FREE_SHIPPING_ORDER_MINIMUM = Decimal(os.environ.get("FREE_SHIPPING_ORDER_MINIMU
 # Door-delivery courier fee below the free-shipping threshold (not Box Now).
 # Temporary flat rate until a carrier (ACS / Γενική / ΕΛΤΑ, etc.) is chosen.
 COURIER_FLAT_FEE = Decimal(os.environ.get("COURIER_FLAT_FEE", "3.20"))
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "app": {
+            "format": "{levelname} {asctime} {name} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "app",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+    "loggers": {
+        "django.request": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+        "django.security": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        "kokkoris": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}

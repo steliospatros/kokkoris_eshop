@@ -48,6 +48,10 @@ def translate_form_error(error):
         return _ERROR_CODE_MESSAGES["password_no_digit"]
     if "must type the same password" in message.lower():
         return "Οι δύο κωδικοί δεν ταιριάζουν."
+    if "this field is required" in message.lower() or message.lower() == "required":
+        return "Αυτό το πεδίο είναι υποχρεωτικό."
+    if "enter a valid email" in message.lower() or "valid email" in message.lower():
+        return "Γράψε ένα έγκυρο email."
     return message
 
 

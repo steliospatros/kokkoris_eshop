@@ -15,6 +15,7 @@ Views/templates should always go through get_cart(request) and never
 instantiate DBCart/SessionCart directly, so they don't need to know or
 care which backend is actually in use for a given visitor.
 """
+from core import user_text
 from products.models import ProductVariant
 
 from .models import Cart
@@ -37,16 +38,30 @@ def compute_stock_issue(product_variant, quantity):
     Returns a human-readable problem message, or None if the line is fine.
     """
     if not product_variant.product.is_active:
-        return "Το προϊόν δεν είναι πλέον διαθέσιμο."
+        return user_text.CART_UNAVAILABLE
     if product_variant.availability == ProductVariant.AVAILABILITY_OUT_OF_STOCK:
-        return "Το προϊόν δεν είναι πλέον διαθέσιμο."
+        return user_text.CART_SOLD_OUT
     if product_variant.availability == ProductVariant.AVAILABILITY_ON_ORDER:
         return None
     if product_variant.stock == 0:
-        return "Το προϊόν δεν είναι διαθέσιμο (έλλειψη αποθέματος)."
+        return user_text.CART_SOLD_OUT
     if quantity > product_variant.stock:
-        return f"Μόνο {product_variant.stock} τεμάχια διαθέσιμα."
+        return user_text.stock_limited(product_variant.stock)
     return None
+
+
+def _reject_invalid_add(product_variant, quantity):
+    if quantity < 1:
+        raise CartError(user_text.CART_QTY_MIN)
+    if not product_variant.product.is_active:
+        raise CartError(user_text.CART_UNAVAILABLE)
+    if product_variant.availability == ProductVariant.AVAILABILITY_OUT_OF_STOCK:
+        raise CartError(user_text.CART_SOLD_OUT)
+    if (
+        product_variant.availability == ProductVariant.AVAILABILITY_AVAILABLE_NOW
+        and product_variant.stock == 0
+    ):
+        raise CartError(user_text.CART_SOLD_OUT)
 
 
 class BaseCart:
@@ -103,17 +118,7 @@ class DBCart(BaseCart):
         return list(self.cart.items.select_related("product_variant__product"))
 
     def add_item(self, product_variant, quantity=1):
-        if quantity < 1:
-            raise CartError("Η ποσότητα πρέπει να είναι τουλάχιστον 1.")
-        if not product_variant.product.is_active:
-            raise CartError("Το προϊόν δεν είναι πλέον διαθέσιμο.")
-        if product_variant.availability == ProductVariant.AVAILABILITY_OUT_OF_STOCK:
-            raise CartError("Το προϊόν είναι εξαντλημένο και δεν μπορεί να προστεθεί στο καλάθι.")
-        if (
-            product_variant.availability == ProductVariant.AVAILABILITY_AVAILABLE_NOW
-            and product_variant.stock == 0
-        ):
-            raise CartError("Το προϊόν δεν είναι διαθέσιμο (έλλειψη αποθέματος).")
+        _reject_invalid_add(product_variant, quantity)
 
         existing = self.cart.items.filter(product_variant=product_variant).first()
         new_quantity = (existing.quantity if existing else 0) + quantity
@@ -139,7 +144,7 @@ class DBCart(BaseCart):
         """
         item = self.cart.items.filter(product_variant=product_variant).first()
         if not item:
-            raise CartError("Το προϊόν δεν βρίσκεται στο καλάθι.")
+            raise CartError(user_text.CART_NOT_IN_CART)
 
         target_quantity = new_quantity if new_quantity is not None else item.quantity
 
@@ -218,17 +223,7 @@ class SessionCart(BaseCart):
         ]
 
     def add_item(self, product_variant, quantity=1):
-        if quantity < 1:
-            raise CartError("Η ποσότητα πρέπει να είναι τουλάχιστον 1.")
-        if not product_variant.product.is_active:
-            raise CartError("Το προϊόν δεν είναι πλέον διαθέσιμο.")
-        if product_variant.availability == ProductVariant.AVAILABILITY_OUT_OF_STOCK:
-            raise CartError("Το προϊόν είναι εξαντλημένο και δεν μπορεί να προστεθεί στο καλάθι.")
-        if (
-            product_variant.availability == ProductVariant.AVAILABILITY_AVAILABLE_NOW
-            and product_variant.stock == 0
-        ):
-            raise CartError("Το προϊόν δεν είναι διαθέσιμο (έλλειψη αποθέματος).")
+        _reject_invalid_add(product_variant, quantity)
 
         key = str(product_variant.pk)
         new_quantity = self._data.get(key, 0) + quantity
@@ -243,7 +238,7 @@ class SessionCart(BaseCart):
     def update_item(self, product_variant, *, new_quantity=None, new_variant=None):
         key = str(product_variant.pk)
         if key not in self._data:
-            raise CartError("Το προϊόν δεν βρίσκεται στο καλάθι.")
+            raise CartError(user_text.CART_NOT_IN_CART)
 
         target_quantity = new_quantity if new_quantity is not None else self._data[key]
 

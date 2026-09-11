@@ -11,6 +11,7 @@ from django.core.exceptions import ValidationError
 
 from accounts.phone_validation import validate_greek_mobile
 from accounts.sms import SMSDeliveryError, is_sms_configured, send_sms
+from core import user_text
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +51,7 @@ def _validation_message(exc: ValidationError) -> str:
         return str(exc.messages[0])
     if getattr(exc, "message", None):
         return str(exc.message)
-    return "Μη έγκυρος αριθμός κινητού."
+    return user_text.OTP_UNKNOWN_PHONE
 
 
 def check_send_cooldown(user_id: int) -> int | None:
@@ -74,7 +75,7 @@ def send_otp(phone: str, *, user_id: int) -> SendOTPResult:
     remaining = check_send_cooldown(user_id)
     if remaining:
         raise ValidationError(
-            f"Περίμενε {remaining}s.",
+            f"Περίμενε {remaining} δευτερόλεπτα πριν στείλεις νέο SMS.",
             code="otp_cooldown",
         )
 
@@ -88,11 +89,11 @@ def send_otp(phone: str, *, user_id: int) -> SendOTPResult:
     message = f"Kokkoris Pet Food: ο κωδικός σου είναι {code}. Ισχύει 10 λεπτά."
 
     if not phone_verification_enabled():
-        raise SMSDeliveryError("Η επιβεβαίωση κινητού δεν είναι ενεργή.")
+        raise SMSDeliveryError(user_text.PHONE_VERIFY_OFF)
 
     if not is_sms_configured():
         cache.delete(_cache_key(normalized))
-        raise SMSDeliveryError("Η αποστολή SMS δεν είναι διαθέσιμη.")
+        raise SMSDeliveryError(user_text.SMS_UNAVAILABLE)
 
     try:
         send_sms(normalized, message)
@@ -110,9 +111,9 @@ def verify_otp(phone: str, code: str) -> str:
     """
     raw_code = (code or "").strip()
     if not raw_code:
-        raise ValidationError("Συμπλήρωσε τον κωδικό.", code="otp_required")
+        raise ValidationError(user_text.OTP_REQUIRED, code="otp_required")
     if not raw_code.isdigit() or len(raw_code) != 6:
-        raise ValidationError("6 ψηφία απαιτούνται.", code="otp_format")
+        raise ValidationError(user_text.OTP_FORMAT, code="otp_format")
 
     try:
         normalized = validate_greek_mobile(phone)
@@ -121,9 +122,9 @@ def verify_otp(phone: str, code: str) -> str:
 
     expected = cache.get(_cache_key(normalized))
     if not expected:
-        raise ValidationError("Ο κωδικός έληξε. Στείλε νέο SMS.", code="otp_expired")
+        raise ValidationError(user_text.OTP_EXPIRED, code="otp_expired")
     if raw_code != str(expected):
-        raise ValidationError("Λάθος κωδικός.", code="otp_invalid")
+        raise ValidationError(user_text.OTP_INVALID, code="otp_invalid")
 
     cache.delete(_cache_key(normalized))
     return normalized

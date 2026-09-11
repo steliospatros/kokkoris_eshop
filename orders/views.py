@@ -1,11 +1,17 @@
+import logging
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from core import user_text
+
 from .models import Order
 from .presentation import build_order_detail_context
+
+logger = logging.getLogger("kokkoris")
 
 
 @login_required
@@ -32,23 +38,22 @@ def cancel_order_view(request, order_id):
     """
     order = get_object_or_404(Order, id=order_id, user=request.user)
 
-    if order.can_be_cancelled_by_customer():
-        order.status = Order.STATUS_CANCELLED
-        order.save(update_fields=["status"])
-        messages.success(request, "Η παραγγελία ακυρώθηκε.")
-    elif order.can_request_cancellation():
-        order.status = Order.STATUS_CANCELLATION_REQUESTED
-        order.cancellation_requested_at = timezone.now()
-        order.save(update_fields=["status", "cancellation_requested_at"])
-        messages.info(
-            request,
-            "Το αίτημα ακύρωσης καταχώρηθηκε. Η ομάδα μας θα εξετάσει την "
-            "αίτηση και, μετά την επιβεβαίωση, θα επιστραφούν τα χρήματα "
-            "στην κάρτα σου.",
-        )
-    elif order.is_refund_pending():
-        messages.info(request, "Το αίτημα ακύρωσης είναι ήδη σε εξέλιξη.")
-    else:
-        messages.error(request, "Αυτή η παραγγελία δεν μπορεί να ακυρωθεί πλέον.")
+    try:
+        if order.can_be_cancelled_by_customer():
+            order.status = Order.STATUS_CANCELLED
+            order.save(update_fields=["status"])
+            messages.success(request, user_text.ORDER_CANCELLED)
+        elif order.can_request_cancellation():
+            order.status = Order.STATUS_CANCELLATION_REQUESTED
+            order.cancellation_requested_at = timezone.now()
+            order.save(update_fields=["status", "cancellation_requested_at"])
+            messages.info(request, user_text.ORDER_CANCEL_REQUESTED)
+        elif order.is_refund_pending():
+            messages.info(request, user_text.ORDER_CANCEL_PENDING)
+        else:
+            messages.error(request, user_text.ORDER_CANCEL_BLOCKED)
+    except Exception:
+        logger.exception("Customer cancel failed for order %s", order.pk)
+        messages.error(request, user_text.GENERIC)
 
     return redirect("orders:detail", order_id=order.id)

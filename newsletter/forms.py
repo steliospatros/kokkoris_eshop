@@ -1,9 +1,15 @@
 from django import forms
 
+from core import user_text
+
 
 class NewsletterSubscribeForm(forms.Form):
     email = forms.EmailField(
         label="Email",
+        error_messages={
+            "required": user_text.NEWSLETTER_BAD_EMAIL,
+            "invalid": user_text.NEWSLETTER_BAD_EMAIL,
+        },
         widget=forms.EmailInput(
             attrs={
                 "placeholder": "Email",

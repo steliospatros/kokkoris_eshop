@@ -3,6 +3,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.csrf import ensure_csrf_cookie
 
+from core.http import json_safe
+
 from cart.cart import get_cart
 from products.catalog import (
     apply_catalog_filters,
@@ -338,13 +340,14 @@ def product_detail(request, slug):
     if context is None:
         from django.http import Http404
 
-        raise Http404("Product has no purchasable variants.")
+        raise Http404()
 
     record_product_view(request, product)
     response = render(request, "products/product_detail.html", context)
     return attach_viewer_cookie(response, request)
 
 
+@json_safe
 def search_suggestions(request):
     """
     JSON endpoint backing the nav's live search dropdown.

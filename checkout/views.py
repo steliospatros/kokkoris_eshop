@@ -13,6 +13,8 @@ from django.views.decorators.http import require_POST
 
 from accounts.profile_context import build_profile_form_context
 from cart.cart import get_cart
+from core import user_text
+from core.http import json_error, json_safe
 from orders.emails import send_order_status_email
 from orders.models import Order, OrderItem
 from orders.presentation import build_order_detail_context
@@ -47,7 +49,16 @@ from .stripe_service import (
     verify_card_payment_intent,
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("kokkoris")
+
+
+def _customer_payment_message(exc):
+    if isinstance(exc, StripeNotConfiguredError):
+        return user_text.CARD_UNAVAILABLE
+    message = str(exc).strip()
+    if message and not any(token in message.lower() for token in ("stripe", "secret", "key", "configured")):
+        return message
+    return user_text.CARD_FAILED
 
 
 def _checkout_coordinate(value):
@@ -64,7 +75,7 @@ def _redirect_if_cart_empty(request):
     """Shared guard: every checkout step needs a non-empty cart."""
     cart = get_cart(request)
     if cart.total_items == 0:
-        messages.error(request, "Το καλάθι σου είναι άδειο.")
+        messages.error(request, user_text.CART_EMPTY)
         return redirect("accounts:cart")
     return None
 
@@ -220,7 +231,7 @@ def checkout_address_view(request):
             form.save()
             stash_checkout_address(request, request.user)
             return redirect("checkout:delivery")
-        messages.error(request, "Διόρθωσε τα σφάλματα και δοκίμασε ξανά.")
+        messages.error(request, user_text.CHECKOUT_FIX_FIELDS)
     else:
         form = CheckoutProfileForm(instance=request.user)
 
@@ -247,7 +258,7 @@ def checkout_delivery_view(request):
 
     checkout_data = request.session.get(SESSION_KEY)
     if not checkout_data:
-        messages.info(request, "Συμπλήρωσε πρώτα τη διεύθυνση παράδοσης.")
+        messages.info(request, user_text.CHECKOUT_NEED_ADDRESS)
         return redirect("checkout:address")
 
     cart = get_cart(request)
@@ -269,14 +280,11 @@ def checkout_delivery_view(request):
     if request.method == "POST":
         delivery_method = request.POST.get("delivery_method")
         if delivery_method not in valid_values:
-            messages.error(request, "Επίλεξε έναν έγκυρο τρόπο παράδοσης.")
+            messages.error(request, user_text.CHECKOUT_BAD_DELIVERY)
         elif delivery_method == Order.DELIVERY_METHOD_BOX_NOW and not request.POST.get(
             "boxnow_locker_id", ""
         ).strip():
-            messages.error(
-                request,
-                "Επίλεξε σημείο παραλαβής BOX NOW από τον χάρτη πριν συνεχίσεις.",
-            )
+            messages.error(request, user_text.CHECKOUT_BOXNOW_LOCKER)
         else:
             fee = _delivery_sidebar_fee(
                 postal_code,
@@ -371,7 +379,7 @@ def _finalize_card_checkout(
     if stock_issues:
         for item, issue in stock_issues.items():
             messages.error(request, f"{item.product_variant}: {issue}")
-        raise StripePaymentError("Υπάρχει πρόβλημα αποθέματος στο καλάθι.")
+        raise StripePaymentError(user_text.CHECKOUT_STOCK)
 
     existing = find_order_for_payment_intent(
         stripe_payment_intent_id,
@@ -401,7 +409,7 @@ def _finalize_card_checkout(
         )
     except InsufficientStockError as exc:
         _report_stock_error(request, exc)
-        raise StripePaymentError("Υπάρχει πρόβλημα αποθέματος στο καλάθι.") from exc
+        raise StripePaymentError(user_text.CHECKOUT_STOCK) from exc
 
 
 @login_required
@@ -413,10 +421,10 @@ def checkout_payment_view(request):
 
     checkout_data = request.session.get(SESSION_KEY)
     if not checkout_data:
-        messages.info(request, "Συμπλήρωσε πρώτα τη διεύθυνση παράδοσης.")
+        messages.info(request, user_text.CHECKOUT_NEED_ADDRESS)
         return redirect("checkout:address")
     if "delivery_method" not in checkout_data:
-        messages.info(request, "Επίλεξε πρώτα τρόπο παράδοσης.")
+        messages.info(request, user_text.CHECKOUT_NEED_DELIVERY)
         return redirect("checkout:delivery")
 
     cart = get_cart(request)
@@ -467,9 +475,9 @@ def checkout_payment_view(request):
                 )
                 return redirect("checkout:confirmation", order_id=order.id)
             except StripePaymentError as exc:
-                messages.error(request, str(exc))
+                messages.error(request, _customer_payment_message(exc))
         elif redirect_status == "failed":
-            messages.error(request, "Η πληρωμή με κάρτα απέτυχε. Δοκίμασε ξανά.")
+            messages.error(request, user_text.CARD_FAILED)
 
     if request.method == "POST":
         form = PaymentMethodForm(request.POST)
@@ -487,10 +495,7 @@ def checkout_payment_view(request):
                 checkout_data["delivery_method"] == Order.DELIVERY_METHOD_BOX_NOW
                 and payment_method == Order.PAYMENT_METHOD_COD
             ):
-                messages.error(
-                    request,
-                    "Η παράδοση σε BOX NOW locker δεν υποστηρίζει αντικαταβολή.",
-                )
+                messages.error(request, user_text.CHECKOUT_BOXNOW_COD)
                 return redirect("checkout:payment")
             is_cod = payment_method == Order.PAYMENT_METHOD_COD
             courier_fee = cod_courier_fee if is_cod else base_courier_fee
@@ -500,10 +505,7 @@ def checkout_payment_view(request):
 
             if payment_method == Order.PAYMENT_METHOD_CARD:
                 if not stripe_payments_enabled():
-                    messages.error(
-                        request,
-                        "Η πληρωμή με κάρτα δεν είναι διαθέσιμη αυτή τη στιγμή.",
-                    )
+                    messages.error(request, user_text.CARD_UNAVAILABLE)
                     return redirect("checkout:payment")
                 stripe_payment_intent_id = request.POST.get(
                     "stripe_payment_intent_id",
@@ -519,7 +521,7 @@ def checkout_payment_view(request):
                         stripe_payment_intent_id=stripe_payment_intent_id,
                     )
                 except StripePaymentError as exc:
-                    messages.error(request, str(exc))
+                    messages.error(request, _customer_payment_message(exc))
                     return redirect("checkout:payment")
                 return redirect("checkout:confirmation", order_id=order.id)
 
@@ -562,21 +564,22 @@ def checkout_payment_view(request):
 
 @login_required
 @require_POST
+@json_safe
 def create_payment_intent_view(request):
     """Create a Stripe PaymentIntent for the current checkout card payment."""
     empty_cart_redirect = _redirect_if_cart_empty(request)
     if empty_cart_redirect:
-        return JsonResponse({"error": "Το καλάθι είναι άδειο."}, status=400)
+        return json_error(user_text.CART_EMPTY)
 
     checkout_data, cart, cart_total, base_courier_fee, _cod_fee = _get_checkout_payment_context(
         request
     )
     if checkout_data is None:
-        return JsonResponse({"error": "Μη ολοκληρωμένο checkout."}, status=400)
+        return json_error(user_text.CHECKOUT_INCOMPLETE)
 
     stock_issues = cart.get_stock_issues()
     if stock_issues:
-        return JsonResponse({"error": "Πρόβλημα αποθέματος στο καλάθι."}, status=400)
+        return json_error(user_text.CHECKOUT_STOCK)
 
     total_cost = cart_total + base_courier_fee
     try:
@@ -586,12 +589,9 @@ def create_payment_intent_view(request):
             checkout_session_key=request.session.session_key,
         )
     except StripeNotConfiguredError:
-        return JsonResponse(
-            {"error": "Η πληρωμή με κάρτα δεν είναι διαθέσιμη."},
-            status=503,
-        )
+        return json_error(user_text.CARD_UNAVAILABLE, status=503)
     except StripePaymentError as exc:
-        return JsonResponse({"error": str(exc)}, status=400)
+        return json_error(_customer_payment_message(exc))
 
     return JsonResponse(
         {

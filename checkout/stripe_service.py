@@ -14,6 +14,7 @@ from decimal import Decimal, ROUND_HALF_UP
 import stripe
 from django.conf import settings
 
+from core import user_text
 from orders.models import Order
 
 
@@ -70,22 +71,18 @@ def create_checkout_payment_intent(
             },
         )
     except stripe.StripeError as exc:
-        raise StripePaymentError(
-            "Δεν ήταν δυνατή η έναρξη της πληρωμής με κάρτα."
-        ) from exc
+        raise StripePaymentError(user_text.CARD_START_FAILED) from exc
 
 
 def retrieve_payment_intent(payment_intent_id: str):
     """Fetch a PaymentIntent from Stripe."""
     if not payment_intent_id:
-        raise StripePaymentError("Λείπει η πληρωμή με κάρτα.")
+        raise StripePaymentError(user_text.CARD_MISSING)
     _configure_stripe()
     try:
         return stripe.PaymentIntent.retrieve(payment_intent_id)
     except stripe.StripeError as exc:
-        raise StripePaymentError(
-            "Δεν ήταν δυνατή η επαλήθευση της πληρωμής με κάρτα."
-        ) from exc
+        raise StripePaymentError(user_text.CARD_VERIFY_FAILED) from exc
 
 
 def verify_card_payment_intent(
@@ -101,15 +98,15 @@ def verify_card_payment_intent(
     """
     intent = retrieve_payment_intent(payment_intent_id)
     if intent.status != "succeeded":
-        raise StripePaymentError("Η πληρωμή με κάρτα δεν ολοκληρώθηκε.")
+        raise StripePaymentError(user_text.CARD_FAILED)
     metadata = intent.metadata or {}
     if metadata.get("user_id") != str(user.pk):
-        raise StripePaymentError("Η πληρωμή δεν αντιστοιχεί στον λογαριασμό σου.")
+        raise StripePaymentError(user_text.CARD_MISMATCH)
     if metadata.get("checkout_session_key") != checkout_session_key:
-        raise StripePaymentError("Η πληρωμή δεν αντιστοιχεί στο τρέχον checkout.")
+        raise StripePaymentError(user_text.CARD_MISMATCH)
     if expected_total is not None:
         if intent.amount != decimal_to_stripe_cents(expected_total):
-            raise StripePaymentError("Το ποσό πληρωμής δεν ταιριάζει με την παραγγελία.")
+            raise StripePaymentError(user_text.CARD_AMOUNT)
     return intent
 
 

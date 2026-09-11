@@ -1,6 +1,7 @@
 from django import forms
 
 from accounts.forms import ProfileForm
+from core import user_text
 from orders.models import Order
 
 
@@ -33,4 +34,8 @@ class PaymentMethodForm(forms.Form):
         ),
         widget=forms.RadioSelect,
         label="Τρόπος πληρωμής",
+        error_messages={
+            "required": user_text.CHECKOUT_NEED_PAYMENT,
+            "invalid_choice": user_text.CHECKOUT_NEED_PAYMENT,
+        },
     )

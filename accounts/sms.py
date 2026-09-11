@@ -6,24 +6,16 @@ import logging
 import requests
 from django.conf import settings
 
-logger = logging.getLogger(__name__)
+from core import user_text
 
+logger = logging.getLogger("kokkoris")
+
+# Customer-facing copy only. Technical Twilio details stay in logs.
 TWILIO_ERROR_MESSAGES = {
-    "21211": "Μη έγκυρος αριθμός.",
-    "21214": "Ο αριθμός δεν δέχεται SMS.",
-    "21606": "Ο αριθμός δεν είναι εξουσιοδοτημένος (δοκιμαστικός λογαριασμός).",
-    "21608": "Η αποστολή SMS δεν είναι ενεργή για αυτή τη χώρα.",
-    "21610": "Ο αριθμός έχει απορρίψει SMS.",
-    "21614": "Μη έγκυρος αριθμός παραλήπτη.",
-    "21612": (
-        "Ο US αριθμός (+1) δεν μπορεί να στείλει στην Ελλάδα. "
-        "Χρειάζεται Alphanumeric Sender ή upgrade λογαριασμού."
-    ),
-    "21267": "Alphanumeric sender δεν επιτρέπεται σε trial — κάνε upgrade στο Twilio.",
-    "21659": "Λάθος αριθμός αποστολής στο .env — χρειάζεσαι Twilio number, όχι verified caller ID.",
-    "21408": "Δεν επιτρέπεται SMS σε αυτή την περιοχή.",
-    "20003": "Λάθος Twilio credentials — έλεγξε SID/token στο .env.",
-    "30032": "Ο αριθμός δεν είναι εξουσιοδοτημένος (δοκιμαστικός λογαριασμός).",
+    "21211": user_text.PHONE_INVALID,
+    "21214": user_text.SMS_NOT_ACCEPTED,
+    "21610": user_text.SMS_OPTED_OUT,
+    "21614": user_text.PHONE_INVALID,
 }
 
 
@@ -65,10 +57,10 @@ def _parse_twilio_error(response: requests.Response) -> str:
             return TWILIO_ERROR_MESSAGES[code]
         message = (payload.get("message") or "").strip()
         if "unverified" in message.lower():
-            return TWILIO_ERROR_MESSAGES["30032"]
+            return user_text.SMS_UNAVAILABLE
     except (ValueError, TypeError):
         pass
-    return "Δεν στάλθηκε SMS. Δοκίμασε ξανά."
+    return user_text.SMS_UNAVAILABLE
 
 
 def send_sms(to_greek_mobile: str, body: str) -> None:
@@ -97,7 +89,7 @@ def send_sms(to_greek_mobile: str, body: str) -> None:
         )
     except requests.RequestException:
         logger.exception("Twilio request failed for %s", to_greek_mobile)
-        raise SMSDeliveryError("Δεν στάλθηκε SMS. Δοκίμασε ξανά.") from None
+        raise SMSDeliveryError(user_text.SMS_UNAVAILABLE) from None
 
     if response.status_code >= 400:
         error = _parse_twilio_error(response)

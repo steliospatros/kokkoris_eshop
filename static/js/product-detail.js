@@ -30,7 +30,7 @@
         }).then(function (response) {
             return response.json().then(function (data) {
                 if (!response.ok) {
-                    throw new Error(data.error || "Σφάλμα δικτύου.");
+                    throw new Error(data.error || (window.KokkorisNotice && window.KokkorisNotice.NETWORK) || "Η σύνδεση διακόπηκε. Έλεγξε το δίκτυό σου και δοκίμασε ξανά.");
                 }
                 return data;
             });
@@ -210,7 +210,11 @@
                     }
                 })
                 .catch(function (err) {
-                    window.alert(err.message);
+                    if (window.KokkorisNotice) {
+                        window.KokkorisNotice.fromError(err);
+                    } else {
+                        window.alert(err.message);
+                    }
                 });
             return;
         }
@@ -224,7 +228,11 @@
                     syncCartUi(data.total_items);
                 })
                 .catch(function (err) {
-                    window.alert(err.message);
+                    if (window.KokkorisNotice) {
+                        window.KokkorisNotice.fromError(err);
+                    } else {
+                        window.alert(err.message);
+                    }
                 });
             return;
         }
@@ -244,7 +252,11 @@
                     syncCartUi(data.total_items);
                 })
                 .catch(function (err) {
-                    window.alert(err.message);
+                    if (window.KokkorisNotice) {
+                        window.KokkorisNotice.fromError(err);
+                    } else {
+                        window.alert(err.message);
+                    }
                 });
             return;
         }
@@ -256,7 +268,11 @@
             var next = parseInt(valuePlus.textContent, 10) + 1;
             var maxStock = footerMaxStock();
             if (maxStock !== null && next > maxStock) {
-                window.alert("Μόνο " + maxStock + " τεμάχια διαθέσιμα.");
+                if (window.KokkorisNotice) {
+                    window.KokkorisNotice.error("Μπορείς να βάλεις έως " + maxStock + " τεμάχια.");
+                } else {
+                    window.alert("Μπορείς να βάλεις έως " + maxStock + " τεμάχια.");
+                }
                 return;
             }
             postJson("/cart/update/", {
@@ -269,7 +285,11 @@
                     syncCartUi(data.total_items);
                 })
                 .catch(function (err) {
-                    window.alert(err.message);
+                    if (window.KokkorisNotice) {
+                        window.KokkorisNotice.fromError(err);
+                    } else {
+                        window.alert(err.message);
+                    }
                 });
         }
     });

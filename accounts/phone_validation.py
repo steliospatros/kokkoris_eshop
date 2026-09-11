@@ -6,6 +6,8 @@ import re
 
 from django.core.exceptions import ValidationError
 
+from core import user_text
+
 # National mobile numbers: 10 digits starting with 69X (X = 0–9).
 _MOBILE_PREFIX_2 = "69"
 _MOBILE_PREFIX_3 = tuple(f"69{digit}" for digit in "0123456789")
@@ -23,19 +25,19 @@ def validate_greek_mobile(raw: str | None) -> str:
     non-mobile prefixes. Raises ValidationError on failure.
     """
     if raw is None or not str(raw).strip():
-        raise ValidationError("Συμπλήρωσε το κινητό.", code="phone_required")
+        raise ValidationError(user_text.PHONE_REQUIRED, code="phone_required")
 
     text = str(raw).strip()
 
     if _LETTERS_RE.search(text):
-        raise ValidationError("Μόνο αριθμοί.", code="phone_letters")
+        raise ValidationError(user_text.PHONE_DIGITS, code="phone_letters")
 
     if not _ALLOWED_CHARS_RE.fullmatch(text):
-        raise ValidationError("Μόνο αριθμοί.", code="phone_invalid_chars")
+        raise ValidationError(user_text.PHONE_DIGITS, code="phone_invalid_chars")
 
     digits = re.sub(r"\D", "", text)
     if not digits:
-        raise ValidationError("Συμπλήρωσε το κινητό.", code="phone_required")
+        raise ValidationError(user_text.PHONE_REQUIRED, code="phone_required")
 
     if digits.startswith("0030"):
         digits = digits[4:]
@@ -43,13 +45,13 @@ def validate_greek_mobile(raw: str | None) -> str:
         digits = digits[2:]
 
     if len(digits) != _NATIONAL_LENGTH:
-        raise ValidationError("10 ψηφία · ξεκινά με 69.", code="phone_length")
+        raise ValidationError(user_text.PHONE_LENGTH, code="phone_length")
 
     if not digits.startswith(_MOBILE_PREFIX_2):
-        raise ValidationError("Ξεκινά με 69.", code="phone_prefix_2")
+        raise ValidationError(user_text.PHONE_PREFIX, code="phone_prefix_2")
 
     prefix3 = digits[:3]
     if prefix3 not in _MOBILE_PREFIX_3:
-        raise ValidationError("Μη έγκυρο κινητό.", code="phone_prefix_3")
+        raise ValidationError(user_text.PHONE_INVALID, code="phone_prefix_3")
 
     return digits

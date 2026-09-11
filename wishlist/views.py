@@ -10,6 +10,8 @@ from products.favourites import record_wishlist_change
 from products.models import Product
 
 from cart.cart import get_cart
+from core import user_text
+from core.http import json_error, json_safe
 from .wishlist import get_wishlist
 
 
@@ -19,12 +21,14 @@ def _cart_quantities(request):
 
 
 @require_GET
+@json_safe
 def status(request):
     wishlist = get_wishlist(request)
     return JsonResponse({"total_items": wishlist.count()})
 
 
 @require_POST
+@json_safe
 def toggle(request):
     """Add or remove a product from the current visitor's wishlist."""
     try:
@@ -34,12 +38,12 @@ def toggle(request):
         else:
             product_id = int(request.POST.get("product_id"))
     except (TypeError, ValueError, json.JSONDecodeError):
-        return JsonResponse({"ok": False, "error": "Μη έγκυρο προϊόν."}, status=400)
+        return json_error(user_text.WISHLIST_UNKNOWN)
 
     try:
         product = get_catalog_queryset().get(pk=product_id)
     except Product.DoesNotExist:
-        return JsonResponse({"ok": False, "error": "Το προϊόν δεν βρέθηκε."}, status=404)
+        return json_error(user_text.WISHLIST_GONE, status=404)
 
     wishlist = get_wishlist(request)
     wishlisted = wishlist.toggle(product)

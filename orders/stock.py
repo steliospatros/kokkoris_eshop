@@ -8,6 +8,7 @@ the cart, checkout is blocked with a clear message.
 from django.db import transaction
 
 from cart.cart import compute_stock_issue
+from core import user_text
 from products.models import ProductVariant
 
 
@@ -47,7 +48,7 @@ def reserve_stock_for_cart(cart):
             variant_id = _cart_item_variant_id(item)
             variant = variants.get(variant_id)
             if variant is None:
-                issues[item] = "Το προϊόν δεν είναι πλέον διαθέσιμο."
+                issues[item] = user_text.CART_UNAVAILABLE
                 continue
             issue = compute_stock_issue(variant, item.quantity)
             if issue:
