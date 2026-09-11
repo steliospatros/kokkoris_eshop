@@ -58,7 +58,7 @@ def _catalog_filter_hidden_fields(sort, per_page):
 def home(request):
     """
     Homepage: full-bleed hero/about/brands/animals sections.
-    The about-us brand list follows the PDF oval order.
+    The about-us brand row follows the official brand order.
     Empty brands stay frozen and hidden.
     """
     cart = get_cart(request)

@@ -291,6 +291,9 @@ class FrozenEmptyCompanyTests(TestCase):
 
         home_labels = [brand["label"] for brand in build_homepage_brand_list()]
         self.assertNotIn("Empty Brand", home_labels)
+        self.assertTrue(
+            all("logo_url" in brand for brand in build_homepage_brand_list())
+        )
 
     def test_browse_company_logo_links_to_brand_page(self):
         company = Company.objects.create(name="Core", code="COR")

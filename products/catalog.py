@@ -1182,19 +1182,19 @@ def _company_catalog_url(company):
 
 
 def build_homepage_brand_list():
-    """PDF brand ovals for the homepage about-us section."""
+    """Homepage about-us brand row: logo + name pill, PDF order."""
     by_code = {company.code.upper(): company for company in Company.objects.public()}
     brands = []
     for code in BRAND_LIST_ORDER:
         company = by_code.get(code)
-        if not company:
+        if not company or not company.logo:
             continue
         brands.append(
             {
                 "code": code,
                 "label": company.name,
                 "url": _company_catalog_url(company),
-                "image": f"images/brand-landing/oval-{code.lower()}.png",
+                "logo_url": company.logo.url,
             }
         )
     return brands
