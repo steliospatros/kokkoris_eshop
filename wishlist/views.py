@@ -79,7 +79,7 @@ def list_view(request):
         request,
         "wishlist/list.html",
         {
-            "page_title": "Wishlist",
+            "page_title": "Αγαπημένα",
             "product_cards": cards,
             "product_count": len(cards),
             "user_is_authenticated": request.user.is_authenticated,

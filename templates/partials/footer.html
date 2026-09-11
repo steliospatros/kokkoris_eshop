@@ -106,17 +106,17 @@
 
                 {% if RECAPTCHA_ENABLED %}
                     <p class="font-inter text-sm lg:text-base text-gray-400 mt-4 lg:mt-5 max-w-[560px] leading-relaxed">
-                        {% blocktrans %}This form is protected by reCAPTCHA and the Google{% endblocktrans %}
+                        {% trans "Αυτή η φόρμα προστατεύεται από reCAPTCHA. Ισχύουν η" %}
                         <a href="https://policies.google.com/privacy"
                            class="underline hover:text-gray-300"
                            target="_blank"
-                           rel="noopener noreferrer">{% trans "Privacy Policy" %}</a>
-                        {% trans "and" %}
+                           rel="noopener noreferrer">{% trans "Πολιτική Απορρήτου" %}</a>
+                        {% trans "και οι" %}
                         <a href="https://policies.google.com/terms"
                            class="underline hover:text-gray-300"
                            target="_blank"
-                           rel="noopener noreferrer">{% trans "Terms of Service" %}</a>
-                        {% trans "apply." %}
+                           rel="noopener noreferrer">{% trans "Όροι Χρήσης" %}</a>
+                        {% trans "της Google." %}
                     </p>
                     <script src="https://www.google.com/recaptcha/api.js?render={{ RECAPTCHA_SITE_KEY }}"></script>
                     <script>window.RECAPTCHA_SITE_KEY = "{{ RECAPTCHA_SITE_KEY }}";</script>
@@ -176,7 +176,7 @@
                 <button type="button"
                         id="cookie-settings-trigger"
                         class="font-inter text-kokkoris-blue text-sm lg:text-base ml-1 hover:underline">
-                    {% trans "Cookie Settings" %}
+                    {% trans "Ρυθμίσεις cookies" %}
                 </button>
             </div>
         </div>

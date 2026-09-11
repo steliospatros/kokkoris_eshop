@@ -38,14 +38,14 @@
             {% if user.is_authenticated %}
             <a href="{% url 'checkout:index' %}"
                class="inline-block rounded-full bg-kokkoris-teal-dark px-8 py-3 text-white font-inter font-medium hover:opacity-90 transition-opacity">
-                {% trans "Συνέχεια στο checkout" %}
+                {% trans "Ολοκλήρωση παραγγελίας" %}
             </a>
             {% else %}
             <button type="button"
                     id="cart-checkout-btn"
                     data-checkout-url="{% url 'checkout:index' %}"
                     class="inline-block rounded-full bg-kokkoris-teal-dark px-8 py-3 text-white font-inter font-medium hover:opacity-90 transition-opacity">
-                {% trans "Συνέχεια στο checkout" %}
+                {% trans "Ολοκλήρωση παραγγελίας" %}
             </button>
             {% endif %}
         </div>

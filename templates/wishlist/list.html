@@ -1,19 +1,18 @@
 {% extends "page.html" %}
 {% load i18n static %}
 
-{% block title %}{% trans "Wishlist" %} — Kokkoris Eshop{% endblock %}
+{% block title %}{% trans "Αγαπημένα" %} — Kokkoris Eshop{% endblock %}
 
 {% block main_class %}w-full max-w-none min-h-[60vh]{% endblock %}
 
 {% block content %}
 <section class="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10">
-    {% if not user.is_authenticated %}
-        <p class="mb-6 text-sm text-slate-500 font-inter">
-            {% trans "Η λίστα σου είναι προσωρινή μέχρι να κλείσεις τον browser ή να συνδεθείς." %}
-        </p>
-    {% endif %}
-
     {% if product_cards %}
+        {% if not user.is_authenticated %}
+            <p class="mb-6 text-sm text-slate-500 font-inter">
+                {% trans "Συνδέσου για να κρατήσεις τα αγαπημένα σου και στις επόμενες επισκέψεις." %}
+            </p>
+        {% endif %}
         <div id="catalog-grid"
              class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4"
              data-user-authenticated="{{ user_is_authenticated|yesno:'true,false' }}">
@@ -23,7 +22,7 @@
         </div>
     {% else %}
         <p class="text-slate-500 font-inter py-16 text-center bg-white rounded-xl border border-slate-200">
-            {% trans "Η wishlist σου είναι άδεια." %}
+            {% trans "Δεν έχεις ακόμα αγαπημένα προϊόντα." %}
             <a href="{% url 'products:all' %}" class="block mt-3 text-kokkoris-teal-dark hover:underline">
                 {% trans "Δες όλα τα προϊόντα" %}
             </a>

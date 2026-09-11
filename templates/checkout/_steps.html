@@ -1,5 +1,5 @@
 {% load i18n %}
-<nav class="checkout-steps" aria-label="{% trans 'Βήματα checkout' %}">
+<nav class="checkout-steps" aria-label="{% trans 'Βήματα παραγγελίας' %}">
     <ol class="checkout-steps__list">
         {% for step in checkout_steps %}
         <li class="checkout-step checkout-step--{{ step.state }}{% if step.key == checkout_step %} checkout-step--current{% endif %}">
