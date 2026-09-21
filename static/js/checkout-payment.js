@@ -31,7 +31,12 @@
 
     function getCsrfToken() {
         var input = form.querySelector("[name=csrfmiddlewaretoken]");
-        return input ? input.value : "";
+        if (input && input.value) {
+            return input.value;
+        }
+        return window.KokkorisNotice && window.KokkorisNotice.csrfToken
+            ? window.KokkorisNotice.csrfToken()
+            : "";
     }
 
     function selectedPaymentMethod() {

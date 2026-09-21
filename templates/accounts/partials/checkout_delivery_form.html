@@ -82,15 +82,19 @@
                                 <p class="text-xs font-inter font-semibold uppercase tracking-wide text-slate-400 mb-1">{{ row.label }}</p>
                                 <input type="hidden" name="floor" id="id_floor" value="{{ row.value }}" class="account-floor-value">
                                 <div class="account-floor-editor">
-                                    <div class="account-floor-picker flex flex-wrap gap-2" role="listbox">
+                                    <div class="account-floor-picker" role="listbox" aria-label="{{ row.label }}">
                                         {% for option in floor_preset_options %}
                                             <button type="button"
-                                                    class="account-floor-picker__option rounded-full border border-slate-300 px-3 py-1 text-xs font-inter hover:border-kokkoris-teal-dark"
-                                                    data-value="{{ option }}">{{ option }}</button>
+                                                    class="account-floor-picker__option"
+                                                    data-value="{{ option }}"
+                                                    role="option"
+                                                    aria-selected="false">{{ option }}</button>
                                         {% endfor %}
                                         <button type="button"
-                                                class="account-floor-picker__option account-floor-picker__option--other rounded-full border border-slate-300 px-3 py-1 text-xs font-inter hover:border-kokkoris-teal-dark"
-                                                data-value="__other__">{{ floor_other_label }}</button>
+                                                class="account-floor-picker__option account-floor-picker__option--other"
+                                                data-value="__other__"
+                                                role="option"
+                                                aria-selected="false">{{ floor_other_label }}</button>
                                     </div>
                                     <input type="text"
                                            class="account-floor-other hidden w-full mt-2 border border-slate-300 rounded-lg px-3 py-2.5 text-sm font-inter"

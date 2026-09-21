@@ -3,7 +3,7 @@ Meaning-based Greek product titles for the storefront.
 
 Subject first, then category, optional brand line, then audience:
   adult-all-breeds-beef-in-jelly (dog, sachets)
-    → «Βοδινό σε ζελέ φακελάκι - για ενήλικους σκύλους κάθε ράτσας»
+    → «Βοδινό σε ζελέ φάκελος - για ενήλικους σκύλους κάθε ράτσας»
   classic-adult-duck (dog, dry-food)
     → «Πάπια ξηρά τροφή Classic - για ενήλικους σκύλους»
 """
@@ -17,7 +17,7 @@ from products.management.commands.import_club4paws import GREEK_ACCENT_FIXES
 _CATEGORY_WORD = {
     "dry-food": "ξηρά τροφή",
     "canned-food": "κονσέρβα",
-    "sachets": "φακελάκι",
+    "sachets": "φάκελος",
     "litter": "άμμος",
     "bundle": "πολυσυσκευασία",
 }
@@ -66,6 +66,10 @@ _FLAVOR = {
 }
 
 _GREEK_TITLE_FIXES: list[tuple[str, str]] = [
+    (r"φακελάκια", "φάκελοι"),
+    (r"Φακελάκια", "Φάκελοι"),
+    (r"φακελάκι", "φάκελος"),
+    (r"Φακελάκι", "Φάκελος"),
     (r"\bΑρνι\b", "Αρνί"),
     (r"\bΒοδινο\b", "Βοδινό"),
     (r"\bΣυκωτι\b", "Συκώτι"),

@@ -180,6 +180,8 @@ _ALIAS_ROWS: list[tuple[tuple[str, ...], dict]] = [
         (
             "φακελακια",
             "φακελακι",
+            "φακελοι",
+            "φακελος",
             "φακελοσ",
             "sachets",
             "sachet",

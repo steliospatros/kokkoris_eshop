@@ -6,13 +6,10 @@
         return;
     }
 
-    function getCookie(name) {
-        var match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
-        return match ? decodeURIComponent(match[2]) : "";
-    }
-
     function csrfToken() {
-        return getCookie("csrftoken");
+        return window.KokkorisNotice && window.KokkorisNotice.csrfToken
+            ? window.KokkorisNotice.csrfToken()
+            : "";
     }
 
     function postJson(url, payload) {
@@ -25,9 +22,12 @@
             credentials: "same-origin",
             body: JSON.stringify(payload),
         }).then(function (response) {
+            if (window.KokkorisNotice && window.KokkorisNotice.readJsonResponse) {
+                return window.KokkorisNotice.readJsonResponse(response);
+            }
             return response.json().then(function (data) {
                 if (!response.ok) {
-                    throw new Error(data.error || (window.KokkorisNotice && window.KokkorisNotice.NETWORK) || "Η σύνδεση διακόπηκε. Έλεγξε το δίκτυό σου και δοκίμασε ξανά.");
+                    throw new Error(data.error || "Η σύνδεση διακόπηκε. Έλεγξε το δίκτυό σου και δοκίμασε ξανά.");
                 }
                 return data;
             });

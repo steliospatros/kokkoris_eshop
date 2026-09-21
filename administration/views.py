@@ -65,7 +65,7 @@ def administration_favourites_view(request):
         request,
         "administration/favourites.html",
         {
-            "page_title": "Favourites",
+            "page_title": "Δημοφιλή",
             "products_section": "favourites",
             "favourite_rows": build_favourites_rows(),
         },
@@ -150,9 +150,9 @@ def administration_toggle_product_pause_view(request, product_id):
     set_product_paused(product, pause)
 
     if pause:
-        messages.success(request, f"Το προϊόν «{product.name}» κρύφτηκε από το e-shop.")
+        messages.success(request, f"Το προϊόν «{product.name}» κρύφτηκε από το κατάστημα.")
     else:
-        messages.success(request, f"Το προϊόν «{product.name}» εμφανίζεται ξανά στο e-shop.")
+        messages.success(request, f"Το προϊόν «{product.name}» εμφανίζεται ξανά στο κατάστημα.")
     variant_id = product.variants.order_by("weight").values_list("pk", flat=True).first()
     return redirect(_inventory_redirect(request, variant_id))
 

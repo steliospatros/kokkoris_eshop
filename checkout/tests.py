@@ -139,6 +139,18 @@ class CheckoutDeliveryViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'name="phone_number"')
 
+    def test_address_page_offers_floors_up_to_fifth(self):
+        response = self.client.get(reverse("checkout:address"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="id_floor"')
+        self.assertContains(response, "Ισόγειο")
+        self.assertContains(response, "5ος όροφος")
+        self.assertNotContains(response, "6ος όροφος")
+        self.assertNotContains(response, "9ος όροφος")
+        self.assertNotContains(response, "Εισόγειο")
+        self.assertContains(response, 'data-value="5ος όροφος"')
+        self.assertContains(response, "account-floor-picker__option")
+
     def test_payment_page_renders_payment_options(self):
         session = self.client.session
         session[SESSION_KEY]["delivery_method"] = Order.DELIVERY_METHOD_COURIER

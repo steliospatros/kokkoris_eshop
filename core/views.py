@@ -3,6 +3,28 @@ from django.shortcuts import render
 from django.template.loader import render_to_string
 
 from core import user_text
+from core.http import json_error
+
+
+def _wants_json(request):
+    accept = request.headers.get("Accept") or ""
+    content_type = request.content_type or ""
+    return (
+        "application/json" in accept
+        or content_type.startswith("application/json")
+        or request.headers.get("X-Requested-With") == "XMLHttpRequest"
+    )
+
+
+def csrf_failure(request, reason=""):
+    """Cart/wishlist POSTs must stay JSON — not the HTML 403 page."""
+    if _wants_json(request):
+        return json_error(
+            user_text.AUTH_SESSION_EXPIRED,
+            status=403,
+            code="AUTH_SESSION_EXPIRED",
+        )
+    return permission_denied(request)
 
 
 def _error_context(*, title, lead):

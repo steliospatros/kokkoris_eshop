@@ -228,6 +228,7 @@
             var selected =
                 optionValue === "__other__" ? value && !isFloorPreset(value) : optionValue === value;
             btn.classList.toggle("account-floor-picker__option--selected", !!selected);
+            btn.setAttribute("aria-selected", selected ? "true" : "false");
         });
     }
 
@@ -419,7 +420,12 @@
         }
 
         floorRow.querySelectorAll(".account-floor-picker__option").forEach(function (btn) {
-            btn.addEventListener("click", function () {
+            btn.addEventListener("click", function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                document.querySelectorAll(".pac-container").forEach(function (el) {
+                    el.style.display = "none";
+                });
                 var optionValue = btn.getAttribute("data-value");
                 if (optionValue === "__other__") {
                     var current = input.value.trim();
@@ -427,7 +433,7 @@
                     return;
                 }
                 setFloorValue(optionValue);
-                applyFloorDisplayMode();
+                highlightFloorSelection(optionValue);
             });
         });
 

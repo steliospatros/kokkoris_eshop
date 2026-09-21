@@ -6,9 +6,10 @@
     var RESEND_SECONDS = 60;
     var OTP_TTL_SECONDS = 600;
 
-    function getCookie(name) {
-        var match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
-        return match ? decodeURIComponent(match[2]) : "";
+    function csrfToken() {
+        return window.KokkorisNotice && window.KokkorisNotice.csrfToken
+            ? window.KokkorisNotice.csrfToken()
+            : "";
     }
 
     function postJson(url, payload) {
@@ -16,7 +17,7 @@
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "X-CSRFToken": getCookie("csrftoken"),
+                "X-CSRFToken": csrfToken(),
             },
             credentials: "same-origin",
             body: JSON.stringify(payload || {}),
@@ -24,11 +25,20 @@
             var contentType = response.headers.get("content-type") || "";
             if (contentType.indexOf("application/json") === -1) {
                 if (response.status === 403) {
+                    if (window.KokkorisNotice && window.KokkorisNotice.reloadIfSessionExpired) {
+                        window.KokkorisNotice.reloadIfSessionExpired(
+                            { code: "AUTH_SESSION_EXPIRED" },
+                            response
+                        );
+                    }
                     throw new Error("Η συνεδρία έληξε. Ανανέωσε τη σελίδα και δοκίμασε ξανά.");
                 }
                 throw new Error("Κάτι πήγε στραβά. Δοκίμασε ξανά σε λίγο.");
             }
             return response.json().then(function (data) {
+                if (window.KokkorisNotice && window.KokkorisNotice.reloadIfSessionExpired) {
+                    window.KokkorisNotice.reloadIfSessionExpired(data, response);
+                }
                 return { ok: response.ok, status: response.status, data: data };
             });
         });

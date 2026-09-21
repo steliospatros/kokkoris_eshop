@@ -59,15 +59,18 @@ def create_checkout_payment_intent(
     """
     _configure_stripe()
     try:
+        # Card-only Intent: Live Dashboard dynamic methods returned
+        # "no valid payment method types" even with wallets on. Explicit card
+        # works; Apple Pay / Google Pay still appear via Payment Element wallets.
         return stripe.PaymentIntent.create(
             amount=decimal_to_stripe_cents(total_cost),
             currency=settings.STRIPE_CURRENCY,
-            automatic_payment_methods={"enabled": True},
+            payment_method_types=["card"],
             receipt_email=user.email or None,
             metadata={
                 "user_id": str(user.pk),
                 "checkout_session_key": checkout_session_key,
-                "site": "kokkorispetfood.gr",
+                "site": "kokkoris-petfood.gr",
             },
         )
     except stripe.StripeError as exc:

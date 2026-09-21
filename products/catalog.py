@@ -39,7 +39,7 @@ SORT_OPTIONS = (
 CATEGORY_LABELS = {
     "Dry Food": "Ξηρά τροφή",
     "Canned Food": "Κονσέρβες",
-    "Sachets": "Φακελάκια",
+    "Sachets": "Φάκελοι",
     "Litter": "Άμμος",
     "Bundle": "Πακέτα",
 }
@@ -86,7 +86,7 @@ ANIMAL_CATEGORY_SLUGS = {
 CATEGORY_SLUG_LABELS = {
     "dry-food": "Ξηρά τροφή",
     "canned-food": "Κονσέρβες",
-    "sachets": "Φακελάκια",
+    "sachets": "Φάκελοι",
     "litter": "Άμμος",
     "bundle": "Πακέτα",
 }
@@ -134,6 +134,11 @@ def _cached_image_pixel_size(image_name):
 
     with default_storage.open(image_name, "rb") as handle:
         return Image.open(handle).size
+
+
+def css_number(value):
+    """Dot decimal for CSS. LANGUAGE_CODE=el would emit 1,55 and break transform."""
+    return f"{float(value):.3f}"
 
 
 def get_product_image_display_scale(product):
@@ -660,9 +665,9 @@ def build_catalog_card(product, *, cart_qty=0, is_wishlisted=False):
     unit_price = variant.unit_price if shows_unit_price(product) else None
     count = product.variant_count
     if count == 1:
-        sizes_label = "1 ΜΕΓΕΘΟΣ"
+        sizes_label = "1 μέγεθος"
     else:
-        sizes_label = f"{count} ΜΕΓΕΘΗ"
+        sizes_label = f"{count} μεγέθη"
 
     stock_display = get_stock_display(variant)
     category_slug = product.category.slug if product.category_id else ""
@@ -689,7 +694,7 @@ def build_catalog_card(product, *, cart_qty=0, is_wishlisted=False):
         "button_label": stock_display.get("button_label", "Αγορά"),
         "image_url": product.image.url if product.image else None,
         "category_slug": category_slug,
-        "image_display_scale": get_product_image_display_scale(product),
+        "image_display_scale": css_number(get_product_image_display_scale(product)),
         "cart_qty": cart_qty,
         "is_wishlisted": is_wishlisted,
         "product_slug": product.slug,
@@ -867,7 +872,7 @@ def build_product_detail_context(request, product, *, selected_variant_id=None):
         "animal_label": animal_label,
         "category_label": category_label,
         "image_url": product.image.url if product.image else None,
-        "image_display_scale": get_product_image_display_scale(product),
+        "image_display_scale": css_number(get_product_image_display_scale(product)),
         "description": product.description.strip() if product.description else "",
         "components": product.components.strip() if product.components else "",
         "bundle_contents": product.bundle_contents.strip() if product.bundle_contents else "",
@@ -1118,9 +1123,10 @@ def build_animal_landing_page(animal_slug):
                 "slug": slug,
                 "label": CATEGORY_SLUG_LABELS.get(slug, slug),
                 "url": f"{reverse('products:browse')}?{query}",
-                "left": round(cx - size / 2, 2),
-                "top": round(top, 2),
-                "size": size,
+                "left": f"{cx - size / 2:.2f}",
+                "top": f"{top:.2f}",
+                "size": f"{size:.2f}",
+                "center": f"{cx:.2f}",
             }
         )
     return {
@@ -1213,14 +1219,14 @@ def build_brand_landing_page():
                 "code": code,
                 "label": company.name,
                 "url": _company_catalog_url(company),
-                "left": left,
-                "top": top,
-                "width": width,
-                "height": height,
+                "left": f"{left:.2f}",
+                "top": f"{top:.2f}",
+                "width": f"{width:.2f}",
+                "height": f"{height:.2f}",
             }
         )
     return {
-        "page_title": "Brands",
+        "page_title": "Μάρκες",
         "landing_band": BRAND_LANDING_BAND,
         "landing_band_w": BRAND_LANDING_BAND_PX[0],
         "landing_band_h": BRAND_LANDING_BAND_PX[1],

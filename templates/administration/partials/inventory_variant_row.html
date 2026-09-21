@@ -9,7 +9,7 @@
                 <p class="font-inter text-lg sm:text-xl text-slate-800 leading-snug">
                     {{ row.display_title }}
                     {% if row.is_paused %}
-                        <span class="text-xs uppercase tracking-wide text-amber-700">({% trans "κρυφό από το e-shop" %})</span>
+                        <span class="text-xs uppercase tracking-wide text-amber-700">({% trans "κρυφό από το κατάστημα" %})</span>
                     {% endif %}
                 </p>
                 {% if row.sku %}
@@ -63,7 +63,7 @@
                         <input type="hidden" name="pause" value="0">
                         <button type="submit"
                                 class="font-inter text-xs text-emerald-800 hover:underline">
-                            {% trans "Εμφάνιση ξανά στο e-shop" %}
+                            {% trans "Εμφάνιση ξανά στο κατάστημα" %}
                         </button>
                     </form>
                 {% else %}
@@ -74,7 +74,7 @@
                         <input type="hidden" name="pause" value="1">
                         <button type="submit"
                                 class="font-inter text-xs text-slate-400 hover:text-slate-700 hover:underline">
-                            {% trans "Απόκρυψη από το e-shop" %}
+                            {% trans "Απόκρυψη από το κατάστημα" %}
                         </button>
                     </form>
                 {% endif %}

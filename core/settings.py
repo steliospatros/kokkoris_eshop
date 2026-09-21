@@ -58,6 +58,13 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", _DEFAULT_INSECURE_KEY).strip() 
 
 ALLOWED_HOSTS = _env_list("ALLOWED_HOSTS")
 CSRF_TRUSTED_ORIGINS = _env_list("CSRF_TRUSTED_ORIGINS")
+CSRF_FAILURE_VIEW = "core.views.csrf_failure"
+# New names ignore leftover sessionid/csrftoken from the HTTP+HTTPS mix.
+SESSION_COOKIE_NAME = "kkid"
+CSRF_COOKIE_NAME = "kkcsrf"
+CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_USE_SESSIONS = True
 
 if not DEBUG:
     if not SECRET_KEY or SECRET_KEY.startswith("django-insecure-"):
@@ -71,11 +78,18 @@ if not DEBUG:
         )
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = _env_bool("SECURE_SSL_REDIRECT", default=True)
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "31536000"))
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
+    # Secure cookies only when the shop is actually on HTTPS. On http://IP
+    # the browser refuses to store/send them, so cart POST dies as HTML 403.
+    SESSION_COOKIE_SECURE = SECURE_SSL_REDIRECT
+    CSRF_COOKIE_SECURE = SECURE_SSL_REDIRECT
+    if SECURE_SSL_REDIRECT:
+        SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "31536000"))
+        SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+        SECURE_HSTS_PRELOAD = True
+    else:
+        SECURE_HSTS_SECONDS = 0
+        SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+        SECURE_HSTS_PRELOAD = False
 
 
 # Application definition
@@ -200,7 +214,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'el'
 
 TIME_ZONE = 'UTC'
 

@@ -154,7 +154,7 @@ class OrderPresentationTests(TestCase):
             delivery_longitude=Decimal("23.7348"),
         )
         message = build_delivery_eta_message(order)
-        self.assertIn("καταχώρησης", message)
+        self.assertIn("καταχώρηση", message)
         self.assertIn("έως 3 εργάσιμες", message)
 
     def test_company_priority_turns_orange_then_red(self):

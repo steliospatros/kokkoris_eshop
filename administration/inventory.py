@@ -10,7 +10,7 @@ ADMIN_AVAILABILITY_CHOICES = (
     (ProductVariant.AVAILABILITY_OUT_OF_STOCK, "Προσωρινά μη διαθέσιμο"),
 )
 
-HIDDEN_SECTION_TITLE = "Κρυφά από το e-shop"
+HIDDEN_SECTION_TITLE = "Κρυφά από το κατάστημα"
 HIDDEN_SECTION_ANCHOR = "inventory-hidden"
 
 

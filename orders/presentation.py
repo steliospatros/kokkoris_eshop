@@ -84,8 +84,8 @@ def build_delivery_eta_message(order: Order) -> str:
 
     if order.delivery_method == Order.DELIVERY_METHOD_COMPANY:
         return (
-            f"Δεδομένης της καταχώρησης στις {registered_label}, η παραγγελία σας "
-            f"θα παραδοθεί εκτιμώμενες {eta_range} ({DELIVERY_WINDOW_PHRASE})."
+            f"Με βάση την καταχώρηση στις {registered_label}, η παραγγελία σου "
+            f"εκτιμάται μεταξύ {eta_range} ({DELIVERY_WINDOW_PHRASE})."
         )
 
     if order.delivery_method == Order.DELIVERY_METHOD_BOX_NOW:
@@ -98,14 +98,14 @@ def build_delivery_eta_message(order: Order) -> str:
         )
         status_note = f" {tracking}" if tracking else ""
         return (
-            f"Δεδομένης της καταχώρησης στις {registered_label}, η παραγγελία σας "
+            f"Με βάση την καταχώρηση στις {registered_label}, η παραγγελία σου "
             f"θα παραδοθεί στο BOX NOW locker «{locker}». Εκτιμώμενη παράδοση: "
             f"{eta_range} ({DELIVERY_WINDOW_PHRASE}).{status_note}{pin_note}"
         )
 
     return (
-        f"Δεδομένης της καταχώρησης στις {registered_label}, μπορείτε να "
-        f"παρακολουθήσετε την αποστολή μέσω courier. Εκτιμώμενη παράδοση: "
+        f"Με βάση την καταχώρηση στις {registered_label}, μπορείς να "
+        f"παρακολουθήσεις την αποστολή μέσω courier. Εκτιμώμενη παράδοση: "
         f"{eta_range} ({DELIVERY_WINDOW_PHRASE})."
     )
 

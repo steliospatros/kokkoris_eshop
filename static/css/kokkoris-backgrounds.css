@@ -80,11 +80,11 @@
 }
 
 .animal-landing--cat {
-  background: #ff931e;
+  background: #ff921e;
 }
 
 .animal-landing--dog {
-  background: #4aa190;
+  background: #4aa08f;
 }
 
 .animal-landing__frame {
@@ -98,6 +98,39 @@
   width: 100%;
   height: auto;
   vertical-align: top;
+  pointer-events: none;
+}
+
+.animal-landing__labels {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 25.5%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.animal-landing--cat .animal-landing__labels {
+  height: 33%;
+}
+
+.animal-landing--cat .animal-landing__label {
+  top: 10%;
+}
+
+.animal-landing__label {
+  position: absolute;
+  top: 8%;
+  transform: translateX(-50%);
+  color: rgba(255, 255, 255, 0.84);
+  font-family: Inter, sans-serif;
+  font-weight: 300;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-size: clamp(0.72rem, 1.28vw, 1.05rem);
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .animal-landing__hotspot {

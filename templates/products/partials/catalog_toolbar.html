@@ -1,19 +1,24 @@
 {% load i18n %}
 <div class="catalog-toolbar mb-6 lg:mb-8">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <p class="text-sm text-slate-500 font-inter">
-            {% blocktrans count counter=product_count %}
-                Βρέθηκε {{ counter }} προϊόν
-            {% plural %}
-                Βρέθηκαν {{ counter }} προϊόντα
-            {% endblocktrans %}
-        </p>
-        <div class="flex items-center gap-3 sm:ml-auto">
+    <div class="flex items-center justify-between gap-3">
+        {% if filter_sections or price_filter %}
+        <button type="button"
+                id="catalog-filters-toggle"
+                class="catalog-filters-toggle"
+                aria-expanded="false"
+                aria-controls="catalog-filters-panel">
+            {% trans "Φίλτρα" %}
+            {% if has_active_filters %}
+                <span class="catalog-filters-toggle__dot" aria-hidden="true"></span>
+            {% endif %}
+        </button>
+        {% endif %}
+        <div class="flex items-center gap-3 ml-auto min-w-0">
             <label for="catalog-sort" class="text-sm text-slate-500 font-inter shrink-0">
                 {% trans "Ταξινόμηση" %}:
             </label>
             <select id="catalog-sort"
-                    class="text-sm font-inter border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-700 cursor-pointer focus:outline-none focus:ring-2 focus:ring-kokkoris-teal-dark/30 focus:border-kokkoris-teal-dark min-w-[11rem]"
+                    class="text-sm font-inter border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-700 cursor-pointer focus:outline-none focus:ring-2 focus:ring-kokkoris-teal-dark/30 focus:border-kokkoris-teal-dark min-w-0 sm:min-w-[11rem] flex-1"
                     onchange="if (this.value) { window.location.href = this.value; }">
                 {% for choice in sort_choices %}
                     <option value="{{ choice.url }}" {% if choice.active %}selected{% endif %}>

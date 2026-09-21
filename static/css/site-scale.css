@@ -31,6 +31,18 @@ body {
     }
 }
 
+/* Phones / tablets: native 100% so tap targets and 100vw do not clip. */
+@media (max-width: 1023px) {
+    .site-scale-root {
+        zoom: 1;
+        transform: none;
+        width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+        min-height: 100vh;
+    }
+}
+
 .site-chrome--header,
 .site-chrome--footer {
     width: 100%;

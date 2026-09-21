@@ -29,7 +29,7 @@ class WelcomeEmailTests(TestCase):
         self.assertEqual(mail.outbox[0].subject, "Καλώς ήρθατε στο Kokkoris Pet Food!")
         body = mail.outbox[0].body
         self.assertIn("Αγαπητέ/ή Γιάννης", body)
-        self.assertIn("Περιηγηθείτε στο Κατάστημα", body)
+        self.assertIn("Περιηγηθείτε στο κατάστημα", body)
         self.assertIn("210 6038727", body)
         self.assertIn(reverse("products:all"), body)
 

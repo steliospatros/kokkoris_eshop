@@ -10,7 +10,7 @@
         {% include "partials/hero.html" %}
         <div class="home-hero-chrome">
             <p class="home-hero-welcome">
-                {% trans "Καλωσήρθατε στην σελίδα μας" %}{% if user.is_authenticated and user.first_name or user.is_authenticated and user.last_name %},
+                {% trans "Καλώς ήρθατε στη σελίδα μας" %}{% if user.is_authenticated and user.first_name or user.is_authenticated and user.last_name %},
                     <span class="home-hero-welcome__name">{{ user.first_name }}{% if user.first_name and user.last_name %} {% endif %}{{ user.last_name }}</span>
                 {% endif %}
             </p>
@@ -30,7 +30,7 @@
 {% block content %}{% endblock %}
 
 {% block extra_body %}
-<script src="{% static 'js/catalog.js' %}?v=buy-note-1"></script>
+<script src="{% static 'js/catalog.js' %}?v=imgscale-2"></script>
 <script>
 (function () {
     document.querySelectorAll(".favourites-browse-section").forEach(function (section) {

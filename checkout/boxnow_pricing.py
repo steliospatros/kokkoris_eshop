@@ -172,8 +172,8 @@ def build_boxnow_option_copy(cart_items, *, too_heavy, fee, free_minimum):
             (
                 f"Το BOX NOW δέχεται έως {max_label} kg και μέγιστες διαστάσεις "
                 f"μεγάλης θήκης {COMPARTMENT_DIM_LABELS[COMPARTMENT_LARGE]}. "
-                f"Το καλάθι σας ζυγίζει {weight_label} kg (χρεώσιμο βάρος). "
-                "Επιλέξτε αποστολή με courier."
+                f"Το καλάθι σου ζυγίζει {weight_label} kg (χρεώσιμο βάρος). "
+                "Επίλεξε αποστολή με courier."
             ),
         )
 
@@ -183,7 +183,7 @@ def build_boxnow_option_copy(cart_items, *, too_heavy, fee, free_minimum):
         price_bit = f"Χρέωση {format_decimal_greek(fee)} €."
     else:
         price_bit = (
-            f"Δωρεάν μεταφορικά — η παραγγελία σας ξεπερνά τα "
+            f"Δωρεάν μεταφορικά — η παραγγελία σου ξεπερνά τα "
             f"{format_decimal_greek(free_minimum)} €."
         )
     description = (

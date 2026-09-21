@@ -30,7 +30,7 @@ PENDING_STATUSES = Order.IN_PROGRESS_STATUSES
 DELIVERY_GROUPS = (
     {
         "key": "company",
-        "label": "Παράδοση από την εταιρία (εντός Αθηνών)",
+        "label": "Παράδοση από την εταιρεία (εντός Αθηνών)",
         "method": Order.DELIVERY_METHOD_COMPANY,
     },
     {

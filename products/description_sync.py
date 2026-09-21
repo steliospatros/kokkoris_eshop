@@ -39,4 +39,9 @@ def sync_description_title(description: str, product_name: str) -> str:
     for old, new in _FYLI_REPLACEMENTS:
         text = text.replace(old, new)
 
+    text = text.replace("Το φακελάκι", "Ο φάκελος")
+    text = text.replace("το φακελάκι", "ο φάκελος")
+    text = text.replace("φακελάκια", "φάκελοι")
+    text = text.replace("φακελάκι", "φάκελος")
+
     return text

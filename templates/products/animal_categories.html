@@ -8,12 +8,17 @@
 {% block content %}
 <section class="animal-landing animal-landing--{{ animal_slug }}" aria-label="{{ page_title }}">
     <div class="animal-landing__frame">
-        <img src="{% static landing_band %}"
+        <img src="{% static landing_band %}?v=one-fill-2"
              alt=""
              class="animal-landing__band"
              width="{{ landing_band_w }}"
              height="{{ landing_band_h }}"
              decoding="async">
+        <div class="animal-landing__labels" aria-hidden="true">
+            {% for spot in landing_hotspots %}
+                <span class="animal-landing__label" style="left: {{ spot.center }}%;">{{ spot.label }}</span>
+            {% endfor %}
+        </div>
         {% for spot in landing_hotspots %}
             <a href="{{ spot.url }}"
                class="animal-landing__hotspot"

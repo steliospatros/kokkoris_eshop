@@ -1,5 +1,5 @@
 {% extends "page.html" %}
-{% load i18n static %}
+{% load i18n static l10n %}
 
 {% block title %}{{ page_title }} — Kokkoris Eshop{% endblock %}
 
@@ -21,7 +21,7 @@
                 {% if image_url %}
                     <div class="product-detail__image-stage">
                         <div class="product-detail__image-wrap"
-                             style="--img-display-scale: {{ image_display_scale|default:1 }};">
+                             style="--img-display-scale: {{ image_display_scale|default:'1'|unlocalize }};">
                             <img src="{{ image_url }}"
                                  alt="{{ page_title }}"
                                  class="product-detail__image"
@@ -269,8 +269,8 @@
 
 {% block extra_body %}
 <link rel="stylesheet" href="{% static 'css/product-detail.css' %}">
-<script src="{% static 'js/product-detail.js' %}?v=buy-note-1"></script>
-<script src="{% static 'js/catalog.js' %}?v=buy-note-1"></script>
+<script src="{% static 'js/product-detail.js' %}?v=csrf-2"></script>
+<script src="{% static 'js/catalog.js' %}?v=imgscale-2"></script>
 <script>
 (function () {
     document.querySelectorAll(".product-detail-related, .favourites-browse-section").forEach(function (section) {

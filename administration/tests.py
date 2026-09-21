@@ -124,7 +124,7 @@ class AdministrationInventoryTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Adult Mix")
         self.assertContains(response, "47")
-        self.assertContains(response, "Favourites")
+        self.assertContains(response, "Δημοφιλή")
 
     def test_adjust_stock_add_and_remove(self):
         variant = ProductVariant.objects.get(product__name="Adult Mix", weight=2)
@@ -222,15 +222,15 @@ class AdministrationInventoryTests(TestCase):
 
         inventory = self.client.get(reverse("administration:inventory"))
         self.assertContains(inventory, "Adult Mix")
-        self.assertContains(inventory, "Κρυφά από το e-shop")
-        self.assertContains(inventory, "Εμφάνιση ξανά στο e-shop")
+        self.assertContains(inventory, "Κρυφά από το κατάστημα")
+        self.assertContains(inventory, "Εμφάνιση ξανά στο κατάστημα")
         html = inventory.content.decode()
         self.assertLess(
             html.find(f'id="variant-{kitten_variant.pk}"'),
-            html.find("Κρυφά από το e-shop"),
+            html.find("Κρυφά από το κατάστημα"),
         )
         self.assertLess(
-            html.find("Κρυφά από το e-shop"),
+            html.find("Κρυφά από το κατάστημα"),
             html.find(f'id="variant-{adult_variant.pk}"'),
         )
 
@@ -242,8 +242,8 @@ class AdministrationInventoryTests(TestCase):
         self.assertTrue(product.is_active)
         self.assertTrue(get_catalog_queryset().filter(pk=product.pk).exists())
         restored = self.client.get(reverse("administration:inventory"))
-        self.assertNotContains(restored, "Κρυφά από το e-shop")
-        self.assertContains(restored, "Απόκρυψη από το e-shop")
+        self.assertNotContains(restored, "Κρυφά από το κατάστημα")
+        self.assertContains(restored, "Απόκρυψη από το κατάστημα")
 
     def test_non_admin_cannot_adjust_stock(self):
         User = get_user_model()
@@ -585,7 +585,7 @@ class AdministrationDeliveriesPanelTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Μετρητά")
         self.assertContains(response, "Κάρτα")
-        self.assertContains(response, "Παράδοση από την εταιρία (εντός Αθηνών)")
+        self.assertContains(response, "Παράδοση από την εταιρεία (εντός Αθηνών)")
         self.assertContains(response, "BOX NOW")
         groups = response.context["delivery_groups"]
         self.assertEqual([group["key"] for group in groups], ["company", "courier", "boxnow"])

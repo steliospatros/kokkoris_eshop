@@ -56,7 +56,7 @@ class HomepageAthensPromoTests(TestCase):
         self.assertContains(response, "home-hero-promos")
         self.assertContains(response, "Αθήνα")
         self.assertContains(response, "Όλη η Ελλάδα")
-        self.assertContains(response, "Καλωσήρθατε στην σελίδα μας")
+        self.assertContains(response, "Καλώς ήρθατε στη σελίδα μας")
         html = response.content.decode()
         welcome_at = html.find("home-hero-welcome")
         promos_at = html.find("home-hero-promos")

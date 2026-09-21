@@ -35,13 +35,24 @@
              class="hidden lg:block absolute left-[500px] lg:top-[43px] w-[68px] h-auto select-none">
     </div>
 
-    <div class="nav-toolbar max-w-[1920px] mx-auto h-16 lg:h-[116px] pl-6 pr-2 lg:pl-[129px] lg:pr-3 font-inter relative">
+    <div class="nav-toolbar max-w-[1920px] mx-auto h-16 lg:h-[116px] pl-3 pr-2 sm:pl-6 lg:pl-[129px] lg:pr-3 font-inter relative">
+        <button type="button"
+                id="nav-browse-toggle"
+                class="nav-browse-toggle"
+                aria-expanded="false"
+                aria-controls="nav-browse-panel"
+                aria-label="{% trans 'Κατηγορίες καταλόγου' %}">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <path d="M4 7h16M4 12h16M4 17h16"/>
+            </svg>
+        </button>
+
         {# Company logo lockup: paw-print icon + "KOKKORIS / PET FOOD" wordmark. #}
-        <a href="{% url 'home' %}" class="nav-toolbar__logo flex items-center gap-3 lg:gap-6 shrink-0">
+        <a href="{% url 'home' %}" class="nav-toolbar__logo flex items-center gap-2 sm:gap-3 lg:gap-6 shrink-0">
             <img src="{% static 'images/kokkoris-logo-icon.png' %}"
                  alt="Kokkoris Pet Food"
                  class="w-10 lg:w-[82px] h-auto shrink-0">
-            <span class="text-center leading-none">
+            <span class="nav-toolbar__wordmark text-center leading-none">
                 <span class="block font-poppins font-light text-lg lg:text-[31px] tracking-[0.12em]">
                     KOKKORIS
                 </span>
@@ -94,7 +105,7 @@
                 {% trans "Όλα τα προϊόντα" %}
             </a>
             <a href="{% url 'products:brands' %}" class="hover:text-kokkoris-dot-teal transition-colors">
-                {% trans "Brands" %}
+                {% trans "Μάρκες" %}
             </a>
         </div>
 
@@ -167,6 +178,17 @@
             </a>
         </div>
     </div>
+
+    <div id="nav-browse-panel"
+         class="nav-browse-panel"
+         hidden>
+        <nav class="nav-browse-panel__links" aria-label="{% trans 'Κατηγορίες καταλόγου' %}">
+            <a href="{% url 'products:dogs' %}">{% trans "Σκύλος" %}</a>
+            <a href="{% url 'products:cats' %}">{% trans "Γάτα" %}</a>
+            <a href="{% url 'products:all' %}">{% trans "Όλα τα προϊόντα" %}</a>
+            <a href="{% url 'products:brands' %}">{% trans "Μάρκες" %}</a>
+        </nav>
+    </div>
 </nav>
 {% if messages %}
     <div class="site-messages">
@@ -202,11 +224,23 @@
         resultsList.innerHTML = "";
         input.value = "";
         input.blur();
+        container.classList.remove("is-search-open");
     }
 
-    // The bar itself is always visible now (it's a permanent pill, not a
-    // click-to-expand icon) - the toggle button just focuses the input.
-    toggle.addEventListener("click", function () {
+    // Desktop: the pill is always visible, so the icon just focuses it.
+    // Phones: the field is collapsed until the icon is tapped.
+    toggle.addEventListener("click", function (event) {
+        if (window.matchMedia("(max-width: 639px)").matches) {
+            var opening = !container.classList.contains("is-search-open");
+            container.classList.toggle("is-search-open", opening);
+            if (opening) {
+                input.focus();
+            } else {
+                closeSearch();
+            }
+            event.preventDefault();
+            return;
+        }
         input.focus();
     });
 

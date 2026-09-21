@@ -155,6 +155,24 @@ def split_weight_and_pack(raw: str) -> tuple[Decimal | None, str]:
     return parse_weight(left), raw
 
 
+def classify_core_wet_category(sku: str, flavor: str = "") -> str:
+    """
+    Core 85 g pouches were imported as Canned Food.
+
+    78863* = Tender Cuts in gravy (pouches)
+    78865* = Purely Paté pouches
+    78864* = 98% gold cans
+    78764* = Savoury Medleys trays (keep as cans)
+    """
+    sku = (sku or "").strip()
+    flavor_l = (flavor or "").lower()
+    if sku.startswith("78863") or sku.startswith("78865"):
+        return "Sachets"
+    if "σάλτσα" in flavor_l or "ζελέ" in flavor_l or "ζελε" in flavor_l:
+        return "Sachets"
+    return "Canned Food"
+
+
 def parse_pack_row(cells: list[str]) -> dict | None:
     if len(cells) < 4:
         return None
@@ -363,7 +381,9 @@ def parse_document(file_path: str) -> list[dict]:
                                 }
                             ],
                             "animal": default_animal,
-                            "category": "Canned Food",
+                            "category": classify_core_wet_category(
+                                row["sku"], row["flavor"]
+                            ),
                             "name": name,
                         }
                     )

@@ -160,14 +160,16 @@
                                                     <button type="button"
                                                             class="account-floor-picker__option"
                                                             data-value="{{ option }}"
-                                                            role="option">
+                                                            role="option"
+                                                            aria-selected="false">
                                                         {{ option }}
                                                     </button>
                                                 {% endfor %}
                                                 <button type="button"
                                                         class="account-floor-picker__option account-floor-picker__option--other"
                                                         data-value="__other__"
-                                                        role="option">
+                                                        role="option"
+                                                        aria-selected="false">
                                                     {{ floor_other_label }}
                                                 </button>
                                             </div>
@@ -300,8 +302,8 @@
 {% endblock %}
 
 {% block extra_body %}
-<link rel="stylesheet" href="{% static 'css/account-details.css' %}">
-<script src="{% static 'js/account-details.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/account-details.css' %}?v=floor-5">
+<script src="{% static 'js/account-details.js' %}?v=floor-5"></script>
 <script src="{% static 'js/greece-address-map.js' %}"></script>
 {% if google_maps_api_key %}
 <script>

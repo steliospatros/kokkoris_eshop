@@ -13,9 +13,10 @@
     var unitPriceEl = document.getElementById("pd-unit-price");
     var cartFooter = document.getElementById("pd-cart-footer");
 
-    function getCookie(name) {
-        var match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
-        return match ? decodeURIComponent(match[2]) : "";
+    function csrfToken() {
+        return window.KokkorisNotice && window.KokkorisNotice.csrfToken
+            ? window.KokkorisNotice.csrfToken()
+            : "";
     }
 
     function postJson(url, payload) {
@@ -23,14 +24,17 @@
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "X-CSRFToken": getCookie("csrftoken"),
+                "X-CSRFToken": csrfToken(),
             },
             credentials: "same-origin",
             body: JSON.stringify(payload),
         }).then(function (response) {
+            if (window.KokkorisNotice && window.KokkorisNotice.readJsonResponse) {
+                return window.KokkorisNotice.readJsonResponse(response);
+            }
             return response.json().then(function (data) {
                 if (!response.ok) {
-                    throw new Error(data.error || (window.KokkorisNotice && window.KokkorisNotice.NETWORK) || "Η σύνδεση διακόπηκε. Έλεγξε το δίκτυό σου και δοκίμασε ξανά.");
+                    throw new Error(data.error || "Η σύνδεση διακόπηκε. Έλεγξε το δίκτυό σου και δοκίμασε ξανά.");
                 }
                 return data;
             });

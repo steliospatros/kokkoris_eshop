@@ -12,7 +12,7 @@ class SubjectFirstTitleTests(SimpleTestCase):
                 "dog",
                 category_slug="sachets",
             ),
-            "Βοδινό σε ζελέ φακελάκι - για ενήλικους σκύλους κάθε ράτσας",
+            "Βοδινό σε ζελέ φάκελος - για ενήλικους σκύλους κάθε ράτσας",
         )
 
     def test_dry_food_small_breeds(self):
@@ -158,6 +158,6 @@ class SubjectFirstTitleTests(SimpleTestCase):
         self.assertTrue(needs_greek_translation("Για ενήλικες γάτες · Κοτόπουλο"))
         self.assertFalse(
             needs_greek_translation(
-                "Βοδινό σε ζελέ φακελάκι - για ενήλικους σκύλους κάθε ράτσας"
+                "Βοδινό σε ζελέ φάκελος - για ενήλικους σκύλους κάθε ράτσας"
             )
         )

@@ -135,7 +135,7 @@ def _category_body(category: str, flavor_acc: str | None, flavor_gen: str | None
     if category == "Sachets":
         sauce = "σε ζελέ ή σάλτσα" if not flavor_acc else f"με {flavor_acc}"
         return (
-            f"Το φακελάκι {sauce} είναι πρακτική, απολαυστική επιλογή γεύματος που "
+            f"Ο φάκελος {sauce} είναι πρακτική, απολαυστική επιλογή γεύματος που "
             f"ενυδατώνει και δελεάζει ακόμη και τους πιο απαιτητικούς ουρανίσκους."
         )
     if category == "Canned Food":

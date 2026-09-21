@@ -106,7 +106,7 @@ def build_delivery_options(*, cart_total, postal_code, cart=None):
             "total_display": format_decimal_greek(cart_total),
             "disabled": not within_urban_area,
             "unavailable_message": (
-                "Η παράδοση από υπάλληλο δεν πραγματοποιείται για την περιοχή που έχετε δηλώσει"
+                "Η παράδοση από υπάλληλο δεν γίνεται στην περιοχή που δήλωσες"
                 if not within_urban_area
                 else ""
             ),
@@ -124,7 +124,7 @@ def build_delivery_options(*, cart_total, postal_code, cart=None):
     free_minimum = get_free_shipping_minimum()
     courier_total = cart_total + courier_fee
     free_note = (
-        f" (δωρεάν μεταφορικά — η παραγγελία σας ξεπερνά τα {format_decimal_greek(free_minimum)} €)"
+        f" (δωρεάν μεταφορικά — η παραγγελία σου ξεπερνά τα {format_decimal_greek(free_minimum)} €)"
         if courier_fee == 0 and cart_total >= free_minimum
         else ""
     )

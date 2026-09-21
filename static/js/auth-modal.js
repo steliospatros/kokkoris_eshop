@@ -49,13 +49,10 @@
         window.location.href = googleLoginUrl();
     }
 
-    function getCookie(name) {
-        var match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
-        return match ? decodeURIComponent(match[2]) : "";
-    }
-
     function csrfToken() {
-        return getCookie("csrftoken");
+        return window.KokkorisNotice && window.KokkorisNotice.csrfToken
+            ? window.KokkorisNotice.csrfToken()
+            : "";
     }
 
     function switchToPanel(name) {
@@ -309,6 +306,9 @@
             body: JSON.stringify(payload),
         }).then(function (response) {
             return response.json().then(function (data) {
+                if (window.KokkorisNotice && window.KokkorisNotice.reloadIfSessionExpired) {
+                    window.KokkorisNotice.reloadIfSessionExpired(data, response);
+                }
                 return { ok: response.ok, status: response.status, data: data };
             });
         });

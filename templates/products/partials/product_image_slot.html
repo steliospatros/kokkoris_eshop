@@ -1,7 +1,7 @@
-{% load i18n %}
+{% load i18n l10n %}
 {# Shared square image area — full card width; icons align across the grid. #}
 <div class="product-image-slot relative shrink-0 bg-white"
-     style="--img-display-scale: {{ card.image_display_scale|default:1 }};">
+     style="--img-display-scale: {{ card.image_display_scale|default:'1'|unlocalize }};">
     {% if card.detail_url %}
     <a href="{{ card.detail_url }}" class="product-image-slot__link flex items-center justify-center w-full h-full">
     {% endif %}

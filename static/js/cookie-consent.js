@@ -31,11 +31,16 @@
         els.marketingToggle.checked = !!(consent && consent.marketing);
     }
 
+    function setBannerVisible(visible) {
+        document.documentElement.classList.toggle("has-cookie-banner", !!visible);
+    }
+
     function hideBanner() {
         var banner = getElements().banner;
         if (banner) {
             banner.classList.add("hidden");
         }
+        setBannerVisible(false);
     }
 
     function showModal() {
@@ -77,6 +82,7 @@
 
         if (!consent && els.banner) {
             els.banner.classList.remove("hidden");
+            setBannerVisible(true);
         }
 
         var acceptAllBtn = document.getElementById("cookie-accept-all");

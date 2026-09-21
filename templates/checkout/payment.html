@@ -111,5 +111,5 @@
 {% if stripe_enabled %}
 <script src="https://js.stripe.com/v3/"></script>
 {% endif %}
-<script src="{% static 'js/checkout-payment.js' %}"></script>
+<script src="{% static 'js/checkout-payment.js' %}?v=csrf-2"></script>
 {% endblock %}

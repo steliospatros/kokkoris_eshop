@@ -3,8 +3,9 @@
 <html lang="el">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>{% block title %}Kokkoris Eshop{% endblock %}</title>
+    <meta name="csrf-token" content="{{ csrf_token }}">
     {# Tailwind via CDN: zero build-step for now. Will be replaced by a proper #}
     {# compiled Tailwind pipeline once the real UI/UX design work starts (Part 5). #}
     <script src="https://cdn.tailwindcss.com"></script>
@@ -44,11 +45,12 @@
     </script>
     {# Precise background gradients (e.g. the hero's radial gradient) that #}
     {# are impractical to express as plain Tailwind utility classes. #}
-    <link rel="stylesheet" href="{% static 'css/kokkoris-backgrounds.css' %}?v=brand-list-1">
+    <link rel="stylesheet" href="{% static 'css/kokkoris-backgrounds.css' %}?v=one-fill-1">
     <link rel="stylesheet" href="{% static 'css/user-notice.css' %}?v=1">
     <link rel="stylesheet" href="{% static 'css/company-brand-page.css' %}?v=c4p-glow">
     <link rel="stylesheet" href="{% static 'css/site-scale.css' %}">
     <link rel="stylesheet" href="{% static 'css/nav-layout.css' %}">
+    <link rel="stylesheet" href="{% static 'css/mobile-web.css' %}?v=2">
     <link rel="stylesheet" href="{% static 'css/free-shipping-promo.css' %}?v=6">
 </head>
 <body class="bg-white overflow-x-hidden">
@@ -70,16 +72,17 @@
     {% include "partials/footer.html" %}
     {% include "partials/cookie-consent.html" %}
     {% include "partials/auth-modal.html" %}
+    <script src="{% static 'js/user-notice.js' %}?v=csrf-2"></script>
     {% if phone_verification_enabled %}
     {% include "partials/phone-verify-modal.html" %}
     <link rel="stylesheet" href="{% static 'css/auth-phone-verify.css' %}">
-    <script src="{% static 'js/auth-phone-verify.js' %}"></script>
+    <script src="{% static 'js/auth-phone-verify.js' %}?v=csrf-2"></script>
     {% endif %}
-    <script src="{% static 'js/user-notice.js' %}?v=1"></script>
     <script src="{% static 'js/cookie-consent.js' %}"></script>
     <script src="{% static 'js/password-rules.js' %}"></script>
-    <script src="{% static 'js/auth-modal.js' %}"></script>
-    <script src="{% static 'js/cart-widget.js' %}"></script>
+    <script src="{% static 'js/auth-modal.js' %}?v=csrf-2"></script>
+    <script src="{% static 'js/cart-widget.js' %}?v=csrf-2"></script>
+    <script src="{% static 'js/mobile-web.js' %}?v=1"></script>
     {% block extra_body %}{% endblock %}
     </div>
 </body>

@@ -9,7 +9,7 @@
      aria-labelledby="auth-modal-title"
      data-google-oauth-ready="{% if google_oauth_ready %}true{% else %}false{% endif %}"
      data-google-login-url="{% if google_oauth_ready %}{{ google_login_url }}{% endif %}">
-    <div class="w-full max-w-md bg-white text-slate-900 rounded-2xl shadow-2xl p-6 lg:p-8 font-inter relative">
+    <div class="auth-modal__sheet w-full max-w-md bg-white text-slate-900 rounded-2xl shadow-2xl p-6 lg:p-8 font-inter relative">
 
         {# ── Step 1: choice ── #}
         <div id="auth-panel-choice" class="auth-panel">
