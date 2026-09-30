@@ -32,6 +32,7 @@ def _variant_row(variant):
         "size_label": size_label,
         "image_url": image_url,
         "stock": variant.stock,
+        "price": variant.selling_price,
         "availability": variant.availability,
         "availability_label": AVAILABILITY_LABELS.get(
             variant.availability,

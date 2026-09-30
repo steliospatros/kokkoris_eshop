@@ -11,7 +11,7 @@
 
     <div class="product-card-body flex flex-col flex-1 min-h-0">
         <div class="product-card-info px-3 pt-2 pb-2 text-center sm:text-left">
-            <p class="text-[10px] text-slate-400 tracking-wide truncate min-h-[1rem]">
+            <p class="product-card-sku text-[10px] text-slate-400 tracking-wide truncate min-h-[1rem]">
                 {% if card.sku %}{{ card.sku }}{% else %}&nbsp;{% endif %}
             </p>
 
@@ -26,7 +26,7 @@
             <div class="product-card-meta mt-1.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-0.5 text-[10px] uppercase tracking-wide">
                 <span class="text-kokkoris-teal-dark font-medium">{{ card.sizes_label }}</span>
                 {% if card.availability_label %}
-                <span class="{{ card.availability_color_class }} text-[10px] normal-case font-medium">
+                <span class="product-card-availability {{ card.availability_color_class }} text-[10px] normal-case font-medium">
                     {{ card.availability_label }}
                 </span>
                 {% endif %}
@@ -34,7 +34,7 @@
 
             <div class="product-card-price mt-2 sm:text-right">
                 <p class="font-inter font-bold text-base text-slate-900">{{ card.price_display }} €</p>
-                <p class="text-[10px] text-slate-500 min-h-[1rem]">
+                <p class="product-card-unit text-[10px] text-slate-500 min-h-[1rem]">
                     {% if card.unit_price_display %}
                         {{ card.unit_price_display }} € / {{ card.unit_label }}
                     {% else %}

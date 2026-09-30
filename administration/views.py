@@ -32,7 +32,11 @@ from administration.deliveries import (
     build_deliveries_panel_context,
 )
 from administration.permissions import user_is_shop_admin
-from administration.services import set_product_paused, set_variant_inventory
+from administration.services import (
+    parse_variant_price,
+    set_product_paused,
+    set_variant_inventory,
+)
 from orders.models import Order
 from products.catalog import AVAILABILITY_LABELS
 from products.models import Product, ProductVariant
@@ -102,6 +106,7 @@ def administration_adjust_stock_view(request, variant_id):
     variant = get_object_or_404(ProductVariant.objects.select_related("product"), pk=variant_id)
 
     raw_stock = (request.POST.get("stock") or "").strip()
+    raw_price = (request.POST.get("price") or "").strip()
     availability = (request.POST.get("availability") or "").strip() or None
     try:
         stock = int(raw_stock)
@@ -113,31 +118,42 @@ def administration_adjust_stock_view(request, variant_id):
         messages.error(request, "Το απόθεμα δεν μπορεί να είναι αρνητικό.")
         return redirect(_inventory_redirect(request, variant.pk))
 
+    try:
+        price = parse_variant_price(raw_price)
+    except ValueError:
+        messages.error(request, "Γράψε έγκυρη τιμή σε ευρώ (π.χ. 18 ή 18,50).")
+        return redirect(_inventory_redirect(request, variant.pk))
+
     previous_stock = variant.stock
     previous_availability = variant.availability
-    set_variant_inventory(variant, stock=stock, availability=availability)
+    previous_price = variant.selling_price
+    set_variant_inventory(
+        variant, stock=stock, availability=availability, price=price
+    )
     variant.refresh_from_db()
 
     if (
         variant.stock == previous_stock
         and variant.availability == previous_availability
+        and variant.selling_price == previous_price
     ):
         messages.info(request, "Δεν έγινε αλλαγή.")
     else:
         status_label = AVAILABILITY_LABELS.get(
             variant.availability, variant.availability
         )
+        price_part = f"{variant.selling_price} €"
         if variant.availability == ProductVariant.AVAILABILITY_ON_ORDER:
             messages.success(
                 request,
                 f"{variant.product.name} ({variant.weight}): "
-                f"Κατόπιν παραγγελίας (χωρίς τεμάχια καταστήματος)",
+                f"{price_part} · Κατόπιν παραγγελίας (χωρίς τεμάχια καταστήματος)",
             )
         else:
             messages.success(
                 request,
                 f"{variant.product.name} ({variant.weight}): "
-                f"{variant.stock} τεμ. · {status_label}",
+                f"{price_part} · {variant.stock} τεμ. · {status_label}",
             )
     return redirect(_inventory_redirect(request, variant.pk))
 

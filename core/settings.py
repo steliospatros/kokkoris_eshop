@@ -102,6 +102,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',  # required by allauth
+    'django.contrib.sitemaps',
 
     # Authentication (custom user + social login)
     'allauth',
@@ -404,8 +405,11 @@ BOXNOW_FEE_LARGE = Decimal(os.environ.get("BOXNOW_FEE_LARGE", "3.50"))
 # Official locker cap (BOX NOW locker-info): 20 kg, Large 36×45×60 cm.
 BOXNOW_MAX_WEIGHT_KG = os.environ.get("BOXNOW_MAX_WEIGHT_KG", "20.0")
 BOXNOW_WEBHOOK_SECRET = os.environ.get("BOXNOW_WEBHOOK_SECRET", "").strip()
-# Map widget needs partnerId. The shipping option itself is always offered.
-BOXNOW_WIDGET_ENABLED = bool(BOXNOW_PARTNER_ID)
+# Offer BOX NOW as a checkout delivery method. Keep false until Partner API
+# credentials and locker widget are fully configured on the live shop.
+BOXNOW_CHECKOUT_ENABLED = _env_bool("BOXNOW_CHECKOUT_ENABLED", default=True)
+# Map widget needs partnerId. Hidden when checkout option is off.
+BOXNOW_WIDGET_ENABLED = bool(BOXNOW_PARTNER_ID) and BOXNOW_CHECKOUT_ENABLED
 
 # -----------------------------------------------------------------------------
 # Free shipping promotion (courier + BOX NOW)

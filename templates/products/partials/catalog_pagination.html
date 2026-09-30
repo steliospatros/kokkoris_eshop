@@ -6,12 +6,12 @@
             {% else %}
                 mt-8 pt-6 border-t border-slate-200
             {% endif %}">
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div class="flex flex-wrap items-center gap-2">
-            <span class="text-sm text-slate-500 font-inter shrink-0">{% trans "Προβολή" %}:</span>
+    <div class="catalog-pagination__row flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="catalog-pagination__per-page flex flex-wrap items-center gap-1.5">
+            <span class="text-xs sm:text-sm text-slate-500 font-inter shrink-0">{% trans "Προβολή" %}:</span>
             {% for choice in per_page_choices %}
                 <a href="{{ choice.url }}"
-                   class="inline-flex items-center justify-center min-w-[2.75rem] px-3 py-1.5 rounded-lg border text-sm font-inter transition-colors
+                   class="catalog-pagination__size inline-flex items-center justify-center min-w-[2.25rem] px-2.5 py-1 rounded-md border text-xs sm:text-sm font-inter transition-colors
                           {% if choice.active %}
                               border-kokkoris-teal-dark bg-kokkoris-teal-dark text-white
                           {% else %}
@@ -23,26 +23,29 @@
         </div>
 
         {% if is_paginated %}
-            <nav class="flex flex-wrap items-center justify-center sm:justify-end gap-1"
+            <nav class="catalog-pagination__pages flex flex-wrap items-center justify-center sm:justify-end gap-1"
                  aria-label="{% trans 'Σελίδες καταλόγου' %}">
                 {% if prev_url %}
                     <a href="{{ prev_url }}"
-                       class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-kokkoris-teal-dark hover:text-kokkoris-teal-dark"
+                       class="catalog-pagination__btn inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-md border border-slate-200 bg-white text-slate-600 hover:border-kokkoris-teal-dark hover:text-kokkoris-teal-dark"
                        aria-label="{% trans 'Προηγούμενη σελίδα' %}">
                         ‹
                     </a>
                 {% else %}
-                    <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed"
+                    <span class="catalog-pagination__btn inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-md border border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed"
                           aria-hidden="true">‹</span>
                 {% endif %}
 
                 {% for link in page_links %}
-                    {% if link.active %}
-                        <span class="inline-flex items-center justify-center min-w-[2.25rem] h-9 px-2 rounded-lg border border-kokkoris-teal-dark bg-kokkoris-teal-dark text-white text-sm font-inter"
+                    {% if link.ellipsis %}
+                        <span class="catalog-pagination__ellipsis inline-flex items-center justify-center min-w-[1.5rem] h-8 sm:h-9 px-0.5 text-slate-400 text-sm font-inter"
+                              aria-hidden="true">…</span>
+                    {% elif link.active %}
+                        <span class="catalog-pagination__btn inline-flex items-center justify-center min-w-[2rem] h-8 sm:min-w-[2.25rem] sm:h-9 px-1.5 rounded-md border border-kokkoris-teal-dark bg-kokkoris-teal-dark text-white text-xs sm:text-sm font-inter"
                               aria-current="page">{{ link.num }}</span>
                     {% else %}
                         <a href="{{ link.url }}"
-                           class="inline-flex items-center justify-center min-w-[2.25rem] h-9 px-2 rounded-lg border border-slate-200 bg-white text-slate-600 text-sm font-inter hover:border-kokkoris-teal-dark hover:text-kokkoris-teal-dark">
+                           class="catalog-pagination__btn inline-flex items-center justify-center min-w-[2rem] h-8 sm:min-w-[2.25rem] sm:h-9 px-1.5 rounded-md border border-slate-200 bg-white text-slate-600 text-xs sm:text-sm font-inter hover:border-kokkoris-teal-dark hover:text-kokkoris-teal-dark">
                             {{ link.num }}
                         </a>
                     {% endif %}
@@ -50,12 +53,12 @@
 
                 {% if next_url %}
                     <a href="{{ next_url }}"
-                       class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-kokkoris-teal-dark hover:text-kokkoris-teal-dark"
+                       class="catalog-pagination__btn inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-md border border-slate-200 bg-white text-slate-600 hover:border-kokkoris-teal-dark hover:text-kokkoris-teal-dark"
                        aria-label="{% trans 'Επόμενη σελίδα' %}">
                         ›
                     </a>
                 {% else %}
-                    <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed"
+                    <span class="catalog-pagination__btn inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-md border border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed"
                           aria-hidden="true">›</span>
                 {% endif %}
             </nav>

@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin/
+Disallow: /administration/
+Disallow: /accounts/
+Disallow: /checkout/
+Disallow: /cart/
+Disallow: /wishlist/
+Disallow: /orders/
+
+Sitemap: {{ sitemap_url }}

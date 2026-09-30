@@ -22,6 +22,15 @@
                   class="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-3">
                 {% csrf_token %}
                 <label class="font-inter text-sm text-slate-600">
+                    {% trans "Τιμή (€)" %}
+                    <input type="text"
+                           name="price"
+                           value="{{ row.price }}"
+                           inputmode="decimal"
+                           required
+                           class="mt-1 block w-28 rounded-lg border border-slate-300 px-3 py-2 text-base font-semibold text-slate-800">
+                </label>
+                <label class="font-inter text-sm text-slate-600">
                     {% trans "Τεμάχια καταστήματος" %}
                     <input type="number"
                            name="stock"
@@ -37,7 +46,7 @@
                 </label>
                 <button type="submit"
                         class="min-h-10 rounded-lg bg-kokkoris-teal-dark px-4 py-2 font-inter text-sm font-semibold text-white hover:opacity-90">
-                    {% trans "Αποθήκευση ποσότητας" %}
+                    {% trans "Αποθήκευση" %}
                 </button>
                 <div>
                     <p class="font-inter text-sm text-slate-600 mb-1">{% trans "Κατάσταση" %}</p>

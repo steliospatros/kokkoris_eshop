@@ -75,10 +75,32 @@
         function setOpen(open) {
             layout.classList.toggle("is-filters-open", open);
             toggle.setAttribute("aria-expanded", open ? "true" : "false");
+            document.documentElement.classList.toggle("is-catalog-filters-open", open);
         }
 
-        toggle.addEventListener("click", function () {
+        if (toggle.querySelector(".catalog-filters-toggle__dot")) {
+            setOpen(true);
+        }
+
+        toggle.addEventListener("click", function (event) {
+            event.stopPropagation();
             setOpen(!layout.classList.contains("is-filters-open"));
+        });
+
+        layout.addEventListener("click", function (event) {
+            if (
+                layout.classList.contains("is-filters-open") &&
+                !panel.contains(event.target) &&
+                !toggle.contains(event.target)
+            ) {
+                setOpen(false);
+            }
+        });
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape") {
+                setOpen(false);
+            }
         });
     }
 

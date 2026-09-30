@@ -1,9 +1,27 @@
-from django.http import HttpResponseServerError
+from django.conf import settings
+from django.http import HttpResponse, HttpResponseServerError
 from django.shortcuts import render
 from django.template.loader import render_to_string
+from django.urls import reverse
 
 from core import user_text
 from core.http import json_error
+
+
+def robots_txt(request):
+    """Allow crawlers on public pages; point them at the XML sitemap."""
+    sitemap_path = reverse("django.contrib.sitemaps.views.sitemap")
+    base = (settings.SITE_BASE_URL or "").rstrip("/")
+    if base:
+        sitemap_url = f"{base}{sitemap_path}"
+    else:
+        sitemap_url = request.build_absolute_uri(sitemap_path)
+    body = render_to_string(
+        "robots.txt",
+        {"sitemap_url": sitemap_url},
+        request=request,
+    )
+    return HttpResponse(body, content_type="text/plain; charset=utf-8")
 
 
 def _wants_json(request):

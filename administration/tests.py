@@ -132,14 +132,14 @@ class AdministrationInventoryTests(TestCase):
 
         self.client.post(
             reverse("administration:adjust_stock", args=[variant.pk]),
-            {"stock": "10"},
+            {"stock": "10", "price": str(variant.price)},
         )
         variant.refresh_from_db()
         self.assertEqual(variant.stock, 10)
 
         self.client.post(
             reverse("administration:adjust_stock", args=[variant.pk]),
-            {"stock": "7"},
+            {"stock": "7", "price": str(variant.price)},
         )
         variant.refresh_from_db()
         self.assertEqual(variant.stock, 7)
@@ -153,7 +153,7 @@ class AdministrationInventoryTests(TestCase):
 
         self.client.post(
             reverse("administration:adjust_stock", args=[variant.pk]),
-            {"stock": "0"},
+            {"stock": "0", "price": str(variant.price)},
         )
         variant.refresh_from_db()
         self.assertEqual(variant.stock, 0)
@@ -161,7 +161,7 @@ class AdministrationInventoryTests(TestCase):
 
         self.client.post(
             reverse("administration:adjust_stock", args=[variant.pk]),
-            {"stock": "6"},
+            {"stock": "6", "price": str(variant.price)},
         )
         variant.refresh_from_db()
         self.assertEqual(variant.stock, 6)
@@ -173,7 +173,7 @@ class AdministrationInventoryTests(TestCase):
 
         self.client.post(
             reverse("administration:adjust_stock", args=[variant.pk]),
-            {"stock": str(variant.stock), "availability": "on_order"},
+            {"stock": str(variant.stock), "price": str(variant.price), "availability": "on_order"},
         )
         variant.refresh_from_db()
         self.assertEqual(variant.availability, ProductVariant.AVAILABILITY_ON_ORDER)
@@ -181,7 +181,7 @@ class AdministrationInventoryTests(TestCase):
 
         self.client.post(
             reverse("administration:adjust_stock", args=[variant.pk]),
-            {"stock": "4", "availability": "out_of_stock"},
+            {"stock": "4", "price": str(variant.price), "availability": "out_of_stock"},
         )
         variant.refresh_from_db()
         self.assertEqual(variant.stock, 4)
@@ -189,7 +189,7 @@ class AdministrationInventoryTests(TestCase):
 
         self.client.post(
             reverse("administration:adjust_stock", args=[variant.pk]),
-            {"stock": "4", "availability": "available_now"},
+            {"stock": "4", "price": str(variant.price), "availability": "available_now"},
         )
         variant.refresh_from_db()
         self.assertEqual(variant.availability, ProductVariant.AVAILABILITY_AVAILABLE_NOW)
@@ -201,8 +201,23 @@ class AdministrationInventoryTests(TestCase):
         self.assertContains(response, "Κατόπιν παραγγελίας")
         self.assertContains(response, "Προσωρινά μη διαθέσιμο")
         self.assertContains(response, "Τεμάχια καταστήματος")
+        self.assertContains(response, "Τιμή (€)")
         self.assertContains(response, "απόθεμα προμηθευτή")
         self.assertContains(response, 'name="stock"')
+        self.assertContains(response, 'name="price"')
+
+    def test_adjust_stock_can_update_price(self):
+        from decimal import Decimal
+
+        variant = ProductVariant.objects.get(product__name="Adult Mix", weight=2)
+        self.client.force_login(self.admin_user)
+
+        self.client.post(
+            reverse("administration:adjust_stock", args=[variant.pk]),
+            {"stock": str(variant.stock), "price": "19,50"},
+        )
+        variant.refresh_from_db()
+        self.assertEqual(variant.price, Decimal("19.50"))
 
     def test_product_pause_hides_from_storefront(self):
         from products.catalog import get_catalog_queryset

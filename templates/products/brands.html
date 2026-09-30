@@ -7,7 +7,7 @@
 
 {% block content %}
 <section class="brand-landing" aria-label="{{ page_title }}">
-    <div class="brand-landing__frame">
+    <div class="brand-landing__frame brand-landing__desktop">
         <img src="{% static landing_band %}"
              alt=""
              class="brand-landing__band"
@@ -22,6 +22,26 @@
                 <span class="sr-only">{{ spot.label }}</span>
             </a>
         {% endfor %}
+    </div>
+
+    <div class="brand-landing__mobile" aria-label="{{ page_title }}">
+        <div class="brand-landing__mobile-grid">
+            {% for spot in landing_hotspots %}
+                <a href="{{ spot.url }}" class="brand-landing__mobile-tile" aria-label="{{ spot.label }}">
+                    <span class="brand-landing__mobile-icon">
+                        {% if spot.logo_url %}
+                            <img src="{{ spot.logo_url }}"
+                                 alt=""
+                                 class="brand-landing__mobile-img"
+                                 decoding="async">
+                        {% else %}
+                            <span class="brand-landing__mobile-fallback">{{ spot.label }}</span>
+                        {% endif %}
+                    </span>
+                    <span class="brand-landing__mobile-label">{{ spot.label }}</span>
+                </a>
+            {% endfor %}
+        </div>
     </div>
 </section>
 {% endblock %}

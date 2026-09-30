@@ -156,6 +156,9 @@ def build_delivery_options(*, cart_total, postal_code, cart=None):
     )
 
     cart_items = cart.items if cart and hasattr(cart, "items") else (cart or [])
+    if not settings.BOXNOW_CHECKOUT_ENABLED:
+        return options, within_urban_area
+
     too_heavy = exceeds_boxnow_weight_limit(cart_items)
     compartment = determine_compartment_size(cart_items)
     boxnow_fee = calculate_courier_fee(

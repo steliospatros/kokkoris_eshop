@@ -14,7 +14,7 @@
             </p>
         {% endif %}
         <div id="catalog-grid"
-             class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4"
+             class="grid grid-cols-3 gap-1.5 sm:gap-3 md:gap-4 lg:grid-cols-4"
              data-user-authenticated="{{ user_is_authenticated|yesno:'true,false' }}">
             {% for card in product_cards %}
                 {% include "products/partials/product_card.html" with card=card %}

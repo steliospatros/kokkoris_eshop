@@ -1127,6 +1127,7 @@ def build_animal_landing_page(animal_slug):
                 "top": f"{top:.2f}",
                 "size": f"{size:.2f}",
                 "center": f"{cx:.2f}",
+                "tile_image": CATEGORY_TILE_IMAGES.get(slug),
             }
         )
     return {
@@ -1223,6 +1224,7 @@ def build_brand_landing_page():
                 "top": f"{top:.2f}",
                 "width": f"{width:.2f}",
                 "height": f"{height:.2f}",
+                "logo_url": company.logo.url if company.logo else "",
             }
         )
     return {
@@ -1407,14 +1409,24 @@ def build_catalog_pagination_context(request, page_obj, *, per_page):
             "next_url": None,
         }
 
-    page_links = [
-        {
-            "num": num,
-            "url": catalog_page_url(request, page=num, per_page=per_page),
-            "active": num == page_obj.number,
-        }
-        for num in page_obj.paginator.page_range
-    ]
+    # Compact range (1 … 4 5 6 … 12) so mobile does not show every page button.
+    page_links = []
+    for num in page_obj.paginator.get_elided_page_range(
+        page_obj.number,
+        on_each_side=1,
+        on_ends=1,
+    ):
+        if num == page_obj.paginator.ELLIPSIS:
+            page_links.append({"num": "…", "url": None, "active": False, "ellipsis": True})
+        else:
+            page_links.append(
+                {
+                    "num": num,
+                    "url": catalog_page_url(request, page=num, per_page=per_page),
+                    "active": num == page_obj.number,
+                    "ellipsis": False,
+                }
+            )
 
     return {
         "per_page_display": per_page_display,

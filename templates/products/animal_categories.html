@@ -7,7 +7,8 @@
 
 {% block content %}
 <section class="animal-landing animal-landing--{{ animal_slug }}" aria-label="{{ page_title }}">
-    <div class="animal-landing__frame">
+    {# Desktop / tablet: full-bleed TROFES band with absolute hotspots #}
+    <div class="animal-landing__frame animal-landing__desktop" aria-hidden="false">
         <img src="{% static landing_band %}?v=one-fill-2"
              alt=""
              class="animal-landing__band"
@@ -27,6 +28,25 @@
                 <span class="sr-only">{{ spot.label }}</span>
             </a>
         {% endfor %}
+    </div>
+
+    {# Phone: real circular tiles so icons stay sharp at 3-across #}
+    <div class="animal-landing__mobile" aria-label="{{ page_title }}">
+        <div class="animal-landing__mobile-grid animal-landing__mobile-grid--{{ animal_slug }}">
+            {% for spot in landing_hotspots %}
+                <a href="{{ spot.url }}" class="animal-landing__mobile-tile">
+                    <span class="animal-landing__mobile-icon">
+                        {% if spot.tile_image %}
+                            <img src="{% static spot.tile_image %}"
+                                 alt=""
+                                 class="animal-landing__mobile-img"
+                                 decoding="async">
+                        {% endif %}
+                    </span>
+                    <span class="animal-landing__mobile-label">{{ spot.label }}</span>
+                </a>
+            {% endfor %}
+        </div>
     </div>
 </section>
 {% endblock %}

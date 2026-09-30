@@ -1,7 +1,11 @@
 {% extends "page.html" %}
 {% load i18n static l10n %}
 
-{% block title %}{{ page_title }} — Kokkoris Eshop{% endblock %}
+{% block title %}{{ page_title }} — Kokkoris Pet Food{% endblock %}
+{% block meta_description %}{{ page_title }} από {{ product.company.name }}. Αγορά online στο Kokkoris Pet Food.{% endblock %}
+{% block og_title %}{{ page_title }} — Kokkoris Pet Food{% endblock %}
+{% block og_description %}{{ page_title }} από {{ product.company.name }}. Αγορά online στο Kokkoris Pet Food.{% endblock %}
+{% block og_type %}product{% endblock %}
 
 {% block main_class %}w-full max-w-none bg-slate-50 min-h-[60vh]{% endblock %}
 
