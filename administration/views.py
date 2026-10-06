@@ -123,35 +123,42 @@ def administration_offer_edit_view(request, offer_id=None):
 
     if request.method == "POST":
         title = (request.POST.get("title") or "").strip()
-        if not title:
-            messages.error(request, "Γράψε τίτλο για την προσφορά.")
-            return redirect(request.path)
         try:
             price = parse_money(request.POST.get("price"))
             lines = parse_offer_lines_from_post(request.POST)
-        except ValueError:
-            messages.error(
-                request,
-                "Έλεγξε τιμή και προϊόντα (τουλάχιστον μία συσκευασία με ποσότητα ≥ 1).",
+            is_active = request.POST.get("is_active") == "1"
+            saved = save_offer(
+                title=title,
+                price=price,
+                is_active=is_active,
+                lines=lines,
+                offer=offer,
             )
+        except ValueError as exc:
+            if str(exc) == "title_required":
+                messages.error(request, "Για πακέτο με πολλά προϊόντα χρειάζεται τίτλος.")
+            else:
+                messages.error(
+                    request,
+                    "Έλεγξε τιμή και προϊόντα (τουλάχιστον μία συσκευασία με ποσότητα ≥ 1).",
+                )
             return redirect(request.path)
-        is_active = request.POST.get("is_active") == "1"
-        saved = save_offer(
-            title=title,
-            price=price,
-            is_active=is_active,
-            lines=lines,
-            offer=offer,
+        kind = "έκπτωση" if saved.items.count() == 1 else "πακέτο"
+        messages.success(
+            request,
+            f"Η προσφορά «{saved.title}» αποθηκεύτηκε ({kind}, −{saved.discount_percent}%).",
         )
-        messages.success(request, f"Η προσφορά «{saved.title}» αποθηκεύτηκε (−{saved.discount_percent}%).")
         return redirect("administration:offers")
 
     selected_lines = []
+    offer_mode = "single"
     if offer:
         selected_lines = [
             {"variant_id": item.variant_id, "quantity": item.quantity}
             for item in offer.items.all()
         ]
+        if len(selected_lines) > 1:
+            offer_mode = "package"
     return render(
         request,
         "administration/offer_edit.html",
@@ -159,6 +166,7 @@ def administration_offer_edit_view(request, offer_id=None):
             "page_title": "Επεξεργασία προσφοράς" if offer else "Νέα προσφορά",
             "products_section": "offers",
             "offer": offer,
+            "offer_mode": offer_mode,
             "variant_options": variant_picker_options(),
             "selected_lines": selected_lines,
         },

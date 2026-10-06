@@ -449,7 +449,11 @@ class Offer(models.Model):
     Package deal: one or more product variants at a single bundle price.
     """
 
-    title = models.CharField(max_length=200)
+    title = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Required for multi-product packages. Single-item offers use the product name.",
+    )
     price = models.DecimalField(
         max_digits=8,
         decimal_places=2,
@@ -469,7 +473,12 @@ class Offer(models.Model):
         ordering = ["-updated_at", "-pk"]
 
     def __str__(self):
-        return self.title
+        if self.title:
+            return self.title
+        line = self.items.select_related("variant__product").first()
+        if line:
+            return str(line.variant)
+        return f"Offer #{self.pk}"
 
     def save(self, *args, **kwargs):
         if self.price is not None:

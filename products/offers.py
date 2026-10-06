@@ -93,7 +93,20 @@ def build_offer_card(offer, *, cart_qty=0):
         if line.quantity > 1:
             bit = f"{line.quantity}× {bit}"
         title_bits.append(bit)
-    title = offer.title or " + ".join(title_bits)
+    # Single-item: always show the product name (ignore custom package title).
+    if len(lines) == 1:
+        title = title_bits[0]
+        product = lines[0].variant.product
+        product_id = product.pk
+        sizes_label = "Προσφορά"
+        detail_url = reverse("products:detail", kwargs={"slug": product.slug}) if product.slug else ""
+        sku = product.sku or ""
+    else:
+        title = offer.title or " + ".join(title_bits)
+        product_id = None
+        sizes_label = f"{len(lines)} προϊόντα"
+        detail_url = ""
+        sku = ""
 
     # Stock: limited by scarcest available_now component
     can_add = True
@@ -111,14 +124,15 @@ def build_offer_card(offer, *, cart_qty=0):
     return {
         "kind": "offer",
         "offer_id": offer.pk,
-        "product_id": None,
+        "product_id": product_id,
         "variant_id": None,
         "title": title,
-        "detail_url": "",
-        "image_urls": images,
+        "detail_url": detail_url,
+        # Collage only for multi-product packages; single-item uses a normal photo.
+        "image_urls": images if len(lines) > 1 else [],
         "image_url": images[0] if images else None,
-        "sizes_label": f"{len(lines)} προϊόντα" if len(lines) > 1 else "Προσφορά",
-        "sku": "",
+        "sizes_label": sizes_label,
+        "sku": sku,
         "availability_label": "Άμεσα" if can_add else "Μη διαθέσιμο",
         "availability_color_class": "text-emerald-700" if can_add else "text-slate-500",
         "price_display": format_decimal_greek(offer.selling_price),

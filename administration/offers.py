@@ -54,13 +54,29 @@ def parse_offer_lines_from_post(post):
     return lines
 
 
+def resolve_offer_title(*, title, lines):
+    """
+    Single-item offers never need a custom title — use the product name.
+    Multi-item packages require an explicit package title.
+    """
+    if len(lines) == 1:
+        variant, qty = lines[0]
+        bit = get_display_title(variant.product, variant)
+        return f"{qty}× {bit}" if qty > 1 else bit
+    cleaned = (title or "").strip()
+    if not cleaned:
+        raise ValueError("title_required")
+    return cleaned
+
+
 def save_offer(*, title, price, is_active, lines, offer=None):
+    resolved_title = resolve_offer_title(title=title, lines=lines)
     with transaction.atomic():
         if offer is None:
-            offer = Offer(title=title, price=price, is_active=is_active)
+            offer = Offer(title=resolved_title, price=price, is_active=is_active)
             offer.save()
         else:
-            offer.title = title
+            offer.title = resolved_title
             offer.price = price
             offer.is_active = is_active
             offer.save()
@@ -78,22 +94,43 @@ def save_offer(*, title, price, is_active, lines, offer=None):
 def build_offer_admin_rows():
     rows = []
     for offer in Offer.objects.prefetch_related(
-        "items__variant__product"
+        "items__variant__product__company"
     ).order_by("-updated_at"):
+        items = list(offer.items.all())
         regular = offer_regular_total(offer)
+        images = []
+        components = []
+        for item in items:
+            product = item.variant.product
+            if product.image:
+                images.append(product.image.url)
+            components.append(
+                {
+                    "title": get_display_title(product, item.variant),
+                    "quantity": item.quantity,
+                    "image_url": product.image.url if product.image else None,
+                    "regular_price_display": format_decimal_greek(
+                        item.variant.selling_price
+                    ),
+                }
+            )
+        is_single = len(items) == 1
         rows.append(
             {
                 "offer": offer,
-                "item_count": offer.items.count(),
+                "is_single": is_single,
+                "kind_label": "Έκπτωση προϊόντος" if is_single else "Πακέτο",
+                "item_count": len(items),
                 "regular_display": format_decimal_greek(regular),
                 "price_display": format_decimal_greek(offer.selling_price),
-                "components": [
-                    {
-                        "title": get_display_title(item.variant.product, item.variant),
-                        "quantity": item.quantity,
-                    }
-                    for item in offer.items.all()
-                ],
+                "images": images[:4],
+                "components": components,
+                "search_text": " ".join(
+                    [
+                        offer.title or "",
+                        *[c["title"] for c in components],
+                    ]
+                ).lower(),
             }
         )
     return rows
@@ -111,15 +148,20 @@ def variant_picker_options():
         .order_by("product__company__name", "product__name", "weight")
     )
     for variant in qs:
+        product = variant.product
         options.append(
             {
                 "id": variant.pk,
                 "label": (
-                    f"{variant.product.company.name} — "
-                    f"{get_display_title(variant.product, variant)} "
+                    f"{product.company.name} — "
+                    f"{get_display_title(product, variant)} "
                     f"({format_decimal_greek(variant.selling_price)} €)"
                 ),
+                "name": get_display_title(product, variant),
+                "company": product.company.name,
                 "price": str(variant.selling_price),
+                "price_display": format_decimal_greek(variant.selling_price),
+                "image_url": product.image.url if product.image else "",
             }
         )
     return options

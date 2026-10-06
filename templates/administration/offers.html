@@ -13,12 +13,17 @@
         </a>
     </p>
 
-    <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <h1 class="font-poppins font-light text-2xl sm:text-3xl text-kokkoris-teal-dark">
-            {% trans "Προϊόντα" %} — {% trans "Προσφορές" %}
-        </h1>
+    <div class="flex flex-wrap items-end justify-between gap-4 mb-6">
+        <div>
+            <h1 class="font-poppins font-light text-2xl sm:text-3xl text-kokkoris-teal-dark">
+                {% trans "Προϊόντα" %} — {% trans "Προσφορές" %}
+            </h1>
+            <p class="mt-1 font-inter text-sm text-slate-500 max-w-xl">
+                {% trans "Μειωμένη τιμή σε ένα προϊόν, ή πακέτο με πολλά προϊόντα σε μία τιμή." %}
+            </p>
+        </div>
         <a href="{% url 'administration:offer_create' %}"
-           class="inline-flex min-h-10 items-center rounded-lg bg-kokkoris-teal-dark px-4 py-2 font-inter text-sm font-semibold text-white hover:opacity-90">
+           class="inline-flex min-h-11 items-center rounded-xl bg-kokkoris-teal-dark px-5 py-2.5 font-inter text-sm font-semibold text-white shadow-sm hover:opacity-90">
             {% trans "Νέα προσφορά" %}
         </a>
     </div>
@@ -28,7 +33,7 @@
     {% if messages %}
         <ul class="mb-6 space-y-2">
             {% for message in messages %}
-                <li class="rounded-lg px-4 py-3 font-inter text-sm {% if message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200{% elif message.tags == 'success' %}bg-emerald-50 text-emerald-800 border border-emerald-200{% else %}bg-slate-50 text-slate-700 border border-slate-200{% endif %}">
+                <li class="rounded-xl px-4 py-3 font-inter text-sm {% if message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200{% elif message.tags == 'success' %}bg-emerald-50 text-emerald-800 border border-emerald-200{% else %}bg-slate-50 text-slate-700 border border-slate-200{% endif %}">
                     {{ message }}
                 </li>
             {% endfor %}
@@ -36,53 +41,165 @@
     {% endif %}
 
     {% if offer_rows %}
-        <ul class="space-y-4">
+        <div class="mb-5 flex flex-col sm:flex-row sm:items-center gap-3">
+            <label class="relative flex-1">
+                <span class="sr-only">{% trans "Αναζήτηση προσφοράς" %}</span>
+                <input type="search"
+                       id="offers-search"
+                       placeholder="{% trans 'Αναζήτηση προσφοράς ή προϊόντος…' %}"
+                       class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-inter text-sm text-slate-800 shadow-sm">
+            </label>
+            <p class="font-inter text-sm text-slate-500 shrink-0">
+                <span id="offers-count">{{ offer_rows|length }}</span>
+                {% trans "προσφορές" %}
+            </p>
+        </div>
+
+        <ul id="offers-list" class="space-y-4">
             {% for row in offer_rows %}
-                <li class="rounded-xl border border-slate-200 bg-white px-4 py-4 sm:px-5">
-                    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                        <div>
-                            <p class="font-inter text-lg text-slate-800">
-                                {{ row.offer.title }}
-                                {% if not row.offer.is_active %}
-                                    <span class="text-xs uppercase text-amber-700">({% trans "ανενεργή" %})</span>
-                                {% endif %}
-                            </p>
-                            <p class="mt-1 font-inter text-sm text-slate-500">
-                                {{ row.item_count }} {% trans "προϊόντα" %} ·
-                                {% trans "Κανονικά" %} {{ row.regular_display }} € ·
-                                {% trans "Προσφορά" %} <strong class="text-slate-800">{{ row.price_display }} €</strong>
-                                {% if row.offer.discount_percent %}
-                                    · <span class="text-red-600 font-semibold">−{{ row.offer.discount_percent }}%</span>
-                                {% endif %}
-                            </p>
-                            <ul class="mt-2 text-sm text-slate-600 font-inter space-y-0.5">
-                                {% for component in row.components %}
-                                    <li>{{ component.quantity }}× {{ component.title }}</li>
-                                {% endfor %}
-                            </ul>
+                <li class="offer-admin-card rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden"
+                    data-offer-card
+                    data-search="{{ row.search_text }}">
+                    <div class="flex flex-col lg:flex-row">
+                        <div class="offer-admin-card__media shrink-0 lg:w-44 bg-slate-50 border-b lg:border-b-0 lg:border-r border-slate-100">
+                            {% if row.images %}
+                                <div class="offer-admin-thumbs offer-admin-thumbs--{{ row.images|length }}">
+                                    {% for url in row.images %}
+                                        <div class="offer-admin-thumbs__cell">
+                                            <img src="{{ url }}" alt="" class="w-full h-full object-contain p-2">
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="h-36 lg:h-full min-h-[9rem] flex items-center justify-center text-slate-300 font-inter text-sm">
+                                    {% trans "Χωρίς εικόνα" %}
+                                </div>
+                            {% endif %}
                         </div>
-                        <div class="flex flex-wrap gap-2">
-                            <a href="{% url 'administration:offer_edit' row.offer.pk %}"
-                               class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-inter hover:bg-slate-50">
-                                {% trans "Επεξεργασία" %}
-                            </a>
-                            <form method="post" action="{% url 'administration:offer_delete' row.offer.pk %}"
-                                  onsubmit="return confirm('{% trans "Διαγραφή προσφοράς;" %}');">
-                                {% csrf_token %}
-                                <button type="submit"
-                                        class="rounded-lg border border-red-200 px-3 py-2 text-sm font-inter text-red-700 hover:bg-red-50">
-                                    {% trans "Διαγραφή" %}
-                                </button>
-                            </form>
+
+                        <div class="flex-1 min-w-0 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                            <div class="min-w-0">
+                                <div class="flex flex-wrap items-center gap-2 mb-2">
+                                    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide {% if row.is_single %}bg-amber-50 text-amber-800{% else %}bg-kokkoris-teal-dark/10 text-kokkoris-teal-dark{% endif %}">
+                                        {{ row.kind_label }}
+                                    </span>
+                                    {% if row.offer.discount_percent %}
+                                        <span class="inline-flex items-center rounded-full bg-red-600 px-2.5 py-0.5 text-[11px] font-bold text-white">
+                                            −{{ row.offer.discount_percent }}%
+                                        </span>
+                                    {% endif %}
+                                    {% if not row.offer.is_active %}
+                                        <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                            {% trans "ανενεργή" %}
+                                        </span>
+                                    {% endif %}
+                                </div>
+
+                                <h2 class="font-inter text-lg sm:text-xl text-slate-800 leading-snug">
+                                    {{ row.offer.title }}
+                                </h2>
+
+                                <div class="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                                    <p class="font-inter text-sm text-red-600 line-through decoration-2">
+                                        {{ row.regular_display }} €
+                                    </p>
+                                    <p class="font-inter text-2xl font-bold text-slate-900">
+                                        {{ row.price_display }} €
+                                    </p>
+                                </div>
+
+                                {% if not row.is_single %}
+                                    <ul class="mt-3 space-y-1">
+                                        {% for component in row.components %}
+                                            <li class="font-inter text-sm text-slate-600">
+                                                {{ component.quantity }}× {{ component.title }}
+                                                <span class="text-slate-400">({{ component.regular_price_display }} €)</span>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+
+                            <div class="flex sm:flex-col gap-2 shrink-0">
+                                <a href="{% url 'administration:offer_edit' row.offer.pk %}"
+                                   class="inline-flex min-h-10 items-center justify-center rounded-xl bg-kokkoris-teal-dark px-4 py-2 text-sm font-inter font-semibold text-white hover:opacity-90">
+                                    {% trans "Επεξεργασία" %}
+                                </a>
+                                <form method="post" action="{% url 'administration:offer_delete' row.offer.pk %}"
+                                      onsubmit="return confirm('{% trans "Διαγραφή προσφοράς;" %}');">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            class="w-full inline-flex min-h-10 items-center justify-center rounded-xl border border-red-200 px-4 py-2 text-sm font-inter text-red-700 hover:bg-red-50">
+                                        {% trans "Διαγραφή" %}
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </li>
             {% endfor %}
         </ul>
-    {% else %}
-        <p class="font-inter text-slate-500 py-10 text-center border border-dashed border-slate-200 rounded-xl">
-            {% trans "Δεν υπάρχουν προσφορές ακόμα." %}
+        <p id="offers-empty-filter" class="hidden font-inter text-slate-500 py-10 text-center border border-dashed border-slate-200 rounded-2xl">
+            {% trans "Καμία προσφορά δεν ταιριάζει στην αναζήτηση." %}
         </p>
+    {% else %}
+        <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50/80 px-6 py-14 text-center">
+            <p class="font-inter text-lg text-slate-700">{% trans "Δεν υπάρχουν προσφορές ακόμα." %}</p>
+            <p class="mt-2 font-inter text-sm text-slate-500 max-w-md mx-auto">
+                {% trans "Ξεκίνα με έκπτωση σε ένα προϊόν, ή φτιάξε πακέτο με πολλά προϊόντα." %}
+            </p>
+            <a href="{% url 'administration:offer_create' %}"
+               class="mt-6 inline-flex min-h-11 items-center rounded-xl bg-kokkoris-teal-dark px-5 py-2.5 font-inter text-sm font-semibold text-white hover:opacity-90">
+                {% trans "Νέα προσφορά" %}
+            </a>
+        </div>
     {% endif %}
 </section>
+
+<style>
+.offer-admin-thumbs {
+    display: grid;
+    min-height: 9rem;
+    height: 100%;
+    gap: 1px;
+    background: #e2e8f0;
+}
+.offer-admin-thumbs--1 { grid-template-columns: 1fr; }
+.offer-admin-thumbs--2 { grid-template-columns: 1fr 1fr; }
+.offer-admin-thumbs--3 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.offer-admin-thumbs--3 .offer-admin-thumbs__cell:first-child { grid-row: 1 / span 2; }
+.offer-admin-thumbs--4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.offer-admin-thumbs__cell {
+    background: #f8fafc;
+    min-height: 4.5rem;
+    overflow: hidden;
+}
+@media (min-width: 1024px) {
+    .offer-admin-thumbs { min-height: 11rem; }
+}
+</style>
+
+{% if offer_rows %}
+<script>
+(function () {
+    var search = document.getElementById("offers-search");
+    var countEl = document.getElementById("offers-count");
+    var emptyEl = document.getElementById("offers-empty-filter");
+    if (!search) return;
+    function filterOffers() {
+        var q = (search.value || "").trim().toLowerCase();
+        var visible = 0;
+        document.querySelectorAll("[data-offer-card]").forEach(function (card) {
+            var hay = card.getAttribute("data-search") || "";
+            var show = !q || hay.indexOf(q) !== -1;
+            card.classList.toggle("hidden", !show);
+            if (show) visible += 1;
+        });
+        if (countEl) countEl.textContent = String(visible);
+        if (emptyEl) emptyEl.classList.toggle("hidden", visible > 0);
+    }
+    search.addEventListener("input", filterOffers);
+})();
+</script>
+{% endif %}
 {% endblock %}

@@ -6,23 +6,28 @@
 {% block main_class %}w-full max-w-none min-h-[60vh]{% endblock %}
 
 {% block content %}
-<section class="max-w-[900px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 pb-20">
+<section class="max-w-[980px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 pb-20">
     <p class="mb-6">
         <a href="{% url 'administration:offers' %}" class="text-kokkoris-teal-dark hover:underline font-inter text-sm">
             ← {% trans "Πίσω στις προσφορές" %}
         </a>
     </p>
 
-    <h1 class="font-poppins font-light text-2xl sm:text-3xl text-kokkoris-teal-dark mb-6">
-        {{ page_title }}
-    </h1>
+    <div class="mb-6">
+        <h1 class="font-poppins font-light text-2xl sm:text-3xl text-kokkoris-teal-dark">
+            {{ page_title }}
+        </h1>
+        <p class="mt-1 font-inter text-sm text-slate-500">
+            {% trans "Επίλεξε τύπο προσφοράς και όρισε τη νέα τιμή." %}
+        </p>
+    </div>
 
     {% include "administration/partials/products_subnav.html" %}
 
     {% if messages %}
         <ul class="mb-6 space-y-2">
             {% for message in messages %}
-                <li class="rounded-lg px-4 py-3 font-inter text-sm {% if message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200{% else %}bg-emerald-50 text-emerald-800 border border-emerald-200{% endif %}">
+                <li class="rounded-xl px-4 py-3 font-inter text-sm {% if message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200{% else %}bg-emerald-50 text-emerald-800 border border-emerald-200{% endif %}">
                     {{ message }}
                 </li>
             {% endfor %}
@@ -32,78 +37,164 @@
     <form method="post" id="offer-form" class="space-y-6">
         {% csrf_token %}
         {{ selected_lines|json_script:"offer-selected-lines" }}
-        <label class="block font-inter text-sm text-slate-600">
-            {% trans "Τίτλος" %}
-            <input type="text" name="title" required
-                   value="{% if offer %}{{ offer.title }}{% endif %}"
-                   class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-base text-slate-800">
-        </label>
+        {{ variant_options|json_script:"offer-variant-options" }}
+        <input type="hidden" name="offer_mode" id="offer-mode-input" value="{{ offer_mode }}">
 
-        <label class="block font-inter text-sm text-slate-600 max-w-xs">
-            {% trans "Τιμή πακέτου (€)" %}
-            <input type="text" name="price" required inputmode="decimal"
-                   value="{% if offer %}{{ offer.price }}{% endif %}"
-                   class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-base font-semibold text-slate-800">
-        </label>
-
-        <label class="inline-flex items-center gap-2 font-inter text-sm text-slate-700">
-            <input type="checkbox" name="is_active" value="1"
-                   {% if not offer or offer.is_active %}checked{% endif %}
-                   class="rounded border-slate-300">
-            {% trans "Ενεργή στο κατάστημα" %}
-        </label>
-
-        <div>
-            <p class="font-inter text-sm font-medium text-slate-700 mb-2">{% trans "Προϊόντα πακέτου" %}</p>
-            <div id="offer-lines" class="space-y-3"></div>
-            <button type="button" id="offer-add-line"
-                    class="mt-3 rounded-lg border border-slate-300 px-3 py-2 text-sm font-inter hover:bg-slate-50">
-                {% trans "Προσθήκη προϊόντος" %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" role="tablist" aria-label="{% trans 'Τύπος προσφοράς' %}">
+            <button type="button"
+                    id="mode-single"
+                    class="offer-mode-btn rounded-2xl border-2 px-4 py-4 text-left transition-colors"
+                    data-mode="single">
+                <span class="block font-inter font-semibold text-slate-800">{% trans "Έκπτωση σε προϊόν" %}</span>
+                <span class="mt-1 block font-inter text-xs text-slate-500 leading-relaxed">
+                    {% trans "Επίλεξε μία συσκευασία και βάλε νέα τιμή. Χωρίς τίτλο." %}
+                </span>
             </button>
-            <p class="mt-2 font-inter text-xs text-slate-400">
-                {% trans "Κανονικό σύνολο" %}: <span id="offer-regular-total">0,00</span> € ·
-                {% trans "Έκπτωση" %}: <span id="offer-discount-preview">0</span>%
-            </p>
+            <button type="button"
+                    id="mode-package"
+                    class="offer-mode-btn rounded-2xl border-2 px-4 py-4 text-left transition-colors"
+                    data-mode="package">
+                <span class="block font-inter font-semibold text-slate-800">{% trans "Πακέτο προϊόντων" %}</span>
+                <span class="mt-1 block font-inter text-xs text-slate-500 leading-relaxed">
+                    {% trans "Συνδύασε πολλά προϊόντα σε μία τιμή πακέτου." %}
+                </span>
+            </button>
         </div>
 
-        <button type="submit"
-                class="min-h-11 rounded-lg bg-kokkoris-teal-dark px-5 py-2.5 font-inter text-sm font-semibold text-white hover:opacity-90">
-            {% trans "Αποθήκευση" %}
-        </button>
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr]">
+                <div class="p-5 sm:p-6 space-y-5 border-b lg:border-b-0 lg:border-r border-slate-100">
+                    <div id="package-title-wrap" class="{% if offer_mode != 'package' %}hidden{% endif %}">
+                        <label class="block font-inter text-sm text-slate-600">
+                            {% trans "Τίτλος πακέτου" %}
+                            <input type="text" name="title" id="offer-title"
+                                   value="{% if offer and offer_mode == 'package' %}{{ offer.title }}{% endif %}"
+                                   placeholder="{% trans 'π.χ. Πακέτο σκύλου — 2 τροφές' %}"
+                                   class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-base text-slate-800">
+                        </label>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between gap-2 mb-2">
+                            <p class="font-inter text-sm font-medium text-slate-700" id="lines-heading">
+                                {% trans "Προϊόν" %}
+                            </p>
+                            <button type="button" id="offer-add-line"
+                                    class="{% if offer_mode != 'package' %}hidden{% endif %} rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-inter hover:bg-slate-50">
+                                {% trans "+ Προσθήκη" %}
+                            </button>
+                        </div>
+                        <div id="offer-lines" class="space-y-3"></div>
+                    </div>
+
+                    <label class="block font-inter text-sm text-slate-600 max-w-xs">
+                        <span id="price-label">{% trans "Νέα τιμή (€)" %}</span>
+                        <input type="text" name="price" id="offer-price" required inputmode="decimal"
+                               value="{% if offer %}{{ offer.price }}{% endif %}"
+                               class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-lg font-semibold text-slate-800">
+                    </label>
+
+                    <label class="inline-flex items-center gap-2 font-inter text-sm text-slate-700">
+                        <input type="checkbox" name="is_active" value="1"
+                               {% if not offer or offer.is_active %}checked{% endif %}
+                               class="rounded border-slate-300">
+                        {% trans "Ενεργή στο κατάστημα" %}
+                    </label>
+                </div>
+
+                <aside class="bg-slate-50 p-5 sm:p-6 flex flex-col">
+                    <p class="font-inter text-xs uppercase tracking-wide text-slate-500 mb-3">{% trans "Προεπισκόπηση" %}</p>
+                    <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex-1">
+                        <div id="preview-image" class="aspect-square rounded-xl bg-slate-100 mb-4 overflow-hidden flex items-center justify-center text-slate-300 text-sm font-inter">
+                            {% trans "Εικόνα προϊόντος" %}
+                        </div>
+                        <p id="preview-title" class="font-inter text-sm font-medium text-slate-800 leading-snug min-h-[2.5rem]">
+                            {% trans "Επίλεξε προϊόν" %}
+                        </p>
+                        <div class="mt-3 flex flex-wrap items-baseline gap-2">
+                            <span id="preview-regular" class="font-inter text-sm text-red-600 line-through decoration-2 hidden"></span>
+                            <span id="preview-price" class="font-inter text-2xl font-bold text-slate-900">—</span>
+                        </div>
+                        <p class="mt-2">
+                            <span id="preview-badge" class="hidden inline-flex items-center rounded-md bg-red-600 px-2 py-0.5 text-xs font-bold text-white">−0%</span>
+                        </p>
+                        <p class="mt-4 font-inter text-xs text-slate-500 leading-relaxed" id="preview-hint">
+                            {% trans "Στο κατάστημα η κανονική τιμή διαγράφεται και φαίνεται η νέα." %}
+                        </p>
+                    </div>
+                </aside>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap gap-3">
+            <button type="submit"
+                    class="min-h-11 rounded-xl bg-kokkoris-teal-dark px-6 py-2.5 font-inter text-sm font-semibold text-white hover:opacity-90">
+                {% trans "Αποθήκευση" %}
+            </button>
+            <a href="{% url 'administration:offers' %}"
+               class="min-h-11 inline-flex items-center rounded-xl border border-slate-300 px-5 py-2.5 font-inter text-sm text-slate-700 hover:bg-slate-50">
+                {% trans "Ακύρωση" %}
+            </a>
+        </div>
     </form>
 </section>
 
 <template id="offer-line-template">
-    <div class="offer-line flex flex-col sm:flex-row gap-2 sm:items-end rounded-lg border border-slate-200 p-3 bg-slate-50">
-        <label class="flex-1 font-inter text-sm text-slate-600">
-            {% trans "Συσκευασία" %}
-            <select name="variant_id" required
-                    class="offer-variant mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800">
-                <option value="">{% trans "— επίλεξε —" %}</option>
-                {% for option in variant_options %}
-                    <option value="{{ option.id }}" data-price="{{ option.price }}">{{ option.label }}</option>
-                {% endfor %}
-            </select>
-        </label>
-        <label class="font-inter text-sm text-slate-600 w-28">
-            {% trans "Ποσότητα" %}
-            <input type="number" name="quantity" min="1" step="1" value="1" required
-                   class="offer-qty mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold">
-        </label>
-        <button type="button" class="offer-remove min-h-10 px-3 text-sm text-red-700 hover:underline">
-            {% trans "Αφαίρεση" %}
-        </button>
+    <div class="offer-line rounded-xl border border-slate-200 bg-slate-50/80 p-3 sm:p-4">
+        <div class="flex flex-col sm:flex-row gap-3 sm:items-end">
+            <label class="flex-1 font-inter text-sm text-slate-600">
+                {% trans "Συσκευασία" %}
+                <select name="variant_id" required
+                        class="offer-variant mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-800 bg-white">
+                    <option value="">{% trans "— επίλεξε προϊόν —" %}</option>
+                    {% for option in variant_options %}
+                        <option value="{{ option.id }}"
+                                data-price="{{ option.price }}"
+                                data-name="{{ option.name }}"
+                                data-image="{{ option.image_url }}">{{ option.label }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label class="offer-qty-wrap font-inter text-sm text-slate-600 w-28">
+                {% trans "Ποσότητα" %}
+                <input type="number" name="quantity" min="1" step="1" value="1" required
+                       class="offer-qty mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm font-semibold bg-white">
+            </label>
+            <button type="button" class="offer-remove min-h-11 px-3 text-sm text-red-700 hover:underline">
+                {% trans "Αφαίρεση" %}
+            </button>
+        </div>
     </div>
 </template>
+
+<style>
+.offer-mode-btn { border-color: #e2e8f0; background: #fff; }
+.offer-mode-btn.is-active {
+    border-color: #0f5c5c;
+    background: rgba(15, 92, 92, 0.06);
+    box-shadow: 0 0 0 1px rgba(15, 92, 92, 0.15);
+}
+#preview-image img { width: 100%; height: 100%; object-fit: contain; padding: 0.75rem; }
+</style>
 
 <script>
 (function () {
     var linesHost = document.getElementById("offer-lines");
     var template = document.getElementById("offer-line-template");
     var addBtn = document.getElementById("offer-add-line");
-    var regularEl = document.getElementById("offer-regular-total");
-    var discountEl = document.getElementById("offer-discount-preview");
-    var priceInput = document.querySelector('input[name="price"]');
+    var priceInput = document.getElementById("offer-price");
+    var titleInput = document.getElementById("offer-title");
+    var titleWrap = document.getElementById("package-title-wrap");
+    var modeInput = document.getElementById("offer-mode-input");
+    var linesHeading = document.getElementById("lines-heading");
+    var priceLabel = document.getElementById("price-label");
+    var previewImage = document.getElementById("preview-image");
+    var previewTitle = document.getElementById("preview-title");
+    var previewRegular = document.getElementById("preview-regular");
+    var previewPrice = document.getElementById("preview-price");
+    var previewBadge = document.getElementById("preview-badge");
+    var previewHint = document.getElementById("preview-hint");
+    var mode = modeInput.value === "package" ? "package" : "single";
     var selected = [];
     try {
         selected = JSON.parse(document.getElementById("offer-selected-lines").textContent);
@@ -115,34 +206,135 @@
         return n.toFixed(2).replace(".", ",");
     }
 
+    function setMode(next) {
+        mode = next;
+        modeInput.value = next;
+        document.querySelectorAll(".offer-mode-btn").forEach(function (btn) {
+            btn.classList.toggle("is-active", btn.dataset.mode === next);
+        });
+        var isPackage = next === "package";
+        titleWrap.classList.toggle("hidden", !isPackage);
+        addBtn.classList.toggle("hidden", !isPackage);
+        linesHeading.textContent = isPackage ? "Προϊόντα πακέτου" : "Προϊόν";
+        priceLabel.textContent = isPackage ? "Τιμή πακέτου (€)" : "Νέα τιμή (€)";
+        titleInput.required = isPackage;
+        if (!isPackage) {
+            titleInput.value = "";
+        }
+        previewHint.textContent = isPackage
+            ? "Το πακέτο εμφανίζεται ως έξτρα κάρτα στο κατάστημα."
+            : "Αντικαθιστά την κανονική κάρτα του προϊόντος στο κατάστημα.";
+        syncSingleModeRows();
+        updateQtyVisibility();
+        recalc();
+    }
+
+    function syncSingleModeRows() {
+        var rows = linesHost.querySelectorAll(".offer-line");
+        if (mode === "single") {
+            if (!rows.length) {
+                addLine(null);
+            } else {
+                Array.prototype.slice.call(rows, 1).forEach(function (row) { row.remove(); });
+            }
+        }
+    }
+
+    function updateQtyVisibility() {
+        linesHost.querySelectorAll(".offer-line").forEach(function (row) {
+            var qtyWrap = row.querySelector(".offer-qty-wrap");
+            var removeBtn = row.querySelector(".offer-remove");
+            var qtyInput = row.querySelector(".offer-qty");
+            if (mode === "single") {
+                qtyWrap.classList.add("hidden");
+                removeBtn.classList.add("hidden");
+                qtyInput.value = "1";
+            } else {
+                qtyWrap.classList.remove("hidden");
+                removeBtn.classList.remove("hidden");
+            }
+        });
+    }
+
     function recalc() {
         var regular = 0;
+        var names = [];
+        var images = [];
         linesHost.querySelectorAll(".offer-line").forEach(function (row) {
             var opt = row.querySelector(".offer-variant").selectedOptions[0];
             var qty = parseInt(row.querySelector(".offer-qty").value, 10) || 0;
             var price = opt && opt.dataset.price ? parseFloat(opt.dataset.price) : 0;
             regular += price * qty;
+            if (opt && opt.value) {
+                var name = opt.dataset.name || opt.textContent;
+                names.push(qty > 1 ? (qty + "× " + name) : name);
+                if (opt.dataset.image) {
+                    images.push(opt.dataset.image);
+                }
+            }
         });
-        regularEl.textContent = formatGreek(regular);
+
         var offerPrice = parseFloat(String(priceInput.value || "0").replace(",", ".")) || 0;
         var pct = regular > 0 && offerPrice < regular
             ? Math.round(((regular - offerPrice) / regular) * 100)
             : 0;
-        discountEl.textContent = String(pct);
+
+        if (mode === "package" && titleInput.value.trim()) {
+            previewTitle.textContent = titleInput.value.trim();
+        } else if (names.length) {
+            previewTitle.textContent = names.join(" + ");
+        } else {
+            previewTitle.textContent = "Επίλεξε προϊόν";
+        }
+
+        if (offerPrice > 0) {
+            previewPrice.textContent = formatGreek(offerPrice) + " €";
+        } else {
+            previewPrice.textContent = "—";
+        }
+
+        if (regular > 0 && offerPrice > 0 && offerPrice < regular) {
+            previewRegular.textContent = formatGreek(regular) + " €";
+            previewRegular.classList.remove("hidden");
+            previewBadge.textContent = "−" + pct + "%";
+            previewBadge.classList.remove("hidden");
+        } else {
+            previewRegular.classList.add("hidden");
+            previewBadge.classList.add("hidden");
+        }
+
+        if (images.length === 1) {
+            previewImage.innerHTML = '<img src="' + images[0] + '" alt="">';
+        } else if (images.length > 1) {
+            previewImage.innerHTML = images.slice(0, 4).map(function (src) {
+                return '<img src="' + src + '" alt="" style="width:48%;height:48%;object-fit:contain;margin:1%;">';
+            }).join("");
+            previewImage.style.display = "flex";
+            previewImage.style.flexWrap = "wrap";
+            previewImage.style.alignContent = "center";
+            previewImage.style.justifyContent = "center";
+        } else {
+            previewImage.textContent = "Εικόνα προϊόντος";
+            previewImage.style.display = "flex";
+        }
     }
 
     function bindRow(row) {
         row.querySelector(".offer-variant").addEventListener("change", recalc);
         row.querySelector(".offer-qty").addEventListener("input", recalc);
         row.querySelector(".offer-remove").addEventListener("click", function () {
+            if (mode === "single") return;
+            if (linesHost.querySelectorAll(".offer-line").length <= 1) return;
             row.remove();
             recalc();
         });
     }
 
     function addLine(preset) {
+        if (mode === "single" && linesHost.querySelectorAll(".offer-line").length >= 1) {
+            return;
+        }
         var node = template.content.cloneNode(true);
-        var row = node.querySelector(".offer-line");
         linesHost.appendChild(node);
         var live = linesHost.lastElementChild;
         if (preset) {
@@ -150,17 +342,62 @@
             live.querySelector(".offer-qty").value = String(preset.quantity || 1);
         }
         bindRow(live);
+        updateQtyVisibility();
         recalc();
     }
 
+    document.querySelectorAll(".offer-mode-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            var next = btn.dataset.mode;
+            if (next === mode) return;
+            if (next === "single" && linesHost.querySelectorAll(".offer-line").length > 1) {
+                if (!window.confirm("Θα μείνει μόνο το πρώτο προϊόν. Συνέχεια;")) {
+                    return;
+                }
+            }
+            setMode(next);
+            if (next === "package" && linesHost.querySelectorAll(".offer-line").length < 2) {
+                addLine(null);
+            }
+        });
+    });
+
     addBtn.addEventListener("click", function () { addLine(null); });
     priceInput.addEventListener("input", recalc);
+    titleInput.addEventListener("input", recalc);
+
+    document.getElementById("offer-form").addEventListener("submit", function (event) {
+        if (mode === "single") {
+            titleInput.value = "";
+            titleInput.required = false;
+            var rows = linesHost.querySelectorAll(".offer-line");
+            Array.prototype.slice.call(rows, 1).forEach(function (row) { row.remove(); });
+            var qty = linesHost.querySelector(".offer-qty");
+            if (qty) qty.value = "1";
+        } else {
+            var count = linesHost.querySelectorAll(".offer-line .offer-variant").length;
+            var filled = 0;
+            linesHost.querySelectorAll(".offer-variant").forEach(function (sel) {
+                if (sel.value) filled += 1;
+            });
+            if (filled < 2) {
+                event.preventDefault();
+                window.alert("Το πακέτο χρειάζεται τουλάχιστον δύο προϊόντα.");
+                return;
+            }
+            if (!titleInput.value.trim()) {
+                event.preventDefault();
+                window.alert("Γράψε τίτλο για το πακέτο.");
+            }
+        }
+    });
 
     if (Array.isArray(selected) && selected.length) {
         selected.forEach(addLine);
     } else {
         addLine(null);
     }
+    setMode(mode);
 })();
 </script>
 {% endblock %}
