@@ -7,39 +7,46 @@ from cart.cart import CartError, get_cart
 from cart.presentation import build_cart_summary
 from core import user_text
 from core.http import json_error, json_safe
-from products.models import ProductVariant
+from products.models import Offer, ProductVariant
 
 
-def _parse_variant_id(request):
-    try:
-        if request.content_type == "application/json":
-            payload = json.loads(request.body.decode("utf-8"))
-            return int(payload.get("variant_id"))
-        return int(request.POST.get("variant_id"))
-    except (TypeError, ValueError, json.JSONDecodeError):
-        return None
+def _json_or_post(request):
+    if request.content_type == "application/json":
+        try:
+            return json.loads(request.body.decode("utf-8"))
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return {}
+    return request.POST
 
 
-def _parse_quantity(request, default=1):
-    try:
-        if request.content_type == "application/json":
-            payload = json.loads(request.body.decode("utf-8"))
-            raw = payload.get("quantity", default)
-        else:
-            raw = request.POST.get("quantity", default)
-        return int(raw)
-    except (TypeError, ValueError, json.JSONDecodeError):
-        return None
+def _parse_int(payload, *keys):
+    for key in keys:
+        raw = payload.get(key)
+        if raw in (None, ""):
+            continue
+        try:
+            return int(raw)
+        except (TypeError, ValueError):
+            return None
+    return None
 
 
 def _cart_payload(cart):
     quantities = {}
+    offer_quantities = {}
     for item in cart.items:
-        quantities[item.product_variant.pk] = item.quantity
+        if getattr(item, "offer_id", None) or getattr(item, "offer", None):
+            offer = getattr(item, "offer", None)
+            oid = getattr(item, "offer_id", None) or (offer.pk if offer else None)
+            if oid:
+                offer_quantities[oid] = item.quantity
+        elif item.product_variant_id:
+            quantities[item.product_variant_id] = item.quantity
     return {
         "ok": True,
         "total_items": cart.total_items,
         "quantities": quantities,
+        "offer_quantities": offer_quantities,
     }
 
 
@@ -74,8 +81,26 @@ def clear(request):
 @require_POST
 @json_safe
 def add(request):
-    """Add one unit of a variant (or merge into existing line)."""
-    variant_id = _parse_variant_id(request)
+    """Add one unit of a variant or one offer package."""
+    payload = _json_or_post(request)
+    offer_id = _parse_int(payload, "offer_id")
+    variant_id = _parse_int(payload, "variant_id")
+    cart = get_cart(request)
+
+    if offer_id:
+        try:
+            offer = Offer.objects.prefetch_related("items__variant__product").get(pk=offer_id)
+        except Offer.DoesNotExist:
+            return json_error(user_text.CART_PRODUCT_UNKNOWN, status=404)
+        try:
+            cart.add_offer(offer, quantity=1)
+        except CartError as exc:
+            return json_error(str(exc))
+        result = _cart_payload(cart)
+        result["offer_id"] = offer_id
+        result["quantity"] = result["offer_quantities"].get(offer_id, 1)
+        return JsonResponse(result)
+
     if not variant_id:
         return json_error(user_text.CART_PRODUCT_UNKNOWN)
 
@@ -84,38 +109,57 @@ def add(request):
     except ProductVariant.DoesNotExist:
         return json_error(user_text.CART_SIZE_GONE, status=404)
 
-    cart = get_cart(request)
     try:
         cart.add_item(variant, quantity=1)
     except CartError as exc:
         return json_error(str(exc))
 
-    payload = _cart_payload(cart)
-    payload["variant_id"] = variant_id
-    payload["quantity"] = next(
-        (q for vid, q in payload["quantities"].items() if int(vid) == variant_id),
-        1,
-    )
-    return JsonResponse(payload)
+    result = _cart_payload(cart)
+    result["variant_id"] = variant_id
+    result["quantity"] = result["quantities"].get(variant_id, 1)
+    return JsonResponse(result)
 
 
 @require_POST
 @json_safe
 def update(request):
-    """Set exact quantity for a variant (0 removes the line)."""
-    variant_id = _parse_variant_id(request)
-    quantity = _parse_quantity(request, default=0)
+    """Set exact quantity for a variant or offer (0 removes the line)."""
+    payload = _json_or_post(request)
+    offer_id = _parse_int(payload, "offer_id")
+    variant_id = _parse_int(payload, "variant_id")
+    quantity = _parse_int(payload, "quantity")
+    if quantity is None:
+        quantity = 0
+    if quantity < 0:
+        return json_error(user_text.CART_QTY_INVALID)
+
+    cart = get_cart(request)
+
+    if offer_id:
+        try:
+            offer = Offer.objects.prefetch_related("items__variant__product").get(pk=offer_id)
+        except Offer.DoesNotExist:
+            return json_error(user_text.CART_PRODUCT_UNKNOWN, status=404)
+        try:
+            if quantity == 0:
+                cart.remove_offer(offer)
+            else:
+                cart.update_offer(offer, new_quantity=quantity)
+        except CartError as exc:
+            return json_error(str(exc))
+        result = _cart_payload(cart)
+        result["offer_id"] = offer_id
+        result["quantity"] = quantity
+        return JsonResponse(result)
+
     if not variant_id:
         return json_error(user_text.CART_PRODUCT_UNKNOWN)
-    if quantity is None or quantity < 0:
-        return json_error(user_text.CART_QTY_INVALID)
 
     try:
         variant = ProductVariant.objects.get(pk=variant_id)
     except ProductVariant.DoesNotExist:
         return json_error(user_text.CART_SIZE_GONE, status=404)
 
-    cart = get_cart(request)
     try:
         if quantity == 0:
             cart.remove_item(variant)
@@ -124,7 +168,7 @@ def update(request):
     except CartError as exc:
         return json_error(str(exc))
 
-    payload = _cart_payload(cart)
-    payload["variant_id"] = variant_id
-    payload["quantity"] = quantity
-    return JsonResponse(payload)
+    result = _cart_payload(cart)
+    result["variant_id"] = variant_id
+    result["quantity"] = quantity
+    return JsonResponse(result)

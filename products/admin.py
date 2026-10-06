@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AnimalType, Category, Company, Favourite, Product, ProductVariant
+from .models import AnimalType, Category, Company, Favourite, Offer, OfferItem, Product, ProductVariant
 
 
 @admin.register(Company)
@@ -122,3 +122,17 @@ class FavouriteAdmin(admin.ModelAdmin):
     search_fields = ("product__name", "product__company__name")
     ordering = ("-score", "-purchase_count", "product__name")
     readonly_fields = ("updated_at",)
+
+
+class OfferItemInline(admin.TabularInline):
+    model = OfferItem
+    extra = 1
+    autocomplete_fields = ("variant",)
+
+
+@admin.register(Offer)
+class OfferAdmin(admin.ModelAdmin):
+    list_display = ("title", "price", "discount_percent", "is_active", "updated_at")
+    list_filter = ("is_active",)
+    search_fields = ("title",)
+    inlines = [OfferItemInline]

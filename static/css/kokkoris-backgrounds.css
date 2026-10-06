@@ -605,3 +605,38 @@
 .site-breadcrumbs--orange {
   background: #ff931e;
 }
+
+/* Offer package collage (split product images). */
+.offer-collage {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  gap: 1px;
+  background: #e2e8f0;
+}
+.offer-collage--1 { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+.offer-collage--2 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; }
+.offer-collage--3 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.offer-collage--3 .offer-collage__cell:first-child { grid-row: 1 / span 2; }
+.offer-collage--4,
+.offer-collage--5,
+.offer-collage--6,
+.offer-collage--7,
+.offer-collage--8 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+.offer-collage__cell {
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  min-height: 0;
+}
+.offer-collage__cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transform: none;
+}

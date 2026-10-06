@@ -31,6 +31,13 @@ from administration.deliveries import (
     apply_delivery_action,
     build_deliveries_panel_context,
 )
+from administration.offers import (
+    build_offer_admin_rows,
+    parse_money,
+    parse_offer_lines_from_post,
+    save_offer,
+    variant_picker_options,
+)
 from administration.permissions import user_is_shop_admin
 from administration.services import (
     parse_variant_price,
@@ -39,7 +46,7 @@ from administration.services import (
 )
 from orders.models import Order
 from products.catalog import AVAILABILITY_LABELS
-from products.models import Product, ProductVariant
+from products.models import Offer, Product, ProductVariant
 
 
 @administration_user_required
@@ -91,6 +98,81 @@ def administration_inventory_view(request):
             "availability_choices": ADMIN_AVAILABILITY_CHOICES,
         },
     )
+
+
+@shop_admin_required
+def administration_offers_view(request):
+    """List active and inactive package offers."""
+    return render(
+        request,
+        "administration/offers.html",
+        {
+            "page_title": "Προσφορές",
+            "products_section": "offers",
+            "offer_rows": build_offer_admin_rows(),
+        },
+    )
+
+
+@shop_admin_required
+def administration_offer_edit_view(request, offer_id=None):
+    """Create or update a package offer."""
+    offer = None
+    if offer_id is not None:
+        offer = get_object_or_404(Offer.objects.prefetch_related("items__variant__product"), pk=offer_id)
+
+    if request.method == "POST":
+        title = (request.POST.get("title") or "").strip()
+        if not title:
+            messages.error(request, "Γράψε τίτλο για την προσφορά.")
+            return redirect(request.path)
+        try:
+            price = parse_money(request.POST.get("price"))
+            lines = parse_offer_lines_from_post(request.POST)
+        except ValueError:
+            messages.error(
+                request,
+                "Έλεγξε τιμή και προϊόντα (τουλάχιστον μία συσκευασία με ποσότητα ≥ 1).",
+            )
+            return redirect(request.path)
+        is_active = request.POST.get("is_active") == "1"
+        saved = save_offer(
+            title=title,
+            price=price,
+            is_active=is_active,
+            lines=lines,
+            offer=offer,
+        )
+        messages.success(request, f"Η προσφορά «{saved.title}» αποθηκεύτηκε (−{saved.discount_percent}%).")
+        return redirect("administration:offers")
+
+    selected_lines = []
+    if offer:
+        selected_lines = [
+            {"variant_id": item.variant_id, "quantity": item.quantity}
+            for item in offer.items.all()
+        ]
+    return render(
+        request,
+        "administration/offer_edit.html",
+        {
+            "page_title": "Επεξεργασία προσφοράς" if offer else "Νέα προσφορά",
+            "products_section": "offers",
+            "offer": offer,
+            "variant_options": variant_picker_options(),
+            "selected_lines": selected_lines,
+        },
+    )
+
+
+@shop_admin_required
+@require_POST
+def administration_offer_delete_view(request, offer_id):
+    offer = get_object_or_404(Offer, pk=offer_id)
+    title = offer.title
+    offer.delete()
+    messages.success(request, f"Η προσφορά «{title}» διαγράφηκε.")
+    return redirect("administration:offers")
 
 
 def _inventory_redirect(request, variant_id=None):

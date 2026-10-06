@@ -3,6 +3,7 @@
 <article class="product-card product-browse-cell flex flex-col flex-none w-[calc((100%-0.5rem)/3)] sm:w-1/4 lg:w-[20%] snap-start bg-white overflow-hidden"
          data-product-id="{{ card.product_id }}"
          data-variant-id="{{ card.variant_id }}"
+         data-offer-id="{{ card.offer_id }}"
          data-can-add="{{ card.can_add|yesno:'true,false' }}"
          data-on-order="{{ card.is_on_order|yesno:'true,false' }}"
          data-button-label="{{ card.button_label }}"
@@ -33,7 +34,12 @@
             </div>
 
             <div class="product-card-price mt-1.5">
-                <p class="font-inter font-bold text-sm text-slate-900">{{ card.price_display }} €</p>
+                {% if card.regular_price_display %}
+                    <p class="font-inter text-[11px] text-red-600 line-through">{{ card.regular_price_display }} €</p>
+                    <p class="font-inter font-bold text-sm text-slate-900">{{ card.price_display }} €</p>
+                {% else %}
+                    <p class="font-inter font-bold text-sm text-slate-900">{{ card.price_display }} €</p>
+                {% endif %}
                 <p class="product-card-unit text-[9px] text-slate-500 min-h-[0.9rem]">
                     {% if card.unit_price_display %}
                         {{ card.unit_price_display }} € / {{ card.unit_label }}
@@ -47,7 +53,7 @@
         <div class="product-card-footer mx-2 mb-2 rounded-full overflow-hidden text-white {% if card.can_add %}bg-kokkoris-teal-dark{% else %}bg-slate-400{% endif %}">
         {% if card.cart_qty > 0 %}
             <div class="cart-stepper flex items-center justify-between px-2 py-1.5"
-                 data-variant-id="{{ card.variant_id }}">
+                 {% if card.offer_id %}data-offer-id="{{ card.offer_id }}"{% else %}data-variant-id="{{ card.variant_id }}"{% endif %}>
                 <button type="button"
                         class="qty-minus w-6 h-6 rounded-full border border-white/40 hover:bg-white/10 text-base leading-none"
                         aria-label="{% trans 'Μείωση ποσότητας' %}">−</button>
@@ -60,14 +66,14 @@
         {% elif card.can_add %}
             <button type="button"
                     class="cart-add w-full py-1.5 text-[11px] font-poppins font-medium uppercase tracking-wider transition-colors hover:bg-kokkoris-teal-mid"
-                    data-variant-id="{{ card.variant_id }}">
+                    {% if card.offer_id %}data-offer-id="{{ card.offer_id }}"{% else %}data-variant-id="{{ card.variant_id }}"{% endif %}>
                 {% trans "Αγορά" %}
             </button>
         {% else %}
             <button type="button"
                     disabled
                     class="cart-add w-full py-1.5 text-[11px] font-poppins font-medium uppercase tracking-wider cursor-not-allowed opacity-80"
-                    data-variant-id="{{ card.variant_id }}">
+                    {% if card.offer_id %}data-offer-id="{{ card.offer_id }}"{% else %}data-variant-id="{{ card.variant_id }}"{% endif %}>
                 {% trans "Αγορά" %}
             </button>
         {% endif %}

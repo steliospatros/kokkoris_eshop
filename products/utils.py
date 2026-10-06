@@ -80,19 +80,17 @@ def calculate_shipping_cost(
     total_volumetric_weight = Decimal("0.00")
 
     for item in cart_items:
-        product = _resolve_product(item)
-        quantity = Decimal(getattr(item, "quantity", 1))
+        for product, quantity in _iter_shipping_units(item):
+            # Billable real weight accumulates per unit in the cart.
+            total_real_weight += Decimal(product.weight) * quantity
 
-        # Billable real weight accumulates per unit in the cart.
-        total_real_weight += Decimal(product.weight) * quantity
-
-        # Volumetric weight: (L × W × H cm) / 5000 → kg equivalent.
-        item_volumetric_weight = (
-            Decimal(product.length)
-            * Decimal(product.width)
-            * Decimal(product.height)
-        ) / VOLUMETRIC_DIVISOR
-        total_volumetric_weight += item_volumetric_weight * quantity
+            # Volumetric weight: (L × W × H cm) / 5000 → kg equivalent.
+            item_volumetric_weight = (
+                Decimal(product.length)
+                * Decimal(product.width)
+                * Decimal(product.height)
+            ) / VOLUMETRIC_DIVISOR
+            total_volumetric_weight += item_volumetric_weight * quantity
 
     # Couriers charge whichever is higher: actual or volumetric weight.
     chargeable_weight = max(total_real_weight, total_volumetric_weight)
@@ -112,10 +110,28 @@ def calculate_shipping_cost(
 
 def _resolve_product(cart_item):
     """Return the Product instance from a cart line, regardless of item shape."""
-    if hasattr(cart_item, "product_variant"):
+    if getattr(cart_item, "offer", None) is not None:
+        lines = cart_item.offer.component_lines()
+        if not lines:
+            raise AttributeError("Offer cart item has no components for shipping.")
+        return lines[0].variant.product
+    if getattr(cart_item, "product_variant", None) is not None:
         return cart_item.product_variant.product
     if hasattr(cart_item, "product"):
         return cart_item.product
     raise AttributeError(
         "Each cart item must provide product_variant or product for shipping."
     )
+
+
+def _iter_shipping_units(cart_item):
+    """Yield (product, quantity) pairs for weight/volume calculation."""
+    offer = getattr(cart_item, "offer", None)
+    if offer is not None:
+        packages = Decimal(getattr(cart_item, "quantity", 1))
+        for line in offer.component_lines():
+            yield line.variant.product, packages * Decimal(line.quantity)
+        return
+    product = _resolve_product(cart_item)
+    yield product, Decimal(getattr(cart_item, "quantity", 1))
+

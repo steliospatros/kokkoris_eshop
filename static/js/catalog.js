@@ -1,9 +1,20 @@
 (function () {
     "use strict";
 
-    var root = document.getElementById("catalog-grid") || document.getElementById("catalog-browse");
+    var root =
+        document.getElementById("catalog-grid") ||
+        document.getElementById("catalog-browse") ||
+        document.querySelector(".offers-browse-section") ||
+        document.querySelector(".favourites-browse-section");
     if (!root) {
         return;
+    }
+    // Homepage has multiple browse rows — listen on a shared ancestor.
+    if (
+        !document.getElementById("catalog-grid") &&
+        !document.getElementById("catalog-browse")
+    ) {
+        root = document.body;
     }
 
     function csrfToken() {
@@ -95,12 +106,18 @@
         return isNaN(value) ? null : value;
     }
 
+    function lineIdAttrs(card) {
+        if (card.dataset.offerId) {
+            return 'data-offer-id="' + card.dataset.offerId + '"';
+        }
+        return 'data-variant-id="' + card.dataset.variantId + '"';
+    }
+
     function renderStepper(card, quantity) {
         var footer = card.querySelector(".product-card-footer");
         if (!footer) {
             return;
         }
-        var variantId = card.dataset.variantId;
         var maxStock = cardMaxStock(card);
         var plusDisabled =
             maxStock !== null && quantity >= maxStock
@@ -108,9 +125,9 @@
                 : "";
         setFooterBg(card, footer);
         footer.innerHTML =
-            '<div class="cart-stepper flex items-center justify-between px-3 py-2" data-variant-id="' +
-            variantId +
-            '">' +
+            '<div class="cart-stepper flex items-center justify-between px-3 py-2" ' +
+            lineIdAttrs(card) +
+            ">" +
             '<button type="button" class="qty-minus w-7 h-7 rounded-full border border-white/40 hover:bg-white/10 text-lg leading-none" aria-label="Μείωση">−</button>' +
             '<span class="qty-value font-semibold text-base min-w-[1.5rem] text-center">' +
             quantity +
@@ -126,20 +143,19 @@
         if (!footer) {
             return;
         }
-        var variantId = card.dataset.variantId;
         if (!cardCanAdd(card)) {
             setFooterBg(card, footer);
             footer.innerHTML =
-                '<button type="button" disabled class="cart-add w-full py-2 text-sm font-poppins font-medium uppercase tracking-wider cursor-not-allowed opacity-80" data-variant-id="' +
-                variantId +
-                '">Αγορά</button>';
+                '<button type="button" disabled class="cart-add w-full py-2 text-sm font-poppins font-medium uppercase tracking-wider cursor-not-allowed opacity-80" ' +
+                lineIdAttrs(card) +
+                ">Αγορά</button>";
             return;
         }
         setFooterBg(card, footer);
         footer.innerHTML =
-            '<button type="button" class="cart-add w-full py-2 text-sm font-poppins font-medium uppercase tracking-wider transition-colors hover:bg-kokkoris-teal-mid" data-variant-id="' +
-            variantId +
-            '">Αγορά</button>';
+            '<button type="button" class="cart-add w-full py-2 text-sm font-poppins font-medium uppercase tracking-wider transition-colors hover:bg-kokkoris-teal-mid" ' +
+            lineIdAttrs(card) +
+            ">Αγορά</button>";
     }
 
     function handleCartError(error) {
@@ -151,11 +167,17 @@
         window.alert((error && error.message) || fallback);
     }
 
-    function addToCart(card, variantId) {
+    function addToCart(card) {
         if (!cardCanAdd(card)) {
             return;
         }
-        postJson("/cart/add/", { variant_id: parseInt(variantId, 10) })
+        var payload = {};
+        if (card.dataset.offerId) {
+            payload.offer_id = parseInt(card.dataset.offerId, 10);
+        } else {
+            payload.variant_id = parseInt(card.dataset.variantId, 10);
+        }
+        postJson("/cart/add/", payload)
             .then(function (data) {
                 renderStepper(card, data.quantity);
                 syncCartUi(data.total_items);
@@ -163,16 +185,19 @@
             .catch(handleCartError);
     }
 
-    function updateQuantity(card, variantId, quantity) {
+    function updateQuantity(card, stepper, quantity) {
         var maxStock = cardMaxStock(card);
         if (maxStock !== null && quantity > maxStock) {
             handleCartError(new Error("Μπορείς να βάλεις έως " + maxStock + " τεμάχια."));
             return;
         }
-        postJson("/cart/update/", {
-            variant_id: parseInt(variantId, 10),
-            quantity: quantity,
-        })
+        var payload = { quantity: quantity };
+        if (stepper.dataset.offerId) {
+            payload.offer_id = parseInt(stepper.dataset.offerId, 10);
+        } else {
+            payload.variant_id = parseInt(stepper.dataset.variantId, 10);
+        }
+        postJson("/cart/update/", payload)
             .then(function (data) {
                 if (data.quantity > 0) {
                     renderStepper(card, data.quantity);
@@ -218,7 +243,7 @@
                 return;
             }
             var card = addBtn.closest(".product-card");
-            addToCart(card, addBtn.dataset.variantId);
+            addToCart(card);
             return;
         }
 
@@ -228,7 +253,7 @@
             var cardMinus = minusBtn.closest(".product-card");
             var valueEl = stepper.querySelector(".qty-value");
             var nextQty = Math.max(0, parseInt(valueEl.textContent, 10) - 1);
-            updateQuantity(cardMinus, stepper.dataset.variantId, nextQty);
+            updateQuantity(cardMinus, stepper, nextQty);
             return;
         }
 
@@ -241,7 +266,7 @@
             var cardPlus = plusBtn.closest(".product-card");
             var valueElPlus = stepperPlus.querySelector(".qty-value");
             var nextQtyPlus = parseInt(valueElPlus.textContent, 10) + 1;
-            updateQuantity(cardPlus, stepperPlus.dataset.variantId, nextQtyPlus);
+            updateQuantity(cardPlus, stepperPlus, nextQtyPlus);
             return;
         }
 

@@ -9,6 +9,18 @@ urlpatterns = [
     path("products/", views.administration_products_view, name="products"),
     path("products/favourites/", views.administration_favourites_view, name="favourites"),
     path("products/inventory/", views.administration_inventory_view, name="inventory"),
+    path("products/offers/", views.administration_offers_view, name="offers"),
+    path("products/offers/new/", views.administration_offer_edit_view, name="offer_create"),
+    path(
+        "products/offers/<int:offer_id>/",
+        views.administration_offer_edit_view,
+        name="offer_edit",
+    ),
+    path(
+        "products/offers/<int:offer_id>/delete/",
+        views.administration_offer_delete_view,
+        name="offer_delete",
+    ),
     path("inventory/", views.administration_inventory_view, name="inventory_legacy"),
     path(
         "inventory/stock/<int:variant_id>/",

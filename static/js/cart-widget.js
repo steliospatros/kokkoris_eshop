@@ -62,6 +62,20 @@
         return isNaN(value) ? null : value;
     }
 
+    function lineKeyAttrs(line) {
+        if (line.offer_id) {
+            return ' data-offer-id="' + line.offer_id + '"';
+        }
+        return ' data-variant-id="' + line.variant_id + '"';
+    }
+
+    function lineStepperAttrs(line) {
+        if (line.offer_id) {
+            return 'data-offer-id="' + line.offer_id + '"';
+        }
+        return 'data-variant-id="' + line.variant_id + '"';
+    }
+
     function renderMiniLine(line) {
         var thumb = line.image_url
             ? '<img src="' + escapeHtml(line.image_url) + '" alt="" class="w-full h-full object-contain">'
@@ -79,9 +93,7 @@
 
         return (
             '<li class="cart-line-row flex items-center gap-3 py-2.5"' +
-            ' data-variant-id="' +
-            line.variant_id +
-            '"' +
+            lineKeyAttrs(line) +
             maxAttr +
             ">" +
             '<div class="shrink-0 w-12 h-12 rounded-lg border border-slate-100 bg-slate-50 overflow-hidden flex items-center justify-center">' +
@@ -92,9 +104,9 @@
             escapeHtml(line.title) +
             "</p>" +
             "</div>" +
-            '<div class="cart-stepper flex items-center gap-1.5 shrink-0 bg-kokkoris-teal-dark text-white rounded-full px-1.5 py-1" data-variant-id="' +
-            line.variant_id +
-            '">' +
+            '<div class="cart-stepper flex items-center gap-1.5 shrink-0 bg-kokkoris-teal-dark text-white rounded-full px-1.5 py-1" ' +
+            lineStepperAttrs(line) +
+            ">" +
             '<button type="button" class="qty-minus w-6 h-6 rounded-full border border-white/40 hover:bg-white/10 text-base leading-none flex items-center justify-center" aria-label="Μείωση">−</button>' +
             '<span class="qty-value font-semibold text-sm min-w-[1.25rem] text-center">' +
             line.quantity +
@@ -140,9 +152,10 @@
         }
 
         data.lines.forEach(function (line) {
-            var row = linesRoot.querySelector(
-                '.cart-line-row[data-variant-id="' + line.variant_id + '"]'
-            );
+            var selector = line.offer_id
+                ? '.cart-line-row[data-offer-id="' + line.offer_id + '"]'
+                : '.cart-line-row[data-variant-id="' + line.variant_id + '"]';
+            var row = linesRoot.querySelector(selector);
             if (!row) {
                 return;
             }
@@ -179,13 +192,19 @@
         if (!linesRoot || !data.lines) {
             return;
         }
-        var activeIds = {};
+        var activeKeys = {};
         data.lines.forEach(function (line) {
-            activeIds[line.variant_id] = true;
+            if (line.offer_id) {
+                activeKeys["o:" + line.offer_id] = true;
+            } else {
+                activeKeys["v:" + line.variant_id] = true;
+            }
         });
         linesRoot.querySelectorAll(".cart-line-row").forEach(function (row) {
-            var variantId = parseInt(row.dataset.variantId, 10);
-            if (!activeIds[variantId]) {
+            var key = row.dataset.offerId
+                ? "o:" + row.dataset.offerId
+                : "v:" + row.dataset.variantId;
+            if (!activeKeys[key]) {
                 row.remove();
             }
         });
@@ -236,17 +255,21 @@
         window.alert((error && error.message) || fallback);
     }
 
-    function updateQuantity(variantId, quantity, lineEl) {
+    function updateQuantity(stepper, quantity, lineEl) {
         var maxStock = lineMaxStock(lineEl);
         if (maxStock !== null && quantity > maxStock) {
             handleCartError(new Error("Μπορείς να βάλεις έως " + maxStock + " τεμάχια."));
             return;
         }
 
-        postJson(UPDATE_URL, {
-            variant_id: parseInt(variantId, 10),
-            quantity: quantity,
-        })
+        var payload = { quantity: quantity };
+        if (stepper.dataset.offerId) {
+            payload.offer_id = parseInt(stepper.dataset.offerId, 10);
+        } else {
+            payload.variant_id = parseInt(stepper.dataset.variantId, 10);
+        }
+
+        postJson(UPDATE_URL, payload)
             .then(function () {
                 return fetch(PREVIEW_URL, { credentials: "same-origin" }).then(function (response) {
                     return response.json();
@@ -274,7 +297,7 @@
                 var lineEl = minusBtn.closest(".cart-line-row");
                 var valueEl = stepper.querySelector(".qty-value");
                 var nextQty = Math.max(0, parseInt(valueEl.textContent, 10) - 1);
-                updateQuantity(stepper.dataset.variantId, nextQty, lineEl);
+                updateQuantity(stepper, nextQty, lineEl);
                 return;
             }
 
@@ -287,7 +310,7 @@
                 var lineElPlus = plusBtn.closest(".cart-line-row");
                 var valueElPlus = stepperPlus.querySelector(".qty-value");
                 var nextQtyPlus = parseInt(valueElPlus.textContent, 10) + 1;
-                updateQuantity(stepperPlus.dataset.variantId, nextQtyPlus, lineElPlus);
+                updateQuantity(stepperPlus, nextQtyPlus, lineElPlus);
             }
         });
     }

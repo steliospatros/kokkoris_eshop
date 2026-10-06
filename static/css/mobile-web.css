@@ -286,7 +286,8 @@ textarea {
     }
 
     .home-hero-welcome {
-        overflow-wrap: anywhere;
+        /* Keep the greeting on one readable line; name truncates via ellipsis. */
+        overflow-wrap: normal;
     }
 
     /* 3-up product cards: drop SKU + €/unit, tighten spacing. */

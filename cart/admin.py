@@ -7,7 +7,7 @@ class CartItemInline(admin.TabularInline):
     """Allows viewing a user's cart contents directly on the Cart page."""
     model = CartItem
     extra = 0
-    fields = ("product_variant", "quantity", "subtotal")
+    fields = ("product_variant", "offer", "quantity", "subtotal")
     readonly_fields = ("subtotal",)
 
 
@@ -34,5 +34,9 @@ class CartAdmin(admin.ModelAdmin):
 @admin.register(CartItem)
 class CartItemAdmin(admin.ModelAdmin):
     """Standalone view of cart lines, useful for scanning what's in active carts."""
-    list_display = ("cart", "product_variant", "quantity", "subtotal", "added_at")
-    search_fields = ("cart__user__email", "product_variant__product__name")
+    list_display = ("cart", "product_variant", "offer", "quantity", "subtotal", "added_at")
+    search_fields = (
+        "cart__user__email",
+        "product_variant__product__name",
+        "offer__title",
+    )

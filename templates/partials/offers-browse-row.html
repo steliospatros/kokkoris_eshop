@@ -1,0 +1,34 @@
+{% load i18n static %}
+{% if offer_cards %}
+<section class="favourites-browse-section offers-browse-section {% if section_class %}{{ section_class }}{% else %}mt-10 lg:mt-14{% endif %}">
+    <h2 class="font-poppins font-light text-xl lg:text-2xl text-kokkoris-teal-dark tracking-wide mb-6 text-center">
+        {% trans "Προσφορές" %}
+    </h2>
+    <div class="brand-products brand-products--white brand-products--panel">
+        <div class="brand-products__row"
+             {% if user_is_authenticated != None %}data-user-authenticated="{{ user_is_authenticated|yesno:'true,false' }}"{% endif %}>
+            <button type="button"
+                    class="brand-products__nav brand-products__nav--prev hidden lg:flex browse-row-prev"
+                    aria-label="{% trans 'Προηγούμενες προσφορές' %}">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M15 6l-6 6 6 6"/>
+                </svg>
+            </button>
+
+            <div class="brand-products__track favourites-browse-track browse-products-track">
+                {% for card in offer_cards %}
+                    {% include "products/partials/product_browse_cell.html" with card=card %}
+                {% endfor %}
+            </div>
+
+            <button type="button"
+                    class="brand-products__nav brand-products__nav--next hidden lg:flex browse-row-next"
+                    aria-label="{% trans 'Επόμενες προσφορές' %}">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M9 6l6 6-6 6"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+</section>
+{% endif %}

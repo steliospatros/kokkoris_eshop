@@ -9,4 +9,8 @@
        class="rounded-full px-4 py-2 text-sm font-inter transition-colors {% if products_section == 'inventory' %}bg-kokkoris-teal-dark text-white{% else %}bg-slate-100 text-slate-700 hover:bg-slate-200{% endif %}">
         {% trans "Απόθεμα" %}
     </a>
+    <a href="{% url 'administration:offers' %}"
+       class="rounded-full px-4 py-2 text-sm font-inter transition-colors {% if products_section == 'offers' %}bg-kokkoris-teal-dark text-white{% else %}bg-slate-100 text-slate-700 hover:bg-slate-200{% endif %}">
+        {% trans "Προσφορές" %}
+    </a>
 </nav>

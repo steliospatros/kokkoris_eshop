@@ -1,0 +1,166 @@
+{% extends "page.html" %}
+{% load i18n %}
+
+{% block title %}{{ page_title }} — Kokkoris Eshop{% endblock %}
+
+{% block main_class %}w-full max-w-none min-h-[60vh]{% endblock %}
+
+{% block content %}
+<section class="max-w-[900px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 pb-20">
+    <p class="mb-6">
+        <a href="{% url 'administration:offers' %}" class="text-kokkoris-teal-dark hover:underline font-inter text-sm">
+            ← {% trans "Πίσω στις προσφορές" %}
+        </a>
+    </p>
+
+    <h1 class="font-poppins font-light text-2xl sm:text-3xl text-kokkoris-teal-dark mb-6">
+        {{ page_title }}
+    </h1>
+
+    {% include "administration/partials/products_subnav.html" %}
+
+    {% if messages %}
+        <ul class="mb-6 space-y-2">
+            {% for message in messages %}
+                <li class="rounded-lg px-4 py-3 font-inter text-sm {% if message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200{% else %}bg-emerald-50 text-emerald-800 border border-emerald-200{% endif %}">
+                    {{ message }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <form method="post" id="offer-form" class="space-y-6">
+        {% csrf_token %}
+        {{ selected_lines|json_script:"offer-selected-lines" }}
+        <label class="block font-inter text-sm text-slate-600">
+            {% trans "Τίτλος" %}
+            <input type="text" name="title" required
+                   value="{% if offer %}{{ offer.title }}{% endif %}"
+                   class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-base text-slate-800">
+        </label>
+
+        <label class="block font-inter text-sm text-slate-600 max-w-xs">
+            {% trans "Τιμή πακέτου (€)" %}
+            <input type="text" name="price" required inputmode="decimal"
+                   value="{% if offer %}{{ offer.price }}{% endif %}"
+                   class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-base font-semibold text-slate-800">
+        </label>
+
+        <label class="inline-flex items-center gap-2 font-inter text-sm text-slate-700">
+            <input type="checkbox" name="is_active" value="1"
+                   {% if not offer or offer.is_active %}checked{% endif %}
+                   class="rounded border-slate-300">
+            {% trans "Ενεργή στο κατάστημα" %}
+        </label>
+
+        <div>
+            <p class="font-inter text-sm font-medium text-slate-700 mb-2">{% trans "Προϊόντα πακέτου" %}</p>
+            <div id="offer-lines" class="space-y-3"></div>
+            <button type="button" id="offer-add-line"
+                    class="mt-3 rounded-lg border border-slate-300 px-3 py-2 text-sm font-inter hover:bg-slate-50">
+                {% trans "Προσθήκη προϊόντος" %}
+            </button>
+            <p class="mt-2 font-inter text-xs text-slate-400">
+                {% trans "Κανονικό σύνολο" %}: <span id="offer-regular-total">0,00</span> € ·
+                {% trans "Έκπτωση" %}: <span id="offer-discount-preview">0</span>%
+            </p>
+        </div>
+
+        <button type="submit"
+                class="min-h-11 rounded-lg bg-kokkoris-teal-dark px-5 py-2.5 font-inter text-sm font-semibold text-white hover:opacity-90">
+            {% trans "Αποθήκευση" %}
+        </button>
+    </form>
+</section>
+
+<template id="offer-line-template">
+    <div class="offer-line flex flex-col sm:flex-row gap-2 sm:items-end rounded-lg border border-slate-200 p-3 bg-slate-50">
+        <label class="flex-1 font-inter text-sm text-slate-600">
+            {% trans "Συσκευασία" %}
+            <select name="variant_id" required
+                    class="offer-variant mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800">
+                <option value="">{% trans "— επίλεξε —" %}</option>
+                {% for option in variant_options %}
+                    <option value="{{ option.id }}" data-price="{{ option.price }}">{{ option.label }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label class="font-inter text-sm text-slate-600 w-28">
+            {% trans "Ποσότητα" %}
+            <input type="number" name="quantity" min="1" step="1" value="1" required
+                   class="offer-qty mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold">
+        </label>
+        <button type="button" class="offer-remove min-h-10 px-3 text-sm text-red-700 hover:underline">
+            {% trans "Αφαίρεση" %}
+        </button>
+    </div>
+</template>
+
+<script>
+(function () {
+    var linesHost = document.getElementById("offer-lines");
+    var template = document.getElementById("offer-line-template");
+    var addBtn = document.getElementById("offer-add-line");
+    var regularEl = document.getElementById("offer-regular-total");
+    var discountEl = document.getElementById("offer-discount-preview");
+    var priceInput = document.querySelector('input[name="price"]');
+    var selected = [];
+    try {
+        selected = JSON.parse(document.getElementById("offer-selected-lines").textContent);
+    } catch (e) {
+        selected = [];
+    }
+
+    function formatGreek(n) {
+        return n.toFixed(2).replace(".", ",");
+    }
+
+    function recalc() {
+        var regular = 0;
+        linesHost.querySelectorAll(".offer-line").forEach(function (row) {
+            var opt = row.querySelector(".offer-variant").selectedOptions[0];
+            var qty = parseInt(row.querySelector(".offer-qty").value, 10) || 0;
+            var price = opt && opt.dataset.price ? parseFloat(opt.dataset.price) : 0;
+            regular += price * qty;
+        });
+        regularEl.textContent = formatGreek(regular);
+        var offerPrice = parseFloat(String(priceInput.value || "0").replace(",", ".")) || 0;
+        var pct = regular > 0 && offerPrice < regular
+            ? Math.round(((regular - offerPrice) / regular) * 100)
+            : 0;
+        discountEl.textContent = String(pct);
+    }
+
+    function bindRow(row) {
+        row.querySelector(".offer-variant").addEventListener("change", recalc);
+        row.querySelector(".offer-qty").addEventListener("input", recalc);
+        row.querySelector(".offer-remove").addEventListener("click", function () {
+            row.remove();
+            recalc();
+        });
+    }
+
+    function addLine(preset) {
+        var node = template.content.cloneNode(true);
+        var row = node.querySelector(".offer-line");
+        linesHost.appendChild(node);
+        var live = linesHost.lastElementChild;
+        if (preset) {
+            live.querySelector(".offer-variant").value = String(preset.variant_id);
+            live.querySelector(".offer-qty").value = String(preset.quantity || 1);
+        }
+        bindRow(live);
+        recalc();
+    }
+
+    addBtn.addEventListener("click", function () { addLine(null); });
+    priceInput.addEventListener("input", recalc);
+
+    if (Array.isArray(selected) && selected.length) {
+        selected.forEach(addLine);
+    } else {
+        addLine(null);
+    }
+})();
+</script>
+{% endblock %}

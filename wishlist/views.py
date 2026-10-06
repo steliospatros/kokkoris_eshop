@@ -17,7 +17,13 @@ from .wishlist import get_wishlist
 
 def _cart_quantities(request):
     cart = get_cart(request)
-    return {item.product_variant.pk: item.quantity for item in cart.items}
+    quantities = {}
+    for item in cart.items:
+        if getattr(item, "offer", None) or getattr(item, "offer_id", None):
+            continue
+        if item.product_variant_id:
+            quantities[item.product_variant_id] = item.quantity
+    return quantities
 
 
 @require_GET

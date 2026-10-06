@@ -10,7 +10,8 @@ from decimal import Decimal
 from django.conf import settings
 
 from products.catalog import format_decimal_greek
-from products.utils import VOLUMETRIC_DIVISOR, _resolve_product
+from products.utils import VOLUMETRIC_DIVISOR, _iter_shipping_units, _resolve_product
+
 
 COMPARTMENT_SMALL = 1
 COMPARTMENT_MEDIUM = 2
@@ -46,26 +47,29 @@ def calculate_cart_chargeable_weight_kg(cart_items):
     total_volumetric_weight = Decimal("0.00")
 
     for item in cart_items:
-        product = _resolve_product(item)
-        quantity = Decimal(getattr(item, "quantity", 1))
-        total_real_weight += Decimal(product.weight) * quantity
-        item_volumetric_weight = (
-            Decimal(product.length)
-            * Decimal(product.width)
-            * Decimal(product.height)
-        ) / VOLUMETRIC_DIVISOR
-        total_volumetric_weight += item_volumetric_weight * quantity
+        for product, quantity in _iter_shipping_units(item):
+            total_real_weight += Decimal(product.weight) * quantity
+            item_volumetric_weight = (
+                Decimal(product.length)
+                * Decimal(product.width)
+                * Decimal(product.height)
+            ) / VOLUMETRIC_DIVISOR
+            total_volumetric_weight += item_volumetric_weight * quantity
 
     return max(total_real_weight, total_volumetric_weight)
 
 
-def _item_dims_cm(item):
-    product = _resolve_product(item)
+def _product_dims_cm(product):
     return (
         float(product.length or 0),
         float(product.width or 0),
         float(product.height or 0),
     )
+
+
+def _item_dims_cm(item):
+    product = _resolve_product(item)
+    return _product_dims_cm(product)
 
 
 def _fits_compartment(dims, compartment):
@@ -75,11 +79,11 @@ def _fits_compartment(dims, compartment):
     return all(package[i] <= box[i] + 0.05 for i in range(3))
 
 
-def _item_required_compartment(item):
-    """Smallest locker that can hold one unit of this line, or None if none."""
-    dims = _item_dims_cm(item)
+def _product_required_compartment(product):
+    """Smallest locker that can hold one unit of this product, or None if none."""
+    dims = _product_dims_cm(product)
     if all(d <= 0 for d in dims):
-        weight = Decimal(_resolve_product(item).weight)
+        weight = Decimal(product.weight)
         if weight <= Decimal("2"):
             return COMPARTMENT_SMALL
         if weight <= Decimal("7"):
@@ -91,6 +95,11 @@ def _item_required_compartment(item):
         if _fits_compartment(dims, size):
             return size
     return None
+
+
+def _item_required_compartment(item):
+    """Smallest locker that can hold one unit of this line, or None if none."""
+    return _product_required_compartment(_resolve_product(item))
 
 
 def determine_compartment_size(cart_items):
@@ -106,14 +115,14 @@ def determine_compartment_size(cart_items):
     required = COMPARTMENT_SMALL
     total_volume = 0.0
     for item in cart_items:
-        quantity = int(getattr(item, "quantity", 1) or 1)
-        size = _item_required_compartment(item)
-        if size is None:
-            return None
-        required = max(required, size)
-        l, w, h = _item_dims_cm(item)
-        if l > 0 and w > 0 and h > 0:
-            total_volume += l * w * h * quantity
+        for product, quantity in _iter_shipping_units(item):
+            size = _product_required_compartment(product)
+            if size is None:
+                return None
+            required = max(required, size)
+            l, w, h = _product_dims_cm(product)
+            if l > 0 and w > 0 and h > 0:
+                total_volume += l * w * h * float(quantity)
 
     large = COMPARTMENT_INNER_CM[COMPARTMENT_LARGE]
     large_volume = large[0] * large[1] * large[2]

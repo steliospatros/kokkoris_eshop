@@ -132,9 +132,16 @@
     text-shadow:
         0 1px 0 rgba(18, 48, 44, 0.22),
         0 4px 18px rgba(18, 48, 44, 0.35);
+    white-space: normal;
 }
 
 .home-hero-welcome__name {
+    display: inline-block;
+    max-width: min(18rem, 70vw);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
     font-weight: 700;
     letter-spacing: 0.03em;
 }
@@ -283,6 +290,11 @@
         margin: 0.55rem 0.85rem 0.1rem;
         font-size: 1.2rem;
         letter-spacing: 0.035em;
+        overflow-wrap: normal;
+    }
+
+    .home-hero-welcome__name {
+        max-width: 55vw;
     }
 }
 

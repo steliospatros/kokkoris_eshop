@@ -1,7 +1,7 @@
 {% load i18n %}
 {# Reusable cart line — used on cart page and rendered by cart-widget.js for the mini panel. #}
 <li class="cart-line-row flex items-center gap-3 {% if compact %}cart-line-row--compact py-2.5{% else %}py-4 px-4 sm:px-5{% endif %}"
-    data-variant-id="{{ line.variant_id }}"
+    {% if line.offer_id %}data-offer-id="{{ line.offer_id }}"{% else %}data-variant-id="{{ line.variant_id }}"{% endif %}
     {% if line.max_quantity != None %}data-max-stock="{{ line.max_quantity }}"{% endif %}>
     <div class="cart-line-row__image shrink-0 {% if compact %}w-12 h-12{% else %}w-16 h-16{% endif %} rounded-lg border border-slate-100 bg-slate-50 overflow-hidden flex items-center justify-center">
         {% if line.image_url %}
@@ -18,12 +18,17 @@
             {{ line.title }}
         </p>
         {% if not compact %}
-            <p class="text-xs text-slate-500 font-inter mt-0.5">{{ line.unit_price_display }} €</p>
+            {% if line.regular_price_display %}
+                <p class="text-xs text-red-600 line-through font-inter mt-0.5">{{ line.regular_price_display }} €</p>
+                <p class="text-xs text-slate-800 font-semibold font-inter">{{ line.unit_price_display }} €</p>
+            {% else %}
+                <p class="text-xs text-slate-500 font-inter mt-0.5">{{ line.unit_price_display }} €</p>
+            {% endif %}
         {% endif %}
     </div>
 
     <div class="cart-stepper cart-line-row__stepper flex items-center gap-1.5 shrink-0 bg-kokkoris-teal-dark text-white rounded-full px-1.5 py-1"
-         data-variant-id="{{ line.variant_id }}">
+         {% if line.offer_id %}data-offer-id="{{ line.offer_id }}"{% else %}data-variant-id="{{ line.variant_id }}"{% endif %}>
         <button type="button"
                 class="qty-minus w-6 h-6 rounded-full border border-white/40 hover:bg-white/10 text-base leading-none flex items-center justify-center"
                 aria-label="{% trans 'Μείωση ποσότητας' %}">−</button>

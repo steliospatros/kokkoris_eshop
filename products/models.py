@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -440,3 +442,102 @@ class ProductVariant(models.Model):
         if self.weight and self.weight > 0:
             return ceil_to_tenth(self.selling_price / self.weight)
         return None
+
+
+class Offer(models.Model):
+    """
+    Package deal: one or more product variants at a single bundle price.
+    """
+
+    title = models.CharField(max_length=200)
+    price = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        help_text="Package price paid by the customer (rounded up to 0.10 €).",
+    )
+    discount_percent = models.PositiveSmallIntegerField(
+        default=0,
+        help_text="Auto-computed from regular total vs package price.",
+    )
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Offer"
+        verbose_name_plural = "Offers"
+        ordering = ["-updated_at", "-pk"]
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if self.price is not None:
+            self.price = ceil_to_tenth(self.price)
+        super().save(*args, **kwargs)
+        # Recompute discount after items exist (caller may save items next).
+        if self.pk:
+            self.refresh_discount(save=True)
+
+    def regular_total(self):
+        total = Decimal("0.00")
+        for line in self.items.select_related("variant"):
+            total += line.variant.selling_price * line.quantity
+        return ceil_to_tenth(total)
+
+    def refresh_discount(self, *, save=True):
+        regular = self.regular_total()
+        if regular > 0 and self.price < regular:
+            percent = int(((regular - self.price) / regular * 100).to_integral_value())
+        else:
+            percent = 0
+        if self.discount_percent != percent:
+            self.discount_percent = percent
+            if save:
+                type(self).objects.filter(pk=self.pk).update(discount_percent=percent)
+        return percent
+
+    @property
+    def selling_price(self):
+        return ceil_to_tenth(self.price)
+
+    @property
+    def is_single_item(self):
+        return self.items.count() == 1
+
+    def component_lines(self):
+        return list(
+            self.items.select_related(
+                "variant__product__company",
+                "variant__product__category",
+            ).order_by("pk")
+        )
+
+
+class OfferItem(models.Model):
+    """One variant + quantity inside an Offer package."""
+
+    offer = models.ForeignKey(
+        Offer,
+        on_delete=models.CASCADE,
+        related_name="items",
+    )
+    variant = models.ForeignKey(
+        ProductVariant,
+        on_delete=models.PROTECT,
+        related_name="offer_items",
+    )
+    quantity = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        verbose_name = "Offer item"
+        verbose_name_plural = "Offer items"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["offer", "variant"],
+                name="unique_offer_variant",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.quantity}x {self.variant} ({self.offer_id})"

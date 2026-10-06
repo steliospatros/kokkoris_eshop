@@ -1,7 +1,8 @@
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
 
-from products.models import ProductVariant
+from products.models import Offer, ProductVariant
 
 
 class Cart(models.Model):
@@ -34,10 +35,8 @@ class Cart(models.Model):
 
 class CartItem(models.Model):
     """
-    A single line in a registered user's persistent cart: one product
-    variant and the quantity requested. Price is intentionally NOT stored
-    here - it is always read live from ProductVariant.price (see
-    subtotal below), unlike OrderItem.price_at_purchase which freezes it.
+    A cart line: either one product variant or one offer package.
+    Price is read live from the variant or offer (never frozen here).
     """
     cart = models.ForeignKey(
         Cart,
@@ -49,7 +48,17 @@ class CartItem(models.Model):
         ProductVariant,
         on_delete=models.CASCADE,
         related_name="cart_items",
-        help_text="The exact package size/product placed in the cart."
+        null=True,
+        blank=True,
+        help_text="Package size line (null when this row is an offer package).",
+    )
+    offer = models.ForeignKey(
+        Offer,
+        on_delete=models.CASCADE,
+        related_name="cart_items",
+        null=True,
+        blank=True,
+        help_text="Package offer line (null for normal variant lines).",
     )
     quantity = models.PositiveIntegerField(default=1)
     added_at = models.DateTimeField(auto_now_add=True)
@@ -57,24 +66,42 @@ class CartItem(models.Model):
     class Meta:
         verbose_name = "Cart Item"
         verbose_name_plural = "Cart Items"
-        # A given variant can only appear once per cart; quantity changes
-        # update this single row instead of creating duplicate lines.
         constraints = [
+            models.CheckConstraint(
+                condition=(
+                    Q(offer__isnull=False, product_variant__isnull=True)
+                    | Q(offer__isnull=True, product_variant__isnull=False)
+                ),
+                name="cartitem_variant_xor_offer",
+            ),
             models.UniqueConstraint(
                 fields=["cart", "product_variant"],
-                name="unique_cart_variant"
-            )
+                condition=Q(product_variant__isnull=False),
+                name="unique_cart_variant",
+            ),
+            models.UniqueConstraint(
+                fields=["cart", "offer"],
+                condition=Q(offer__isnull=False),
+                name="unique_cart_offer",
+            ),
         ]
 
     def __str__(self):
+        if self.offer_id:
+            return f"{self.quantity}x offer#{self.offer_id} (Cart #{self.cart_id})"
         return f"{self.quantity}x {self.product_variant} (Cart #{self.cart_id})"
 
     @property
     def subtotal(self):
         """Live price x quantity - recalculated every time, never frozen."""
+        if self.offer_id:
+            return self.quantity * self.offer.selling_price
         return self.quantity * self.product_variant.selling_price
 
     def get_stock_issue(self):
         """Delegates to the shared availability/stock rules in cart/cart.py."""
-        from .cart import compute_stock_issue
+        from .cart import compute_offer_stock_issue, compute_stock_issue
+
+        if self.offer_id:
+            return compute_offer_stock_issue(self.offer, self.quantity)
         return compute_stock_issue(self.product_variant, self.quantity)

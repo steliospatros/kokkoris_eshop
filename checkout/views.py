@@ -123,19 +123,26 @@ def _get_checkout_payment_context(request):
     return checkout_data, cart, cart_total, base_courier_fee, cod_courier_fee
 
 
+def _cart_item_label(item):
+    offer = getattr(item, "offer", None)
+    if offer is not None:
+        return offer.title
+    return str(item.product_variant)
+
+
 def _redirect_if_stock_issues(request, cart, *, redirect_to="accounts:cart"):
     """Block checkout when cart lines no longer have enough stock."""
     stock_issues = cart.get_stock_issues()
     if not stock_issues:
         return None
     for item, issue in stock_issues.items():
-        messages.error(request, f"{item.product_variant}: {issue}")
+        messages.error(request, f"{_cart_item_label(item)}: {issue}")
     return redirect(redirect_to)
 
 
 def _report_stock_error(request, exc: InsufficientStockError):
     for item, issue in exc.issues.items():
-        messages.error(request, f"{item.product_variant}: {issue}")
+        messages.error(request, f"{_cart_item_label(item)}: {issue}")
 
 
 def _create_order_from_checkout(
@@ -150,6 +157,8 @@ def _create_order_from_checkout(
     order_status,
     stripe_payment_intent_id="",
 ):
+    from products.offers import allocate_offer_unit_prices
+
     with transaction.atomic():
         reserve_stock_for_cart(cart)
         order = Order.objects.create(
@@ -175,12 +184,22 @@ def _create_order_from_checkout(
             boxnow_locker_postal_code=checkout_data.get("boxnow_locker_postal_code", ""),
         )
         for item in list(cart.items):
-            OrderItem.objects.create(
-                order=order,
-                product_variant=item.product_variant,
-                quantity=item.quantity,
-                price_at_purchase=item.product_variant.selling_price,
-            )
+            offer = getattr(item, "offer", None)
+            if offer is not None:
+                for variant, qty_per_package, unit_price in allocate_offer_unit_prices(offer):
+                    OrderItem.objects.create(
+                        order=order,
+                        product_variant=variant,
+                        quantity=qty_per_package * item.quantity,
+                        price_at_purchase=unit_price,
+                    )
+            else:
+                OrderItem.objects.create(
+                    order=order,
+                    product_variant=item.product_variant,
+                    quantity=item.quantity,
+                    price_at_purchase=item.product_variant.selling_price,
+                )
         increment_favourite_counts(cart.items)
         cart.clear()
 
@@ -378,7 +397,7 @@ def _finalize_card_checkout(
     stock_issues = cart.get_stock_issues()
     if stock_issues:
         for item, issue in stock_issues.items():
-            messages.error(request, f"{item.product_variant}: {issue}")
+            messages.error(request, f"{_cart_item_label(item)}: {issue}")
         raise StripePaymentError(user_text.CHECKOUT_STOCK)
 
     existing = find_order_for_payment_intent(
@@ -488,7 +507,7 @@ def checkout_payment_view(request):
         stock_issues = cart.get_stock_issues()
         if stock_issues:
             for item, issue in stock_issues.items():
-                messages.error(request, f"{item.product_variant}: {issue}")
+                messages.error(request, f"{_cart_item_label(item)}: {issue}")
         elif form.is_valid():
             payment_method = form.cleaned_data["payment_method"]
             if (

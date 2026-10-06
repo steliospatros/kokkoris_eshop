@@ -63,6 +63,9 @@ def home(request):
     The about-us brand row follows the official brand order.
     Empty brands stay frozen and hidden.
     """
+    from accounts.emails import hero_greeting_name
+    from products.offers import build_offer_cards
+
     cart = get_cart(request)
     cart_promo = (
         build_free_shipping_promo(cart.total)
@@ -76,7 +79,11 @@ def home(request):
         {
             "homepage_brands": build_homepage_brand_list(),
             "favourite_cards": build_favourites_browse_cards(request, limit=12),
+            "offer_cards": build_offer_cards(
+                cart_offer_quantities=_cart_offer_quantities(request),
+            ),
             "user_is_authenticated": request.user.is_authenticated,
+            "hero_greeting_name": hero_greeting_name(request.user),
             "homepage_free_shipping_promo": cart_promo,
             "homepage_athens_delivery_promo": build_athens_delivery_promo(),
         },
@@ -85,7 +92,23 @@ def home(request):
 
 def _cart_quantities(request):
     cart = get_cart(request)
-    return {item.product_variant.pk: item.quantity for item in cart.items}
+    quantities = {}
+    for item in cart.items:
+        if getattr(item, "offer_id", None) or getattr(item, "offer", None):
+            continue
+        quantities[item.product_variant.pk] = item.quantity
+    return quantities
+
+
+def _cart_offer_quantities(request):
+    cart = get_cart(request)
+    quantities = {}
+    for item in cart.items:
+        offer = getattr(item, "offer", None)
+        offer_id = getattr(item, "offer_id", None) or (offer.pk if offer else None)
+        if offer_id:
+            quantities[offer_id] = item.quantity
+    return quantities
 
 
 def _wishlisted_ids(request):
@@ -95,6 +118,13 @@ def _wishlisted_ids(request):
 
 
 def _catalog_page(request, page_title):
+    from products.offers import (
+        active_offers_queryset,
+        build_offer_cards,
+        merge_catalog_with_offers,
+        single_item_replaced_product_ids,
+    )
+
     base_queryset = get_catalog_queryset()
     animal_slugs = resolve_animal_slugs(request)
 
@@ -105,6 +135,7 @@ def _catalog_page(request, page_title):
     brand_codes = parse_filter_values(request, "brand")
     category_slugs = parse_filter_values(request, "category")
     availability_keys = parse_filter_values(request, "availability")
+    offers_only = request.GET.get("offers") == "1"
     price_bounds = get_catalog_price_bounds(scope_queryset)
     price_filter = resolve_price_filter(request, price_bounds)
 
@@ -122,16 +153,53 @@ def _catalog_page(request, page_title):
     sort = parse_sort(request.GET.get("sort"))
     products = apply_catalog_sort(products, sort, mix_seed=catalog_mix_seed(request))
 
-    total_count = len(products) if isinstance(products, list) else products.count()
-    per_page = parse_per_page(request.GET.get("per_page"))
-    page_number = parse_page_number(request.GET.get("page"))
-    pagination = paginate_catalog_queryset(products, per_page, page_number)
-
-    cards = build_catalog_cards(
-        pagination["page_products"],
-        cart_quantities=_cart_quantities(request),
-        wishlisted_ids=_wishlisted_ids(request),
+    offers = list(active_offers_queryset())
+    offer_cards = build_offer_cards(
+        offers,
+        cart_offer_quantities=_cart_offer_quantities(request),
     )
+    if offers_only:
+        cards = offer_cards
+        total_count = len(cards)
+        per_page = parse_per_page(request.GET.get("per_page"))
+        page_number = parse_page_number(request.GET.get("page"))
+        # Simple slice pagination for offer-only view
+        if per_page is None:
+            page_products = cards
+            from django.core.paginator import Paginator
+            page_obj = Paginator(cards, max(len(cards), 1)).page(1)
+        else:
+            from django.core.paginator import Paginator
+            paginator = Paginator(cards, per_page)
+            page_obj = paginator.get_page(page_number)
+            page_products = list(page_obj.object_list)
+        cards = page_products
+        pagination = {"page_obj": page_obj, "page_products": page_products}
+    else:
+        total_count = len(products) if isinstance(products, list) else products.count()
+        per_page = parse_per_page(request.GET.get("per_page"))
+        page_number = parse_page_number(request.GET.get("page"))
+        pagination = paginate_catalog_queryset(products, per_page, page_number)
+
+        product_cards = build_catalog_cards(
+            pagination["page_products"],
+            cart_quantities=_cart_quantities(request),
+            wishlisted_ids=_wishlisted_ids(request),
+        )
+        # Offers only on first page so they stay advertised at the top
+        if page_number <= 1:
+            cards = merge_catalog_with_offers(
+                product_cards,
+                offer_cards=offer_cards,
+                replaced_product_ids=single_item_replaced_product_ids(offers),
+            )
+            total_count = total_count + len(offer_cards)
+        else:
+            cards = [
+                card
+                for card in product_cards
+                if card.get("product_id") not in single_item_replaced_product_ids(offers)
+            ]
 
     filter_context = build_catalog_filter_context(
         request,
@@ -142,6 +210,7 @@ def _catalog_page(request, page_title):
         availability_keys=availability_keys,
         price_filter=price_filter,
     )
+    filter_context["offers_filter_checked"] = offers_only
 
     return {
         "page_title": page_title,

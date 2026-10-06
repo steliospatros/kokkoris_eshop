@@ -36,8 +36,9 @@ ADULT_CAT_PRICES = (
     (Decimal("7.00"), Decimal("32.00")),
 )
 KITTEN_PRICES = (
-    (Decimal("2.00"), Decimal("18.00")),
-    (Decimal("4.00"), Decimal("32.00")),
+    (Decimal("1.00"), Decimal("10.00")),
+    (Decimal("3.00"), Decimal("18.00")),
+    (Decimal("7.00"), Decimal("32.00")),
 )
 
 PRODUCTS = (

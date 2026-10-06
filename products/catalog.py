@@ -621,6 +621,9 @@ def _catalog_query_items(
         if key in AVAILABILITY_FILTER_KEYS:
             items.append(("availability", key))
 
+    if request.GET.get("offers") == "1":
+        items.append(("offers", "1"))
+
     if price_active is ...:
         price_min_raw = request.GET.get("price_min")
         price_max_raw = request.GET.get("price_max")
@@ -673,6 +676,8 @@ def build_catalog_card(product, *, cart_qty=0, is_wishlisted=False):
     category_slug = product.category.slug if product.category_id else ""
 
     return {
+        "kind": "product",
+        "offer_id": None,
         "product_id": product.id,
         "variant_id": variant.id,
         "sku": variant.sku or "",
@@ -681,6 +686,8 @@ def build_catalog_card(product, *, cart_qty=0, is_wishlisted=False):
         "variant_count": count,
         "price": variant.selling_price,
         "price_display": format_decimal_greek(variant.selling_price),
+        "regular_price_display": "",
+        "discount_percent": 0,
         "unit_price_display": format_decimal_greek(unit_price) if unit_price else "",
         "unit_label": variant.unit_label,
         "availability": variant.availability,
@@ -693,6 +700,7 @@ def build_catalog_card(product, *, cart_qty=0, is_wishlisted=False):
         "is_on_order": stock_display["status"] == STOCK_STATUS_ON_ORDER,
         "button_label": stock_display.get("button_label", "Αγορά"),
         "image_url": product.image.url if product.image else None,
+        "image_urls": [],
         "category_slug": category_slug,
         "image_display_scale": css_number(get_product_image_display_scale(product)),
         "cart_qty": cart_qty,
@@ -819,7 +827,9 @@ def build_product_detail_context(request, product, *, selected_variant_id=None):
         from cart.cart import get_cart
 
         cart_quantities = {
-            item.product_variant.pk: item.quantity for item in get_cart(request).items
+            item.product_variant.pk: item.quantity
+            for item in get_cart(request).items
+            if getattr(item, "product_variant", None) is not None
         }
 
     wishlisted_ids = set()
@@ -1060,11 +1070,14 @@ def build_catalog_filter_context(
         for key, label in AVAILABILITY_FILTER_OPTIONS
     ]
 
+    offers_checked = request.GET.get("offers") == "1"
+
     has_active_filters = bool(
         selected_animals
         or selected_brands
         or selected_categories
         or selected_availability
+        or offers_checked
         or price_filter.get("active")
     )
 
@@ -1074,6 +1087,18 @@ def build_catalog_filter_context(
             {"id": "brand", "title": "Μάρκα / Εταιρεία", "param": "brand", "options": brand_options},
             {"id": "category", "title": "Κατηγορία", "param": "category", "options": category_options},
             {
+                "id": "offers",
+                "title": "Προσφορές",
+                "param": "offers",
+                "options": [
+                    {
+                        "value": "1",
+                        "label": "Μόνο προσφορές",
+                        "checked": offers_checked,
+                    }
+                ],
+            },
+            {
                 "id": "availability",
                 "title": "Διαθεσιμότητα",
                 "param": "availability",
@@ -1082,6 +1107,7 @@ def build_catalog_filter_context(
         ],
         "price_filter": price_filter,
         "has_active_filters": has_active_filters,
+        "offers_filter_checked": offers_checked,
         "selected_animal_slugs": animal_slugs,
         "selected_brand_codes": brand_codes,
         "selected_category_slugs": category_slugs,

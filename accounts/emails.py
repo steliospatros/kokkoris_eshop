@@ -23,6 +23,18 @@ def welcome_display_name(user: User) -> str:
     return "φίλε/η μας"
 
 
+def hero_greeting_name(user) -> str:
+    """
+    Homepage hero greeting: first + last name only.
+    Never use email — long emails break the hero line on first login.
+    """
+    if not user or not getattr(user, "is_authenticated", False):
+        return ""
+    first = (user.first_name or "").strip()
+    last = (user.last_name or "").strip()
+    return f"{first} {last}".strip()
+
+
 def build_welcome_email_context(user: User) -> dict:
     shop_url = f"{_site_base_url()}{reverse('products:all')}"
     return {

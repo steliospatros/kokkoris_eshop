@@ -50,10 +50,16 @@ def _adjust_favourite(product_id, *, score=0, purchases=0, wishlists=0, views=0)
 def increment_favourite_counts(cart_items):
     """
     Record completed sales: +1 unit and +20 score per quantity.
+    Offer packages credit each component product by its package quantity.
     """
     totals = Counter()
     for item in cart_items:
-        totals[item.product_variant.product_id] += item.quantity
+        offer = getattr(item, "offer", None)
+        if offer is not None:
+            for line in offer.component_lines():
+                totals[line.variant.product_id] += line.quantity * item.quantity
+        else:
+            totals[item.product_variant.product_id] += item.quantity
 
     for product_id, quantity in totals.items():
         _adjust_favourite(
@@ -198,7 +204,9 @@ def build_favourites_browse_cards(request, *, limit=12, exclude_product_ids=None
         from wishlist.wishlist import get_wishlist
 
         cart_quantities = {
-            item.product_variant.pk: item.quantity for item in get_cart(request).items
+            item.product_variant.pk: item.quantity
+            for item in get_cart(request).items
+            if getattr(item, "product_variant", None) is not None
         }
         wishlisted_ids = get_wishlist(request).product_ids
 

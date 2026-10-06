@@ -5,6 +5,8 @@ Stock is decremented atomically when an order is created at checkout
 completion. If another customer buys the last units while items sit in
 the cart, checkout is blocked with a clear message.
 """
+from collections import defaultdict
+
 from django.db import transaction
 
 from cart.cart import compute_stock_issue
@@ -12,8 +14,26 @@ from core import user_text
 from products.models import ProductVariant
 
 
-def _cart_item_variant_id(item):
-    return getattr(item, "product_variant_id", None) or item.product_variant.pk
+def expand_cart_variant_quantities(cart_items):
+    """
+    Map cart lines to total variant units needed.
+
+    Offer packages expand into their component variants × package quantity.
+    """
+    needed = defaultdict(int)
+    owners = defaultdict(list)
+    for item in cart_items:
+        offer = getattr(item, "offer", None)
+        if offer is not None:
+            for line in offer.component_lines():
+                units = line.quantity * item.quantity
+                needed[line.variant_id] += units
+                owners[line.variant_id].append(item)
+        else:
+            variant_id = getattr(item, "product_variant_id", None) or item.product_variant.pk
+            needed[variant_id] += item.quantity
+            owners[variant_id].append(item)
+    return needed, owners
 
 
 class InsufficientStockError(Exception):
@@ -34,34 +54,35 @@ def reserve_stock_for_cart(cart):
     if not items:
         return
 
+    needed, owners = expand_cart_variant_quantities(items)
+
     with transaction.atomic():
-        variant_ids = [_cart_item_variant_id(item) for item in items]
         variants = {
             variant.pk: variant
             for variant in ProductVariant.objects.select_for_update().filter(
-                pk__in=variant_ids
+                pk__in=list(needed.keys())
             )
         }
 
         issues = {}
-        for item in items:
-            variant_id = _cart_item_variant_id(item)
+        for variant_id, quantity in needed.items():
             variant = variants.get(variant_id)
+            owner = owners[variant_id][0]
             if variant is None:
-                issues[item] = user_text.CART_UNAVAILABLE
+                issues[owner] = user_text.CART_UNAVAILABLE
                 continue
-            issue = compute_stock_issue(variant, item.quantity)
+            issue = compute_stock_issue(variant, quantity)
             if issue:
-                issues[item] = issue
+                issues[owner] = issue
 
         if issues:
             raise InsufficientStockError(issues)
 
-        for item in items:
-            variant = variants[_cart_item_variant_id(item)]
+        for variant_id, quantity in needed.items():
+            variant = variants[variant_id]
             if variant.availability != ProductVariant.AVAILABILITY_AVAILABLE_NOW:
                 continue
-            variant.stock -= item.quantity
+            variant.stock -= quantity
             update_fields = ["stock"]
             if variant.stock == 0:
                 variant.availability = ProductVariant.AVAILABILITY_OUT_OF_STOCK
