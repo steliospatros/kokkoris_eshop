@@ -106,11 +106,29 @@
         return isNaN(value) ? null : value;
     }
 
-    function lineIdAttrs(card) {
-        if (card.dataset.offerId) {
-            return 'data-offer-id="' + card.dataset.offerId + '"';
+    function parsePositiveInt(raw) {
+        if (raw === undefined || raw === null || raw === "" || raw === "None" || raw === "null") {
+            return null;
         }
-        return 'data-variant-id="' + card.dataset.variantId + '"';
+        var value = parseInt(raw, 10);
+        return isNaN(value) || value <= 0 ? null : value;
+    }
+
+    function cardOfferId(card) {
+        return card ? parsePositiveInt(card.dataset.offerId) : null;
+    }
+
+    function cardVariantId(card) {
+        return card ? parsePositiveInt(card.dataset.variantId) : null;
+    }
+
+    function lineIdAttrs(card) {
+        var offerId = cardOfferId(card);
+        if (offerId) {
+            return 'data-offer-id="' + offerId + '"';
+        }
+        var variantId = cardVariantId(card);
+        return variantId ? 'data-variant-id="' + variantId + '"' : "";
     }
 
     function renderStepper(card, quantity) {
@@ -168,14 +186,19 @@
     }
 
     function addToCart(card) {
-        if (!cardCanAdd(card)) {
+        if (!card || !cardCanAdd(card)) {
             return;
         }
         var payload = {};
-        if (card.dataset.offerId) {
-            payload.offer_id = parseInt(card.dataset.offerId, 10);
+        var offerId = cardOfferId(card);
+        var variantId = cardVariantId(card);
+        if (offerId) {
+            payload.offer_id = offerId;
+        } else if (variantId) {
+            payload.variant_id = variantId;
         } else {
-            payload.variant_id = parseInt(card.dataset.variantId, 10);
+            handleCartError(new Error("Δεν αναγνωρίσαμε το προϊόν. Ανανέωσε τη σελίδα και δοκίμασε ξανά."));
+            return;
         }
         postJson("/cart/add/", payload)
             .then(function (data) {
@@ -192,10 +215,15 @@
             return;
         }
         var payload = { quantity: quantity };
-        if (stepper.dataset.offerId) {
-            payload.offer_id = parseInt(stepper.dataset.offerId, 10);
+        var offerId = parsePositiveInt(stepper && stepper.dataset.offerId) || cardOfferId(card);
+        var variantId = parsePositiveInt(stepper && stepper.dataset.variantId) || cardVariantId(card);
+        if (offerId) {
+            payload.offer_id = offerId;
+        } else if (variantId) {
+            payload.variant_id = variantId;
         } else {
-            payload.variant_id = parseInt(stepper.dataset.variantId, 10);
+            handleCartError(new Error("Δεν αναγνωρίσαμε το προϊόν. Ανανέωσε τη σελίδα και δοκίμασε ξανά."));
+            return;
         }
         postJson("/cart/update/", payload)
             .then(function (data) {

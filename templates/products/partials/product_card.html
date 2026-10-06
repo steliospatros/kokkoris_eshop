@@ -1,9 +1,9 @@
 {% load i18n static %}
 {# Compact petcity-style card — small centered product image. #}
 <article class="product-card flex flex-col h-full rounded-xl border border-slate-200 bg-white overflow-hidden hover:shadow-md transition-shadow"
-         data-product-id="{{ card.product_id }}"
-         data-variant-id="{{ card.variant_id }}"
-         data-offer-id="{{ card.offer_id }}"
+         {% if card.product_id %}data-product-id="{{ card.product_id }}"{% endif %}
+         {% if card.variant_id %}data-variant-id="{{ card.variant_id }}"{% endif %}
+         {% if card.offer_id %}data-offer-id="{{ card.offer_id }}"{% endif %}
          data-can-add="{{ card.can_add|yesno:'true,false' }}"
          data-on-order="{{ card.is_on_order|yesno:'true,false' }}"
          data-button-label="{{ card.button_label }}"
@@ -53,7 +53,7 @@
         <div class="product-card-footer mt-auto text-white {% if card.can_add %}bg-kokkoris-teal-dark{% else %}bg-slate-400{% endif %}">
         {% if card.cart_qty > 0 %}
             <div class="cart-stepper flex items-center justify-between px-3 py-2"
-                 {% if card.offer_id %}data-offer-id="{{ card.offer_id }}"{% else %}data-variant-id="{{ card.variant_id }}"{% endif %}>
+                 {% if card.offer_id %}data-offer-id="{{ card.offer_id }}"{% elif card.variant_id %}data-variant-id="{{ card.variant_id }}"{% endif %}>
                 <button type="button"
                         class="qty-minus w-7 h-7 rounded-full border border-white/40 hover:bg-white/10 text-lg leading-none"
                         aria-label="{% trans 'Μείωση ποσότητας' %}">−</button>
@@ -66,14 +66,14 @@
         {% elif card.can_add %}
             <button type="button"
                     class="cart-add w-full py-2 text-sm font-poppins font-medium uppercase tracking-wider transition-colors hover:bg-kokkoris-teal-mid"
-                    {% if card.offer_id %}data-offer-id="{{ card.offer_id }}"{% else %}data-variant-id="{{ card.variant_id }}"{% endif %}>
+                    {% if card.offer_id %}data-offer-id="{{ card.offer_id }}"{% elif card.variant_id %}data-variant-id="{{ card.variant_id }}"{% endif %}>
                 {% trans "Αγορά" %}
             </button>
         {% else %}
             <button type="button"
                     disabled
                     class="cart-add w-full py-2 text-sm font-poppins font-medium uppercase tracking-wider cursor-not-allowed opacity-80"
-                    {% if card.offer_id %}data-offer-id="{{ card.offer_id }}"{% else %}data-variant-id="{{ card.variant_id }}"{% endif %}>
+                    {% if card.offer_id %}data-offer-id="{{ card.offer_id }}"{% elif card.variant_id %}data-variant-id="{{ card.variant_id }}"{% endif %}>
                 {% trans "Αγορά" %}
             </button>
         {% endif %}

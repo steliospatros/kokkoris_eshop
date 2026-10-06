@@ -70,6 +70,51 @@ class CartPageMarkupTests(TestCase):
         self.assertContains(page, "Adult Mix")
 
 
+class CartAddNoneOfferIdBugTests(TestCase):
+    """Django 6 renders None as the string 'None' in templates; clients must not treat it as an offer."""
+
+    def test_add_ignores_null_offer_id_and_uses_variant(self):
+        company = Company.objects.create(name="Brand", code="BRD")
+        animal = AnimalType.objects.create(name="Dog", slug="dog")
+        category = Category.objects.create(name="Dry Food", slug="dry-food")
+        product = Product.objects.create(
+            name="Adult Mix",
+            company=company,
+            animal_type=animal,
+            category=category,
+            is_active=True,
+        )
+        variant = ProductVariant.objects.create(
+            product=product, weight=2, price=10, stock=5
+        )
+        response = self.client.post(
+            reverse("cart:add"),
+            data='{"offer_id": null, "variant_id": %d}' % variant.pk,
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["ok"])
+        self.assertEqual(response.json()["variant_id"], variant.pk)
+
+    def test_catalog_card_omits_none_offer_attr(self):
+        company = Company.objects.create(name="Brand", code="BRD")
+        animal = AnimalType.objects.create(name="Dog", slug="dog")
+        category = Category.objects.create(name="Dry Food", slug="dry-food")
+        product = Product.objects.create(
+            name="Adult Mix",
+            company=company,
+            animal_type=animal,
+            category=category,
+            is_active=True,
+        )
+        ProductVariant.objects.create(product=product, weight=2, price=10, stock=5)
+        page = self.client.get(reverse("products:all"))
+        self.assertEqual(page.status_code, 200)
+        html = page.content.decode()
+        self.assertNotIn('data-offer-id="None"', html)
+        self.assertNotIn('data-variant-id="None"', html)
+
+
 class OfferCartTests(TestCase):
     @classmethod
     def setUpTestData(cls):

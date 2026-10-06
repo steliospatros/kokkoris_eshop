@@ -19,15 +19,17 @@ def _json_or_post(request):
     return request.POST
 
 
-def _parse_int(payload, *keys):
+def _parse_int(payload, *keys, allow_zero=False):
     for key in keys:
         raw = payload.get(key)
-        if raw in (None, ""):
+        if raw in (None, "", "None", "null"):
             continue
         try:
-            return int(raw)
+            value = int(raw)
         except (TypeError, ValueError):
-            return None
+            continue
+        if value > 0 or (allow_zero and value == 0):
+            return value
     return None
 
 
@@ -87,7 +89,8 @@ def add(request):
     variant_id = _parse_int(payload, "variant_id")
     cart = get_cart(request)
 
-    if offer_id:
+    # Prefer a real offer id; ignore invalid/null offer_id and fall back to variant.
+    if offer_id and not variant_id:
         try:
             offer = Offer.objects.prefetch_related("items__variant__product").get(pk=offer_id)
         except Offer.DoesNotExist:
@@ -100,6 +103,10 @@ def add(request):
         result["offer_id"] = offer_id
         result["quantity"] = result["offer_quantities"].get(offer_id, 1)
         return JsonResponse(result)
+
+    if offer_id and variant_id:
+        # Ambiguous/broken client payload — use variant (safer for normal products).
+        offer_id = None
 
     if not variant_id:
         return json_error(user_text.CART_PRODUCT_UNKNOWN)
@@ -127,15 +134,19 @@ def update(request):
     payload = _json_or_post(request)
     offer_id = _parse_int(payload, "offer_id")
     variant_id = _parse_int(payload, "variant_id")
-    quantity = _parse_int(payload, "quantity")
+    quantity = _parse_int(payload, "quantity", allow_zero=True)
     if quantity is None:
-        quantity = 0
+        # Missing quantity defaults to 0 (remove line) only when key absent.
+        if "quantity" not in payload:
+            quantity = 0
+        else:
+            return json_error(user_text.CART_QTY_INVALID)
     if quantity < 0:
         return json_error(user_text.CART_QTY_INVALID)
 
     cart = get_cart(request)
 
-    if offer_id:
+    if offer_id and not variant_id:
         try:
             offer = Offer.objects.prefetch_related("items__variant__product").get(pk=offer_id)
         except Offer.DoesNotExist:

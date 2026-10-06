@@ -96,8 +96,8 @@
     </ul>
 </li>
 {% else %}
-<li class="cart-line-row flex items-center gap-3 {% if compact %}cart-line-row--compact py-2.5 gap-2.5{% else %}py-4 px-4 sm:px-5 gap-4{% endif %}"
-    data-variant-id="{{ line.variant_id }}"
+<li class="cart-line-row cart-variant-row flex items-center gap-3 {% if compact %}cart-line-row--compact py-2.5 gap-2.5{% else %}py-4 px-4 sm:px-5 gap-4{% endif %}"
+    {% if line.variant_id %}data-variant-id="{{ line.variant_id }}"{% endif %}
     {% if line.max_quantity != None %}data-max-stock="{{ line.max_quantity }}"{% endif %}>
     <div class="cart-line-row__image shrink-0 overflow-hidden flex items-center justify-center {% if compact %}w-12 h-12 rounded-xl{% endif %}">
         {% if line.image_url %}
@@ -112,7 +112,7 @@
             {{ line.title }}
         </p>
         {% if not compact %}
-            <p class="text-sm text-slate-500 font-inter mt-1">{{ line.unit_price_display }} €</p>
+            <p class="text-sm text-slate-600 font-semibold font-inter mt-1">{{ line.unit_price_display }} €</p>
         {% endif %}
     </div>
 

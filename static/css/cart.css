@@ -22,12 +22,20 @@
 /* Full cart page — generous product photos */
 #cart-page .cart-line-row:not(.cart-line-row--compact):not(.cart-offer-group) {
   align-items: stretch;
+  background: linear-gradient(90deg, #f0f7f7 0%, #ffffff 55%);
 }
 
 #cart-page .cart-line-row:not(.cart-line-row--compact) > .cart-line-row__image {
   width: 5.5rem;
   height: 5.5rem;
   border-radius: 1rem;
+}
+
+#nav-cart-panel .cart-variant-row {
+  background: linear-gradient(90deg, #f0f7f7 0%, #ffffff 70%);
+  border-radius: 0.5rem;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
 }
 
 #cart-page .cart-offer-group {
