@@ -149,11 +149,6 @@ def administration_offer_edit_view(request, offer_id=None):
                     "Έλεγξε τιμή και προϊόντα (τουλάχιστον μία συσκευασία με ποσότητα ≥ 1).",
                 )
             return redirect(request.path)
-        kind = "έκπτωση" if saved.items.count() == 1 else "πακέτο"
-        messages.success(
-            request,
-            f"Η προσφορά «{saved.title}» αποθηκεύτηκε ({kind}, −{saved.discount_percent}%).",
-        )
         return redirect("administration:offers")
 
     selected_lines = []
