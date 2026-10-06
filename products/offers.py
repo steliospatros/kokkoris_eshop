@@ -107,7 +107,7 @@ def build_offer_card(offer, *, cart_qty=0):
         product_id = product.pk
         sizes_label = "Προσφορά"
         detail_url = collage_items[0]["detail_url"]
-        sku = product.sku or ""
+        sku = lines[0].variant.sku or ""
     else:
         title = offer.title or " + ".join(title_bits)
         product_id = None
