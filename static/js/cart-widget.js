@@ -89,18 +89,30 @@
                 : "";
 
         if (line.kind === "offer" || line.offer_id) {
+            var comps = line.components || [];
+            var collageCount = Math.min(Math.max(comps.length, 1), 4);
+            var collageCells = "";
+            for (var i = 0; i < collageCount; i += 1) {
+                var c = comps[i] || {};
+                collageCells +=
+                    '<div class="cart-offer-collage__cell">' +
+                    (c.image_url
+                        ? '<img src="' + escapeHtml(c.image_url) + '" alt="">'
+                        : "") +
+                    "</div>";
+            }
             var componentsHtml = "";
-            (line.components || []).forEach(function (component) {
+            comps.forEach(function (component) {
                 var cThumb = component.image_url
-                    ? '<img src="' + escapeHtml(component.image_url) + '" alt="" class="w-full h-full object-contain">'
+                    ? '<img src="' + escapeHtml(component.image_url) + '" alt="">'
                     : '<span class="w-full h-full bg-slate-100"></span>';
                 componentsHtml +=
-                    '<li class="flex items-center gap-2 py-1.5">' +
-                    '<div class="shrink-0 w-8 h-8 rounded border border-slate-100 bg-slate-50 overflow-hidden">' +
+                    '<li class="cart-offer-component flex items-center gap-2 py-1.5">' +
+                    '<div class="cart-offer-component__image shrink-0 overflow-hidden flex items-center justify-center">' +
                     cThumb +
                     "</div>" +
                     '<div class="min-w-0 flex-1">' +
-                    '<p class="font-inter text-[11px] text-slate-700 leading-snug line-clamp-1">' +
+                    '<p class="font-inter text-[11px] text-slate-800 leading-snug line-clamp-1">' +
                     escapeHtml(component.title) +
                     "</p>" +
                     '<p class="text-[10px] text-amber-700 uppercase tracking-wide">Μέρος προσφοράς · ' +
@@ -115,7 +127,12 @@
                 lineKeyAttrs(line) +
                 maxAttr +
                 ">" +
-                '<div class="flex items-center gap-2 py-2 bg-amber-50/80 px-1 rounded-t">' +
+                '<div class="cart-offer-group__head flex items-center gap-2.5 py-2">' +
+                '<div class="cart-offer-collage cart-offer-collage--' +
+                collageCount +
+                '">' +
+                collageCells +
+                "</div>" +
                 '<div class="flex-1 min-w-0">' +
                 '<p class="text-[10px] uppercase tracking-wide text-amber-800 font-semibold">Προσφορά</p>' +
                 '<p class="font-inter font-medium text-slate-800 text-xs leading-snug line-clamp-2">' +
@@ -137,7 +154,7 @@
                 escapeHtml(line.subtotal_display) +
                 " €</p>" +
                 "</div>" +
-                '<ul class="pl-1 pb-1">' +
+                '<ul class="pb-1">' +
                 componentsHtml +
                 "</ul>" +
                 "</li>"
@@ -145,15 +162,15 @@
         }
 
         var thumb = line.image_url
-            ? '<img src="' + escapeHtml(line.image_url) + '" alt="" class="w-full h-full object-contain">'
+            ? '<img src="' + escapeHtml(line.image_url) + '" alt="">'
             : '<span class="w-full h-full bg-slate-100"></span>';
 
         return (
-            '<li class="cart-line-row flex items-center gap-3 py-2.5"' +
+            '<li class="cart-line-row flex items-center gap-2.5 py-2.5"' +
             lineKeyAttrs(line) +
             maxAttr +
             ">" +
-            '<div class="shrink-0 w-12 h-12 rounded-lg border border-slate-100 bg-slate-50 overflow-hidden flex items-center justify-center">' +
+            '<div class="cart-line-row__image shrink-0 overflow-hidden flex items-center justify-center">' +
             thumb +
             "</div>" +
             '<div class="flex-1 min-w-0">' +

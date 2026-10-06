@@ -233,37 +233,6 @@ textarea {
 }
 
 @media (max-width: 639px) {
-    #cart-page .cart-line-row:not(.cart-line-row--compact) {
-        display: grid;
-        grid-template-columns: 4rem minmax(0, 1fr);
-        grid-template-areas:
-            "image info"
-            "image meta";
-        align-items: center;
-        column-gap: 0.75rem;
-        row-gap: 0.55rem;
-    }
-
-    #cart-page .cart-line-row__image {
-        grid-area: image;
-        align-self: start;
-    }
-
-    #cart-page .cart-line-row__info {
-        grid-area: info;
-    }
-
-    #cart-page .cart-line-row__stepper {
-        grid-area: meta;
-        justify-self: start;
-    }
-
-    #cart-page .cart-line-row__subtotal {
-        grid-area: meta;
-        justify-self: end;
-        width: auto;
-    }
-
     #auth-modal {
         align-items: flex-end;
         padding: 0;
