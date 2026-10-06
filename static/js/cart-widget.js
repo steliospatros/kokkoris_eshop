@@ -77,9 +77,6 @@
     }
 
     function renderMiniLine(line) {
-        var thumb = line.image_url
-            ? '<img src="' + escapeHtml(line.image_url) + '" alt="" class="w-full h-full object-contain">'
-            : '<span class="w-full h-full bg-slate-100"></span>';
         var plusDisabled =
             line.max_quantity !== null &&
             line.max_quantity !== undefined &&
@@ -90,6 +87,66 @@
             line.max_quantity !== null && line.max_quantity !== undefined
                 ? ' data-max-stock="' + line.max_quantity + '"'
                 : "";
+
+        if (line.kind === "offer" || line.offer_id) {
+            var componentsHtml = "";
+            (line.components || []).forEach(function (component) {
+                var cThumb = component.image_url
+                    ? '<img src="' + escapeHtml(component.image_url) + '" alt="" class="w-full h-full object-contain">'
+                    : '<span class="w-full h-full bg-slate-100"></span>';
+                componentsHtml +=
+                    '<li class="flex items-center gap-2 py-1.5">' +
+                    '<div class="shrink-0 w-8 h-8 rounded border border-slate-100 bg-slate-50 overflow-hidden">' +
+                    cThumb +
+                    "</div>" +
+                    '<div class="min-w-0 flex-1">' +
+                    '<p class="font-inter text-[11px] text-slate-700 leading-snug line-clamp-1">' +
+                    escapeHtml(component.title) +
+                    "</p>" +
+                    '<p class="text-[10px] text-amber-700 uppercase tracking-wide">Μέρος προσφοράς · ' +
+                    component.quantity +
+                    "×</p>" +
+                    "</div>" +
+                    '<span class="text-[9px] text-slate-400 border border-slate-200 rounded px-1">κλειδωμένο</span>' +
+                    "</li>";
+            });
+            return (
+                '<li class="cart-line-row cart-offer-group"' +
+                lineKeyAttrs(line) +
+                maxAttr +
+                ">" +
+                '<div class="flex items-center gap-2 py-2 bg-amber-50/80 px-1 rounded-t">' +
+                '<div class="flex-1 min-w-0">' +
+                '<p class="text-[10px] uppercase tracking-wide text-amber-800 font-semibold">Προσφορά</p>' +
+                '<p class="font-inter font-medium text-slate-800 text-xs leading-snug line-clamp-2">' +
+                escapeHtml(line.title) +
+                "</p>" +
+                "</div>" +
+                '<div class="cart-stepper flex items-center gap-1.5 shrink-0 bg-kokkoris-teal-dark text-white rounded-full px-1.5 py-1" ' +
+                lineStepperAttrs(line) +
+                ">" +
+                '<button type="button" class="qty-minus w-6 h-6 rounded-full border border-white/40 hover:bg-white/10 text-base leading-none flex items-center justify-center" aria-label="Μείωση">−</button>' +
+                '<span class="qty-value font-semibold text-sm min-w-[1.25rem] text-center">' +
+                line.quantity +
+                "</span>" +
+                '<button type="button" class="qty-plus w-6 h-6 rounded-full border border-white/40 hover:bg-white/10 text-base leading-none flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"' +
+                plusDisabled +
+                ' aria-label="Αύξηση">+</button>' +
+                "</div>" +
+                '<p class="cart-line-subtotal font-inter font-semibold text-slate-800 text-xs w-12 text-right shrink-0">' +
+                escapeHtml(line.subtotal_display) +
+                " €</p>" +
+                "</div>" +
+                '<ul class="pl-1 pb-1">' +
+                componentsHtml +
+                "</ul>" +
+                "</li>"
+            );
+        }
+
+        var thumb = line.image_url
+            ? '<img src="' + escapeHtml(line.image_url) + '" alt="" class="w-full h-full object-contain">'
+            : '<span class="w-full h-full bg-slate-100"></span>';
 
         return (
             '<li class="cart-line-row flex items-center gap-3 py-2.5"' +
@@ -151,10 +208,17 @@
             return;
         }
 
+        // Offer groups nest locked component rows — reload so quantities stay in sync.
+        var hasOffer = data.lines.some(function (line) {
+            return line.kind === "offer" || line.offer_id;
+        });
+        if (hasOffer || linesRoot.querySelector(".cart-offer-group")) {
+            window.location.reload();
+            return;
+        }
+
         data.lines.forEach(function (line) {
-            var selector = line.offer_id
-                ? '.cart-line-row[data-offer-id="' + line.offer_id + '"]'
-                : '.cart-line-row[data-variant-id="' + line.variant_id + '"]';
+            var selector = '.cart-line-row[data-variant-id="' + line.variant_id + '"]';
             var row = linesRoot.querySelector(selector);
             if (!row) {
                 return;

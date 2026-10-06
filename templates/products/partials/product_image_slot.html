@@ -1,8 +1,35 @@
 {% load i18n l10n %}
-{# Shared square image area — full card width; offer collage when image_urls set. #}
+{# Shared square image area — full card width; offer collage when collage_items set. #}
 <div class="product-image-slot relative shrink-0 bg-white"
      style="--img-display-scale: {{ card.image_display_scale|default:'1'|unlocalize }};">
-    {% if card.kind == "offer" and card.image_urls %}
+    {% if card.kind == "offer" and card.collage_items %}
+        <div class="offer-collage offer-collage--{{ card.collage_items|length }}">
+            {% for item in card.collage_items %}
+                {% if item.detail_url %}
+                <a href="{{ item.detail_url }}"
+                   class="offer-collage__cell offer-collage__cell--link"
+                   title="{{ item.title }}"
+                   aria-label="{{ item.title }}">
+                    {% if item.image_url %}
+                        <img src="{{ item.image_url }}" alt="{{ item.title }}">
+                    {% endif %}
+                </a>
+                {% else %}
+                <div class="offer-collage__cell" aria-hidden="true">
+                    {% if item.image_url %}
+                        <img src="{{ item.image_url }}" alt="">
+                    {% endif %}
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% if card.discount_percent %}
+            <span class="offer-badge absolute top-2 left-2 z-10 rounded-md bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-sm pointer-events-none">
+                −{{ card.discount_percent }}%
+            </span>
+        {% endif %}
+    {% elif card.kind == "offer" and card.image_urls %}
+        {# Fallback if collage_items missing #}
         <div class="offer-collage offer-collage--{{ card.image_urls|length }}" aria-hidden="true">
             {% for url in card.image_urls %}
                 <div class="offer-collage__cell">
@@ -30,7 +57,7 @@
         </a>
         {% endif %}
         {% if card.discount_percent %}
-            <span class="offer-badge absolute top-2 left-2 z-10 rounded-md bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
+            <span class="offer-badge absolute top-2 left-2 z-10 rounded-md bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-sm pointer-events-none">
                 −{{ card.discount_percent }}%
             </span>
         {% endif %}

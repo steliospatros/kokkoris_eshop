@@ -1,7 +1,87 @@
 {% load i18n %}
-{# Reusable cart line — used on cart page and rendered by cart-widget.js for the mini panel. #}
+{# Reusable cart line — variant row or offer group with locked components. #}
+{% if line.kind == "offer" %}
+<li class="cart-line-row cart-offer-group {% if compact %}cart-line-row--compact{% endif %}"
+    data-offer-id="{{ line.offer_id }}"
+    {% if line.max_quantity != None %}data-max-stock="{{ line.max_quantity }}"{% endif %}>
+    <div class="cart-offer-group__head flex items-center gap-3 {% if compact %}py-2.5{% else %}py-4 px-4 sm:px-5{% endif %} bg-amber-50/70 border-b border-amber-100">
+        <div class="cart-line-row__info flex-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-2 mb-1">
+                <span class="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
+                    {% trans "Προσφορά" %}
+                </span>
+                {% if line.discount_percent %}
+                    <span class="inline-flex items-center rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                        −{{ line.discount_percent }}%
+                    </span>
+                {% endif %}
+            </div>
+            <p class="font-inter font-medium text-slate-800 {% if compact %}text-xs leading-snug line-clamp-2{% else %}text-sm leading-snug{% endif %}">
+                {{ line.title }}
+            </p>
+            {% if not compact %}
+                {% if line.regular_price_display %}
+                    <p class="text-xs text-red-600 line-through font-inter mt-0.5">{{ line.regular_price_display }} €</p>
+                    <p class="text-xs text-slate-800 font-semibold font-inter">{{ line.unit_price_display }} € / {% trans "πακέτο" %}</p>
+                {% else %}
+                    <p class="text-xs text-slate-500 font-inter mt-0.5">{{ line.unit_price_display }} € / {% trans "πακέτο" %}</p>
+                {% endif %}
+            {% endif %}
+        </div>
+
+        <div class="cart-stepper cart-line-row__stepper flex items-center gap-1.5 shrink-0 bg-kokkoris-teal-dark text-white rounded-full px-1.5 py-1"
+             data-offer-id="{{ line.offer_id }}">
+            <button type="button"
+                    class="qty-minus w-6 h-6 rounded-full border border-white/40 hover:bg-white/10 text-base leading-none flex items-center justify-center"
+                    aria-label="{% trans 'Μείωση πακέτων' %}">−</button>
+            <span class="qty-value font-semibold text-sm min-w-[1.25rem] text-center">{{ line.quantity }}</span>
+            <button type="button"
+                    class="qty-plus w-6 h-6 rounded-full border border-white/40 hover:bg-white/10 text-base leading-none flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+                    aria-label="{% trans 'Αύξηση πακέτων' %}"
+                    {% if line.max_quantity != None and line.quantity >= line.max_quantity %}disabled{% endif %}>+</button>
+        </div>
+
+        <p class="cart-line-subtotal cart-line-row__subtotal font-inter font-semibold text-slate-800 {% if compact %}text-xs w-14 text-right{% else %}text-sm w-20 text-right{% endif %} shrink-0">
+            {{ line.subtotal_display }} €
+        </p>
+    </div>
+
+    <ul class="cart-offer-group__components {% if compact %}px-2 pb-2{% else %}px-4 sm:px-5 pb-3{% endif %} space-y-0">
+        {% for component in line.components %}
+            <li class="cart-offer-component flex items-center gap-3 {% if compact %}py-1.5{% else %}py-2.5{% endif %} {% if not forloop.last %}border-b border-slate-100{% endif %}">
+                <div class="shrink-0 {% if compact %}w-9 h-9{% else %}w-12 h-12{% endif %} rounded-lg border border-slate-100 bg-slate-50 overflow-hidden flex items-center justify-center">
+                    {% if component.image_url %}
+                        <img src="{{ component.image_url }}" alt="" class="w-full h-full object-contain">
+                    {% else %}
+                        <span class="w-full h-full bg-slate-100"></span>
+                    {% endif %}
+                </div>
+                <div class="flex-1 min-w-0">
+                    {% if component.detail_url and not compact %}
+                        <a href="{{ component.detail_url }}" class="font-inter text-sm text-slate-700 hover:text-kokkoris-teal-dark leading-snug line-clamp-2">
+                            {{ component.title }}
+                        </a>
+                    {% else %}
+                        <p class="font-inter {% if compact %}text-[11px]{% else %}text-sm{% endif %} text-slate-700 leading-snug line-clamp-2">
+                            {{ component.title }}
+                        </p>
+                    {% endif %}
+                    <p class="mt-0.5 font-inter text-[10px] uppercase tracking-wide text-amber-700/90">
+                        {{ component.status_label }}
+                        · {{ component.quantity }}×
+                    </p>
+                </div>
+                <span class="shrink-0 text-[10px] font-inter text-slate-400 px-1.5 py-0.5 rounded border border-slate-200 bg-slate-50"
+                      title="{% trans 'Αλλάζει μόνο με την ποσότητα της προσφοράς' %}">
+                    {% trans "κλειδωμένο" %}
+                </span>
+            </li>
+        {% endfor %}
+    </ul>
+</li>
+{% else %}
 <li class="cart-line-row flex items-center gap-3 {% if compact %}cart-line-row--compact py-2.5{% else %}py-4 px-4 sm:px-5{% endif %}"
-    {% if line.offer_id %}data-offer-id="{{ line.offer_id }}"{% else %}data-variant-id="{{ line.variant_id }}"{% endif %}
+    data-variant-id="{{ line.variant_id }}"
     {% if line.max_quantity != None %}data-max-stock="{{ line.max_quantity }}"{% endif %}>
     <div class="cart-line-row__image shrink-0 {% if compact %}w-12 h-12{% else %}w-16 h-16{% endif %} rounded-lg border border-slate-100 bg-slate-50 overflow-hidden flex items-center justify-center">
         {% if line.image_url %}
@@ -18,17 +98,12 @@
             {{ line.title }}
         </p>
         {% if not compact %}
-            {% if line.regular_price_display %}
-                <p class="text-xs text-red-600 line-through font-inter mt-0.5">{{ line.regular_price_display }} €</p>
-                <p class="text-xs text-slate-800 font-semibold font-inter">{{ line.unit_price_display }} €</p>
-            {% else %}
-                <p class="text-xs text-slate-500 font-inter mt-0.5">{{ line.unit_price_display }} €</p>
-            {% endif %}
+            <p class="text-xs text-slate-500 font-inter mt-0.5">{{ line.unit_price_display }} €</p>
         {% endif %}
     </div>
 
     <div class="cart-stepper cart-line-row__stepper flex items-center gap-1.5 shrink-0 bg-kokkoris-teal-dark text-white rounded-full px-1.5 py-1"
-         {% if line.offer_id %}data-offer-id="{{ line.offer_id }}"{% else %}data-variant-id="{{ line.variant_id }}"{% endif %}>
+         data-variant-id="{{ line.variant_id }}">
         <button type="button"
                 class="qty-minus w-6 h-6 rounded-full border border-white/40 hover:bg-white/10 text-base leading-none flex items-center justify-center"
                 aria-label="{% trans 'Μείωση ποσότητας' %}">−</button>
@@ -43,3 +118,4 @@
         {{ line.subtotal_display }} €
     </p>
 </li>
+{% endif %}

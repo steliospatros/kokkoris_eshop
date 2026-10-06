@@ -79,27 +79,34 @@ def build_offer_card(offer, *, cart_qty=0):
     if not lines:
         return None
     regular = offer_regular_total(offer)
-    images = []
-    for line in lines:
-        product = line.variant.product
-        if product.image:
-            images.append(product.image.url)
-        else:
-            images.append("")
-    # Collage uses unique product images in offer order (keep duplicates if qty>1? use once per line)
+    collage_items = []
     title_bits = []
     for line in lines:
-        bit = get_display_title(line.variant.product, line.variant)
+        product = line.variant.product
+        bit = get_display_title(product, line.variant)
         if line.quantity > 1:
             bit = f"{line.quantity}× {bit}"
         title_bits.append(bit)
+        collage_items.append(
+            {
+                "image_url": product.image.url if product.image else "",
+                "detail_url": (
+                    reverse("products:detail", kwargs={"slug": product.slug})
+                    if product.slug
+                    else ""
+                ),
+                "title": bit,
+                "product_id": product.pk,
+            }
+        )
+    images = [item["image_url"] for item in collage_items]
     # Single-item: always show the product name (ignore custom package title).
     if len(lines) == 1:
         title = title_bits[0]
         product = lines[0].variant.product
         product_id = product.pk
         sizes_label = "Προσφορά"
-        detail_url = reverse("products:detail", kwargs={"slug": product.slug}) if product.slug else ""
+        detail_url = collage_items[0]["detail_url"]
         sku = product.sku or ""
     else:
         title = offer.title or " + ".join(title_bits)
@@ -130,6 +137,7 @@ def build_offer_card(offer, *, cart_qty=0):
         "detail_url": detail_url,
         # Collage only for multi-product packages; single-item uses a normal photo.
         "image_urls": images if len(lines) > 1 else [],
+        "collage_items": collage_items if len(lines) > 1 else [],
         "image_url": images[0] if images else None,
         "sizes_label": sizes_label,
         "sku": sku,

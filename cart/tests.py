@@ -131,6 +131,10 @@ class OfferCartTests(TestCase):
         html = page.content.decode()
         self.assertIn(f'data-offer-id="{self.offer.pk}"', html)
         self.assertContains(page, "Πακέτο Α+Β")
+        self.assertContains(page, "Μέρος προσφοράς")
+        self.assertContains(page, "κλειδωμένο")
+        self.assertContains(page, "Offer A")
+        self.assertContains(page, "Offer B")
 
     def test_offer_stock_blocks_when_component_short(self):
         self.variant_a.stock = 0

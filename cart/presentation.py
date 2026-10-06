@@ -1,17 +1,37 @@
 """Shared cart line formatting for pages, previews, and APIs."""
+from django.urls import reverse
+
 from cart.cart import DBCart
 from products.catalog import format_decimal_greek, get_display_title, get_stock_display
 from products.offers import offer_regular_total
 
 
+def _offer_component_payload(line, *, package_qty):
+    product = line.variant.product
+    per_package = line.quantity
+    total_units = per_package * package_qty
+    return {
+        "title": get_display_title(product, line.variant),
+        "image_url": product.image.url if product.image else None,
+        "detail_url": (
+            reverse("products:detail", kwargs={"slug": product.slug})
+            if product.slug
+            else ""
+        ),
+        "per_package": per_package,
+        "quantity": total_units,
+        "status_label": "Μέρος προσφοράς",
+    }
+
+
 def build_cart_line(item):
     offer = getattr(item, "offer", None)
     if offer is not None:
-        images = []
-        for line in offer.component_lines():
-            product = line.variant.product
-            if product.image:
-                images.append(product.image.url)
+        components = [
+            _offer_component_payload(line, package_qty=item.quantity)
+            for line in offer.component_lines()
+        ]
+        images = [c["image_url"] for c in components if c["image_url"]]
         stock_ok = item.get_stock_issue() is None
         max_packages = None
         for line in offer.component_lines():
@@ -28,6 +48,7 @@ def build_cart_line(item):
             "title": offer.title,
             "image_url": images[0] if images else None,
             "image_urls": images,
+            "components": components,
             "quantity": item.quantity,
             "unit_price": offer.selling_price,
             "unit_price_display": format_decimal_greek(offer.selling_price),
@@ -39,6 +60,7 @@ def build_cart_line(item):
             "subtotal_display": format_decimal_greek(item.subtotal),
             "max_quantity": max_packages,
             "can_add": stock_ok and (max_packages is None or max_packages > 0),
+            "locked_components": True,
         }
 
     variant = item.product_variant
@@ -52,6 +74,7 @@ def build_cart_line(item):
         "title": get_display_title(product, variant),
         "image_url": product.image.url if product.image else None,
         "image_urls": [],
+        "components": [],
         "quantity": item.quantity,
         "unit_price": variant.selling_price,
         "unit_price_display": format_decimal_greek(variant.selling_price),
@@ -61,6 +84,7 @@ def build_cart_line(item):
         "subtotal_display": format_decimal_greek(item.subtotal),
         "max_quantity": stock["max_quantity"],
         "can_add": stock["can_add"],
+        "locked_components": False,
     }
 
 
