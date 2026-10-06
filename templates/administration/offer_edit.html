@@ -90,8 +90,11 @@
                     <label class="block font-inter text-sm text-slate-600 max-w-xs">
                         <span id="price-label">{% trans "Νέα τιμή (€)" %}</span>
                         <input type="text" name="price" id="offer-price" required inputmode="decimal"
-                               value="{% if offer %}{{ offer.price }}{% endif %}"
+                               value="{{ offer_price_display }}"
+                               placeholder="π.χ. 12,5 ή 12.5"
                                class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-lg font-semibold text-slate-800">
+                        <span class="mt-1 block text-xs text-slate-500">{% trans "Μικρότερη από το άθροισμα. Δέχεται κόμμα ή τελεία (12,5 = 12.5)." %}</span>
+                        <span id="price-error" class="mt-1 hidden text-xs text-red-700"></span>
                     </label>
 
                     <label class="inline-flex items-center gap-2 font-inter text-sm text-slate-700">
@@ -206,6 +209,48 @@
         return n.toFixed(2).replace(".", ",");
     }
 
+    function parsePriceInput(raw) {
+        var text = String(raw || "").trim().replace("€", "").replace(/\s/g, "");
+        if (!text) return NaN;
+        var comma = text.lastIndexOf(",");
+        var dot = text.lastIndexOf(".");
+        if (comma !== -1 && dot !== -1) {
+            if (comma > dot) {
+                text = text.replace(/\./g, "").replace(",", ".");
+            } else {
+                text = text.replace(/,/g, "");
+            }
+        } else {
+            text = text.replace(",", ".");
+        }
+        return parseFloat(text);
+    }
+
+    function regularTotal() {
+        var regular = 0;
+        linesHost.querySelectorAll(".offer-line").forEach(function (row) {
+            var opt = row.querySelector(".offer-variant").selectedOptions[0];
+            var qty = parseInt(row.querySelector(".offer-qty").value, 10) || 0;
+            var price = opt && opt.dataset.price ? parseFloat(opt.dataset.price) : 0;
+            regular += price * qty;
+        });
+        return regular;
+    }
+
+    function setPriceError(message) {
+        var el = document.getElementById("price-error");
+        if (!el) return;
+        if (message) {
+            el.textContent = message;
+            el.classList.remove("hidden");
+            priceInput.classList.add("border-red-400");
+        } else {
+            el.textContent = "";
+            el.classList.add("hidden");
+            priceInput.classList.remove("border-red-400");
+        }
+    }
+
     function setMode(next) {
         mode = next;
         modeInput.value = next;
@@ -274,8 +319,9 @@
             }
         });
 
-        var offerPrice = parseFloat(String(priceInput.value || "0").replace(",", ".")) || 0;
-        var pct = regular > 0 && offerPrice < regular
+        var offerPrice = parsePriceInput(priceInput.value);
+        if (!isFinite(offerPrice)) offerPrice = 0;
+        var pct = regular > 0 && offerPrice > 0 && offerPrice < regular
             ? Math.round(((regular - offerPrice) / regular) * 100)
             : 0;
 
@@ -298,9 +344,15 @@
             previewRegular.classList.remove("hidden");
             previewBadge.textContent = "−" + pct + "%";
             previewBadge.classList.remove("hidden");
+            setPriceError("");
         } else {
             previewRegular.classList.add("hidden");
             previewBadge.classList.add("hidden");
+            if (regular > 0 && offerPrice > 0 && offerPrice >= regular) {
+                setPriceError("Η τιμή πρέπει να είναι μικρότερη από " + formatGreek(regular) + " €.");
+            } else {
+                setPriceError("");
+            }
         }
 
         if (images.length === 1) {
@@ -375,7 +427,6 @@
             var qty = linesHost.querySelector(".offer-qty");
             if (qty) qty.value = "1";
         } else {
-            var count = linesHost.querySelectorAll(".offer-line .offer-variant").length;
             var filled = 0;
             linesHost.querySelectorAll(".offer-variant").forEach(function (sel) {
                 if (sel.value) filled += 1;
@@ -388,8 +439,26 @@
             if (!titleInput.value.trim()) {
                 event.preventDefault();
                 window.alert("Γράψε τίτλο για το πακέτο.");
+                return;
             }
         }
+
+        var offerPrice = parsePriceInput(priceInput.value);
+        var regular = regularTotal();
+        if (!isFinite(offerPrice) || offerPrice <= 0) {
+            event.preventDefault();
+            setPriceError("Βάλε έγκυρη τιμή (π.χ. 12,5 ή 12.5).");
+            priceInput.focus();
+            return;
+        }
+        if (regular > 0 && offerPrice >= regular) {
+            event.preventDefault();
+            setPriceError("Η τιμή πρέπει να είναι μικρότερη από " + formatGreek(regular) + " €.");
+            priceInput.focus();
+            return;
+        }
+        // Normalize so server always gets a period decimal (same as comma input).
+        priceInput.value = String(offerPrice).replace(",", ".");
     });
 
     if (Array.isArray(selected) && selected.length) {

@@ -10,9 +10,21 @@ from products.pricing import ceil_to_tenth
 
 
 def parse_money(raw):
-    text = (raw or "").strip().replace("€", "").replace(" ", "").replace(",", ".")
+    """
+    Parse a euro amount. Comma and period are both accepted as decimal
+    separators (56,5 and 56.5 are the same). If both appear, the last one
+    is treated as the decimal separator (1.234,56 or 1,234.56).
+    """
+    text = (raw or "").strip().replace("€", "").replace(" ", "")
     if not text:
         raise ValueError("empty")
+    if "," in text and "." in text:
+        if text.rfind(",") > text.rfind("."):
+            text = text.replace(".", "").replace(",", ".")
+        else:
+            text = text.replace(",", "")
+    else:
+        text = text.replace(",", ".")
     try:
         amount = Decimal(text)
     except (InvalidOperation, TypeError) as exc:
@@ -20,6 +32,21 @@ def parse_money(raw):
     if amount <= 0:
         raise ValueError("non_positive")
     return ceil_to_tenth(amount)
+
+
+def lines_regular_total(lines):
+    total = Decimal("0.00")
+    for variant, qty in lines:
+        total += variant.selling_price * qty
+    return ceil_to_tenth(total)
+
+
+def validate_offer_price(price, lines):
+    """Offer price must be strictly below the sum of component selling prices."""
+    regular = lines_regular_total(lines)
+    if price >= regular:
+        raise ValueError("price_not_discount")
+    return regular
 
 
 def parse_offer_lines_from_post(post):
@@ -71,6 +98,7 @@ def resolve_offer_title(*, title, lines):
 
 def save_offer(*, title, price, is_active, lines, offer=None):
     resolved_title = resolve_offer_title(title=title, lines=lines)
+    validate_offer_price(price, lines)
     with transaction.atomic():
         if offer is None:
             offer = Offer(title=resolved_title, price=price, is_active=is_active)

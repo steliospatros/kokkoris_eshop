@@ -45,7 +45,7 @@ from administration.services import (
     set_variant_inventory,
 )
 from orders.models import Order
-from products.catalog import AVAILABILITY_LABELS
+from products.catalog import AVAILABILITY_LABELS, format_decimal_greek
 from products.models import Offer, Product, ProductVariant
 
 
@@ -135,8 +135,14 @@ def administration_offer_edit_view(request, offer_id=None):
                 offer=offer,
             )
         except ValueError as exc:
-            if str(exc) == "title_required":
+            code = str(exc)
+            if code == "title_required":
                 messages.error(request, "Για πακέτο με πολλά προϊόντα χρειάζεται τίτλος.")
+            elif code == "price_not_discount":
+                messages.error(
+                    request,
+                    "Η τιμή προσφοράς πρέπει να είναι μικρότερη από το άθροισμα των κανονικών τιμών.",
+                )
             else:
                 messages.error(
                     request,
@@ -167,6 +173,7 @@ def administration_offer_edit_view(request, offer_id=None):
             "products_section": "offers",
             "offer": offer,
             "offer_mode": offer_mode,
+            "offer_price_display": format_decimal_greek(offer.price) if offer else "",
             "variant_options": variant_picker_options(),
             "selected_lines": selected_lines,
         },

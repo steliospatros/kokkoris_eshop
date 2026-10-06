@@ -900,3 +900,101 @@ class PaymentsDashboardTests(TestCase):
         self.assertContains(response, "20,00")
         self.assertContains(response, "30,00")
         self.assertContains(response, "10,00")
+
+
+class OfferMoneyAndDiscountTests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.admin_user = User.objects.create_user(
+            email="steliospatros@gmail.com",
+            password="test-pass-123",
+        )
+        AdministrationUser.objects.get_or_create(
+            email="steliospatros@gmail.com",
+            defaults={"is_active": True},
+        )
+        company = Company.objects.create(name="Offer Co", code="OFF")
+        category = Category.objects.create(name="Food")
+        animal = AnimalType.objects.create(name="Dog", slug="dog-offer")
+        product = Product.objects.create(
+            name="Offer Food",
+            company=company,
+            category=category,
+            animal_type=animal,
+        )
+        self.variant = ProductVariant.objects.create(
+            product=product,
+            weight=2,
+            price=20,
+            stock=10,
+            availability=ProductVariant.AVAILABILITY_AVAILABLE_NOW,
+        )
+
+    def test_parse_money_accepts_comma_and_period(self):
+        from decimal import Decimal
+
+        from administration.offers import parse_money
+
+        self.assertEqual(parse_money("56,5"), parse_money("56.5"))
+        self.assertEqual(parse_money("56,5"), Decimal("56.50"))
+        self.assertEqual(parse_money("12,5"), Decimal("12.50"))
+
+    def test_save_offer_rejects_price_not_below_regular(self):
+        from decimal import Decimal
+
+        from administration.offers import save_offer
+
+        lines = [(self.variant, 1)]
+        with self.assertRaises(ValueError) as ctx:
+            save_offer(
+                title="",
+                price=Decimal("20.00"),
+                is_active=True,
+                lines=lines,
+            )
+        self.assertEqual(str(ctx.exception), "price_not_discount")
+
+        with self.assertRaises(ValueError) as ctx:
+            save_offer(
+                title="",
+                price=Decimal("25.00"),
+                is_active=True,
+                lines=lines,
+            )
+        self.assertEqual(str(ctx.exception), "price_not_discount")
+
+    def test_create_offer_rejects_equal_price_via_post(self):
+        from products.models import Offer
+
+        self.client.force_login(self.admin_user)
+        response = self.client.post(
+            reverse("administration:offer_create"),
+            {
+                "title": "",
+                "price": "20",
+                "is_active": "1",
+                "variant_id": [str(self.variant.pk)],
+                "quantity": ["1"],
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Offer.objects.count(), 0)
+
+    def test_create_offer_accepts_comma_price_below_regular(self):
+        from products.models import Offer
+
+        self.client.force_login(self.admin_user)
+        response = self.client.post(
+            reverse("administration:offer_create"),
+            {
+                "title": "",
+                "price": "15,5",
+                "is_active": "1",
+                "variant_id": [str(self.variant.pk)],
+                "quantity": ["1"],
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Offer.objects.count(), 1)
+        offer = Offer.objects.get()
+        self.assertEqual(str(offer.price), "15.50")
