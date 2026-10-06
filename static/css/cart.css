@@ -1,12 +1,10 @@
-/* Cart line imagery — full page + mini panel */
+/* Cart line imagery — full page + mini panel (neutral, same look for offers & products) */
 
 .cart-line-row__image,
-.cart-offer-component__image {
-  background:
-    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.95), transparent 55%),
-    linear-gradient(160deg, #f8fafc 0%, #eef2f7 100%);
-  border: 1px solid #e8eef5;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+.cart-offer-component__image,
+.cart-offer-collage__cell {
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
 }
 
 .cart-line-row__image img,
@@ -15,46 +13,26 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  padding: 0.35rem;
+  padding: 0.25rem;
   display: block;
 }
 
-/* Full cart page — generous product photos */
 #cart-page .cart-line-row:not(.cart-line-row--compact):not(.cart-offer-group) {
-  align-items: stretch;
-  background: linear-gradient(90deg, #f0f7f7 0%, #ffffff 55%);
-}
-
-#cart-page .cart-line-row:not(.cart-line-row--compact) > .cart-line-row__image {
-  width: 5.5rem;
-  height: 5.5rem;
-  border-radius: 1rem;
-}
-
-#nav-cart-panel .cart-variant-row {
-  background: linear-gradient(90deg, #f0f7f7 0%, #ffffff 70%);
-  border-radius: 0.5rem;
-  padding-left: 0.25rem;
-  padding-right: 0.25rem;
+  align-items: center;
 }
 
 #cart-page .cart-offer-group {
   background: #fff;
 }
 
-#cart-page .cart-offer-group__head {
-  gap: 1rem;
-  align-items: stretch;
-}
-
 #cart-page .cart-offer-collage {
   display: grid;
-  width: 5.5rem;
-  height: 5.5rem;
+  width: 4rem;
+  height: 4rem;
   flex-shrink: 0;
-  border-radius: 1rem;
+  border-radius: 0.5rem;
   overflow: hidden;
-  border: 1px solid #e8eef5;
+  border: 1px solid #f1f5f9;
   background: #e2e8f0;
   gap: 1px;
 }
@@ -71,43 +49,31 @@
 }
 
 .cart-offer-collage__cell {
-  background:
-    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.95), transparent 55%),
-    linear-gradient(160deg, #f8fafc 0%, #eef2f7 100%);
   min-height: 0;
   overflow: hidden;
 }
 
 #cart-page .cart-offer-component__image {
-  width: 4.25rem;
-  height: 4.25rem;
-  border-radius: 0.9rem;
-}
-
-#cart-page .cart-offer-component {
-  padding-top: 0.85rem;
-  padding-bottom: 0.85rem;
-}
-
-#cart-page .cart-offer-group__components {
-  background: linear-gradient(180deg, #fffbeb 0%, #ffffff 40%);
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.5rem;
 }
 
 /* Mini cart panel */
 #nav-cart-panel .cart-line-row__image {
-  width: 3.25rem;
-  height: 3.25rem;
-  border-radius: 0.75rem;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.5rem;
 }
 
 #nav-cart-panel .cart-offer-collage {
   display: grid;
-  width: 3.25rem;
-  height: 3.25rem;
+  width: 3rem;
+  height: 3rem;
   flex-shrink: 0;
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
   overflow: hidden;
-  border: 1px solid #e8eef5;
+  border: 1px solid #f1f5f9;
   background: #e2e8f0;
   gap: 1px;
 }
@@ -121,42 +87,26 @@
 }
 
 #nav-cart-panel .cart-offer-component__image {
-  width: 2.35rem;
-  height: 2.35rem;
-  border-radius: 0.55rem;
-}
-
-@media (min-width: 640px) {
-  #cart-page .cart-line-row:not(.cart-line-row--compact) > .cart-line-row__image {
-    width: 6.5rem;
-    height: 6.5rem;
-  }
-
-  #cart-page .cart-offer-collage {
-    width: 6.5rem;
-    height: 6.5rem;
-  }
-
-  #cart-page .cart-offer-component__image {
-    width: 5rem;
-    height: 5rem;
-  }
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.4rem;
 }
 
 @media (max-width: 639px) {
   #cart-page .cart-line-row:not(.cart-line-row--compact):not(.cart-offer-group) {
     display: grid;
-    grid-template-columns: 5.5rem minmax(0, 1fr);
+    grid-template-columns: 4rem minmax(0, 1fr);
     grid-template-areas:
       "image info"
       "image meta";
-    align-items: start;
-    column-gap: 0.85rem;
-    row-gap: 0.65rem;
+    align-items: center;
+    column-gap: 0.75rem;
+    row-gap: 0.55rem;
   }
 
   #cart-page .cart-line-row:not(.cart-offer-group) > .cart-line-row__image {
     grid-area: image;
+    align-self: start;
   }
 
   #cart-page .cart-line-row:not(.cart-offer-group) > .cart-line-row__info {
@@ -176,12 +126,13 @@
 
   #cart-page .cart-offer-group__head {
     display: grid;
-    grid-template-columns: 5.5rem minmax(0, 1fr);
+    grid-template-columns: 4rem minmax(0, 1fr);
     grid-template-areas:
       "collage info"
       "collage meta";
-    column-gap: 0.85rem;
-    row-gap: 0.65rem;
+    align-items: center;
+    column-gap: 0.75rem;
+    row-gap: 0.55rem;
   }
 
   #cart-page .cart-offer-group__head .cart-offer-collage {

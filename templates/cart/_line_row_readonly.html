@@ -1,10 +1,10 @@
 {% load i18n %}
 {% if line.kind == "offer" %}
 <li class="{% if not forloop.last %}border-b border-slate-100{% endif %}">
-    <div class="flex items-center gap-3 py-3 px-4 bg-gradient-to-r from-amber-50 to-white">
+    <div class="flex items-center gap-3 py-3 px-4">
         {% with n=line.components|length %}
         <div class="cart-offer-collage cart-offer-collage--{% if n > 4 %}4{% else %}{{ n }}{% endif %}"
-             style="width:3.5rem;height:3.5rem;border-radius:0.75rem;overflow:hidden;display:grid;gap:1px;background:#e2e8f0;flex-shrink:0;border:1px solid #e8eef5;">
+             style="width:3.5rem;height:3.5rem;border-radius:0.5rem;overflow:hidden;display:grid;gap:1px;background:#e2e8f0;flex-shrink:0;border:1px solid #f1f5f9;">
             {% for component in line.components %}
                 {% if forloop.counter <= 4 %}
                 <div class="cart-offer-collage__cell" style="background:#f8fafc;min-height:0;overflow:hidden;">
@@ -17,23 +17,22 @@
         </div>
         {% endwith %}
         <div class="flex-1 min-w-0">
-            <p class="text-[10px] uppercase tracking-wide text-amber-800 font-semibold mb-0.5">{% trans "Προσφορά" %}</p>
             <p class="font-inter text-xs text-slate-800 leading-snug line-clamp-2">{{ line.title }}</p>
-            <p class="text-[11px] text-slate-500 font-inter mt-0.5">× {{ line.quantity }} {% trans "πακέτα" %}</p>
+            <p class="text-[11px] text-slate-500 font-inter mt-0.5">× {{ line.quantity }}</p>
         </div>
         <p class="font-inter font-semibold text-sm text-slate-800 shrink-0">{{ line.subtotal_display }} €</p>
     </div>
     <ul class="px-4 pb-3 space-y-2">
         {% for component in line.components %}
             <li class="flex items-center gap-2.5">
-                <div class="cart-offer-component__image shrink-0 w-11 h-11 rounded-lg overflow-hidden flex items-center justify-center border border-slate-100 bg-slate-50">
+                <div class="cart-offer-component__image shrink-0 w-11 h-11 rounded-lg overflow-hidden flex items-center justify-center">
                     {% if component.image_url %}
-                        <img src="{{ component.image_url }}" alt="" class="w-full h-full object-contain p-0.5">
+                        <img src="{{ component.image_url }}" alt="">
                     {% endif %}
                 </div>
                 <div class="min-w-0 flex-1">
                     <p class="font-inter text-[11px] text-slate-700 leading-snug line-clamp-2">{{ component.title }}</p>
-                    <p class="text-[10px] text-amber-700 uppercase tracking-wide">{{ component.status_label }} · {{ component.quantity }}×</p>
+                    <p class="text-[11px] text-slate-500">× {{ component.quantity }}</p>
                 </div>
             </li>
         {% endfor %}
@@ -41,9 +40,9 @@
 </li>
 {% else %}
 <li class="flex items-center gap-3 py-3 px-4 {% if not forloop.last %}border-b border-slate-100{% endif %}">
-    <div class="cart-line-row__image shrink-0 w-14 h-14 rounded-xl overflow-hidden flex items-center justify-center border border-slate-100 bg-slate-50">
+    <div class="cart-line-row__image shrink-0 w-14 h-14 rounded-lg overflow-hidden flex items-center justify-center">
         {% if line.image_url %}
-            <img src="{{ line.image_url }}" alt="" class="w-full h-full object-contain p-1">
+            <img src="{{ line.image_url }}" alt="">
         {% else %}
             <span class="w-full h-full bg-slate-100"></span>
         {% endif %}

@@ -176,8 +176,8 @@ class OfferCartTests(TestCase):
         html = page.content.decode()
         self.assertIn(f'data-offer-id="{self.offer.pk}"', html)
         self.assertContains(page, "Πακέτο Α+Β")
-        self.assertContains(page, "Μέρος προσφοράς")
-        self.assertContains(page, "κλειδωμένο")
+        self.assertNotContains(page, "κλειδωμένο")
+        self.assertNotContains(page, "Μέρος προσφοράς")
         self.assertContains(page, "Offer A")
         self.assertContains(page, "Offer B")
 

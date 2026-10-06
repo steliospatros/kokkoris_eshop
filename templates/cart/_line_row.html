@@ -1,10 +1,10 @@
 {% load i18n %}
-{# Reusable cart line — variant row or offer group with locked components. #}
+{# Reusable cart line — variant row or offer group with component products. #}
 {% if line.kind == "offer" %}
 <li class="cart-line-row cart-offer-group {% if compact %}cart-line-row--compact{% endif %}"
     data-offer-id="{{ line.offer_id }}"
     {% if line.max_quantity != None %}data-max-stock="{{ line.max_quantity }}"{% endif %}>
-    <div class="cart-offer-group__head flex {% if compact %}items-center gap-2.5 py-2.5{% else %}items-stretch gap-4 py-4 px-4 sm:px-5{% endif %} bg-gradient-to-r from-amber-50 via-amber-50/60 to-white border-b border-amber-100/80">
+    <div class="cart-offer-group__head flex items-center gap-3 {% if compact %}py-2.5{% else %}py-4 px-4 sm:px-5{% endif %} border-b border-slate-100">
         {% with n=line.components|length %}
         <div class="cart-offer-collage cart-offer-collage--{% if n > 4 %}4{% else %}{{ n }}{% endif %}" aria-hidden="true">
             {% for component in line.components %}
@@ -21,31 +21,21 @@
         </div>
         {% endwith %}
 
-        <div class="cart-line-row__info flex-1 min-w-0 flex flex-col justify-center">
-            <div class="flex flex-wrap items-center gap-2 mb-1">
-                <span class="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
-                    {% trans "Προσφορά" %}
-                </span>
-                {% if line.discount_percent %}
-                    <span class="inline-flex items-center rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white">
-                        −{{ line.discount_percent }}%
-                    </span>
-                {% endif %}
-            </div>
-            <p class="font-inter font-medium text-slate-800 {% if compact %}text-xs leading-snug line-clamp-2{% else %}text-sm sm:text-base leading-snug{% endif %}">
+        <div class="cart-line-row__info flex-1 min-w-0">
+            <p class="font-inter font-medium text-slate-800 {% if compact %}text-xs leading-snug line-clamp-2{% else %}text-sm leading-snug{% endif %}">
                 {{ line.title }}
             </p>
             {% if not compact %}
                 {% if line.regular_price_display %}
-                    <p class="text-xs text-red-600 line-through font-inter mt-1">{{ line.regular_price_display }} €</p>
-                    <p class="text-sm text-slate-800 font-semibold font-inter">{{ line.unit_price_display }} € / {% trans "πακέτο" %}</p>
+                    <p class="text-xs text-red-600 line-through font-inter mt-0.5">{{ line.regular_price_display }} €</p>
+                    <p class="text-xs text-slate-500 font-inter">{{ line.unit_price_display }} €</p>
                 {% else %}
-                    <p class="text-sm text-slate-600 font-inter mt-1">{{ line.unit_price_display }} € / {% trans "πακέτο" %}</p>
+                    <p class="text-xs text-slate-500 font-inter mt-0.5">{{ line.unit_price_display }} €</p>
                 {% endif %}
             {% endif %}
         </div>
 
-        <div class="cart-stepper cart-line-row__stepper flex items-center gap-1.5 shrink-0 self-center bg-kokkoris-teal-dark text-white rounded-full px-1.5 py-1"
+        <div class="cart-stepper cart-line-row__stepper flex items-center gap-1.5 shrink-0 bg-kokkoris-teal-dark text-white rounded-full px-1.5 py-1"
              data-offer-id="{{ line.offer_id }}">
             <button type="button"
                     class="qty-minus w-6 h-6 rounded-full border border-white/40 hover:bg-white/10 text-base leading-none flex items-center justify-center"
@@ -57,15 +47,15 @@
                     {% if line.max_quantity != None and line.quantity >= line.max_quantity %}disabled{% endif %}>+</button>
         </div>
 
-        <p class="cart-line-subtotal cart-line-row__subtotal self-center font-inter font-semibold text-slate-800 {% if compact %}text-xs w-14 text-right{% else %}text-sm sm:text-base w-20 text-right{% endif %} shrink-0">
+        <p class="cart-line-subtotal cart-line-row__subtotal font-inter font-semibold text-slate-800 {% if compact %}text-xs w-14 text-right{% else %}text-sm w-20 text-right{% endif %} shrink-0">
             {{ line.subtotal_display }} €
         </p>
     </div>
 
     <ul class="cart-offer-group__components {% if compact %}px-2 pb-2{% else %}px-4 sm:px-5 pb-2{% endif %}">
         {% for component in line.components %}
-            <li class="cart-offer-component flex items-center gap-3 {% if compact %}py-1.5{% else %}py-3{% endif %} {% if not forloop.last %}border-b border-amber-100/60{% endif %}">
-                <div class="cart-offer-component__image shrink-0 overflow-hidden flex items-center justify-center {% if compact %}w-9 h-9 rounded-lg{% endif %}">
+            <li class="cart-offer-component flex items-center gap-3 {% if compact %}py-1.5{% else %}py-2.5{% endif %} {% if not forloop.last %}border-b border-slate-100{% endif %}">
+                <div class="cart-offer-component__image shrink-0 overflow-hidden flex items-center justify-center {% if compact %}w-9 h-9 rounded-lg{% else %}w-12 h-12 rounded-lg{% endif %}">
                     {% if component.image_url %}
                         <img src="{{ component.image_url }}" alt="">
                     {% else %}
@@ -74,32 +64,25 @@
                 </div>
                 <div class="flex-1 min-w-0">
                     {% if component.detail_url and not compact %}
-                        <a href="{{ component.detail_url }}" class="font-inter text-sm sm:text-[15px] text-slate-800 hover:text-kokkoris-teal-dark leading-snug line-clamp-2">
+                        <a href="{{ component.detail_url }}" class="font-inter text-sm text-slate-800 hover:text-kokkoris-teal-dark leading-snug line-clamp-2">
                             {{ component.title }}
                         </a>
                     {% else %}
-                        <p class="font-inter {% if compact %}text-[11px]{% else %}text-sm sm:text-[15px]{% endif %} text-slate-800 leading-snug line-clamp-2">
+                        <p class="font-inter {% if compact %}text-[11px]{% else %}text-sm{% endif %} text-slate-800 leading-snug line-clamp-2">
                             {{ component.title }}
                         </p>
                     {% endif %}
-                    <p class="mt-1 font-inter text-[10px] uppercase tracking-wide text-amber-700/90">
-                        {{ component.status_label }}
-                        · {{ component.quantity }}×
-                    </p>
+                    <p class="mt-0.5 font-inter text-xs text-slate-500">× {{ component.quantity }}</p>
                 </div>
-                <span class="shrink-0 text-[10px] font-inter text-slate-400 px-1.5 py-0.5 rounded-md border border-slate-200/80 bg-white/80"
-                      title="{% trans 'Αλλάζει μόνο με την ποσότητα της προσφοράς' %}">
-                    {% trans "κλειδωμένο" %}
-                </span>
             </li>
         {% endfor %}
     </ul>
 </li>
 {% else %}
-<li class="cart-line-row cart-variant-row flex items-center gap-3 {% if compact %}cart-line-row--compact py-2.5 gap-2.5{% else %}py-4 px-4 sm:px-5 gap-4{% endif %}"
+<li class="cart-line-row flex items-center gap-3 {% if compact %}cart-line-row--compact py-2.5{% else %}py-4 px-4 sm:px-5{% endif %}"
     {% if line.variant_id %}data-variant-id="{{ line.variant_id }}"{% endif %}
     {% if line.max_quantity != None %}data-max-stock="{{ line.max_quantity }}"{% endif %}>
-    <div class="cart-line-row__image shrink-0 overflow-hidden flex items-center justify-center {% if compact %}w-12 h-12 rounded-xl{% endif %}">
+    <div class="cart-line-row__image shrink-0 overflow-hidden flex items-center justify-center {% if compact %}w-12 h-12{% else %}w-16 h-16{% endif %} rounded-lg">
         {% if line.image_url %}
             <img src="{{ line.image_url }}" alt="">
         {% else %}
@@ -108,11 +91,11 @@
     </div>
 
     <div class="cart-line-row__info flex-1 min-w-0">
-        <p class="font-inter font-medium text-slate-800 {% if compact %}text-xs leading-snug line-clamp-2{% else %}text-sm sm:text-base leading-snug{% endif %}">
+        <p class="font-inter font-medium text-slate-800 {% if compact %}text-xs leading-snug line-clamp-2{% else %}text-sm leading-snug{% endif %}">
             {{ line.title }}
         </p>
         {% if not compact %}
-            <p class="text-sm text-slate-600 font-semibold font-inter mt-1">{{ line.unit_price_display }} €</p>
+            <p class="text-xs text-slate-500 font-inter mt-0.5">{{ line.unit_price_display }} €</p>
         {% endif %}
     </div>
 
@@ -128,7 +111,7 @@
                 {% if line.max_quantity != None and line.quantity >= line.max_quantity %}disabled{% endif %}>+</button>
     </div>
 
-    <p class="cart-line-subtotal cart-line-row__subtotal font-inter font-semibold text-slate-800 {% if compact %}text-xs w-14 text-right{% else %}text-sm sm:text-base w-20 text-right{% endif %} shrink-0">
+    <p class="cart-line-subtotal cart-line-row__subtotal font-inter font-semibold text-slate-800 {% if compact %}text-xs w-14 text-right{% else %}text-sm w-20 text-right{% endif %} shrink-0">
         {{ line.subtotal_display }} €
     </p>
 </li>

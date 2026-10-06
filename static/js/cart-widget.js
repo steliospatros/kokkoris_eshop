@@ -115,11 +115,10 @@
                     '<p class="font-inter text-[11px] text-slate-800 leading-snug line-clamp-1">' +
                     escapeHtml(component.title) +
                     "</p>" +
-                    '<p class="text-[10px] text-amber-700 uppercase tracking-wide">Μέρος προσφοράς · ' +
+                    '<p class="text-[11px] text-slate-500">× ' +
                     component.quantity +
-                    "×</p>" +
+                    "</p>" +
                     "</div>" +
-                    '<span class="text-[9px] text-slate-400 border border-slate-200 rounded px-1">κλειδωμένο</span>' +
                     "</li>";
             });
             return (
@@ -127,19 +126,18 @@
                 lineKeyAttrs(line) +
                 maxAttr +
                 ">" +
-                '<div class="cart-offer-group__head flex items-center gap-2.5 py-2">' +
+                '<div class="cart-offer-group__head flex items-center gap-3 py-2.5">' +
                 '<div class="cart-offer-collage cart-offer-collage--' +
                 collageCount +
                 '">' +
                 collageCells +
                 "</div>" +
-                '<div class="flex-1 min-w-0">' +
-                '<p class="text-[10px] uppercase tracking-wide text-amber-800 font-semibold">Προσφορά</p>' +
+                '<div class="cart-line-row__info flex-1 min-w-0">' +
                 '<p class="font-inter font-medium text-slate-800 text-xs leading-snug line-clamp-2">' +
                 escapeHtml(line.title) +
                 "</p>" +
                 "</div>" +
-                '<div class="cart-stepper flex items-center gap-1.5 shrink-0 bg-kokkoris-teal-dark text-white rounded-full px-1.5 py-1" ' +
+                '<div class="cart-stepper cart-line-row__stepper flex items-center gap-1.5 shrink-0 bg-kokkoris-teal-dark text-white rounded-full px-1.5 py-1" ' +
                 lineStepperAttrs(line) +
                 ">" +
                 '<button type="button" class="qty-minus w-6 h-6 rounded-full border border-white/40 hover:bg-white/10 text-base leading-none flex items-center justify-center" aria-label="Μείωση">−</button>' +
@@ -150,7 +148,7 @@
                 plusDisabled +
                 ' aria-label="Αύξηση">+</button>' +
                 "</div>" +
-                '<p class="cart-line-subtotal font-inter font-semibold text-slate-800 text-xs w-12 text-right shrink-0">' +
+                '<p class="cart-line-subtotal font-inter font-semibold text-slate-800 text-xs w-14 text-right shrink-0">' +
                 escapeHtml(line.subtotal_display) +
                 " €</p>" +
                 "</div>" +
@@ -166,19 +164,19 @@
             : '<span class="w-full h-full bg-slate-100"></span>';
 
         return (
-            '<li class="cart-line-row flex items-center gap-2.5 py-2.5"' +
+            '<li class="cart-line-row flex items-center gap-3 py-2.5"' +
             lineKeyAttrs(line) +
             maxAttr +
             ">" +
-            '<div class="cart-line-row__image shrink-0 overflow-hidden flex items-center justify-center">' +
+            '<div class="cart-line-row__image shrink-0 w-12 h-12 rounded-lg overflow-hidden flex items-center justify-center">' +
             thumb +
             "</div>" +
-            '<div class="flex-1 min-w-0">' +
+            '<div class="cart-line-row__info flex-1 min-w-0">' +
             '<p class="font-inter font-medium text-slate-800 text-xs leading-snug line-clamp-2">' +
             escapeHtml(line.title) +
             "</p>" +
             "</div>" +
-            '<div class="cart-stepper flex items-center gap-1.5 shrink-0 bg-kokkoris-teal-dark text-white rounded-full px-1.5 py-1" ' +
+            '<div class="cart-stepper cart-line-row__stepper flex items-center gap-1.5 shrink-0 bg-kokkoris-teal-dark text-white rounded-full px-1.5 py-1" ' +
             lineStepperAttrs(line) +
             ">" +
             '<button type="button" class="qty-minus w-6 h-6 rounded-full border border-white/40 hover:bg-white/10 text-base leading-none flex items-center justify-center" aria-label="Μείωση">−</button>' +
