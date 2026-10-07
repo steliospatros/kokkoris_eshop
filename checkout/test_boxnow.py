@@ -98,7 +98,7 @@ class BoxNowDeliveryOptionsTests(SimpleTestCase):
         self.assertEqual(box_now["fee"], Decimal("1.80"))
         self.assertIn("8×45×60", box_now["description"])
         self.assertIn("20", box_now["description"])
-        self.assertIn("έως 3 εργάσιμες", box_now["description"])
+        self.assertIn("24ωρο", box_now["description"])
 
     def test_calculate_courier_fee_for_box_now(self):
         fee = calculate_courier_fee(
@@ -221,6 +221,7 @@ class BoxNowCheckoutDeliveryTests(TestCase):
         self.assertEqual(data["boxnow_locker_id"], "42")
 
 
+@override_settings(BOXNOW_WEBHOOK_SECRET="")
 class BoxNowWebhookTests(TestCase):
     @classmethod
     def setUpTestData(cls):

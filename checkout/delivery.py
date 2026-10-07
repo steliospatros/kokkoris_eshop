@@ -177,7 +177,7 @@ def build_delivery_options(*, cart_total, postal_code, cart=None):
     options.append(
         {
             "value": Order.DELIVERY_METHOD_BOX_NOW,
-            "label": "Παράδοση σε BOX NOW locker",
+            "label": "BOX NOW Lockers | Γρήγορη παράδοση, 24/7",
             "description": description,
             "fee": boxnow_fee,
             "fee_display": (

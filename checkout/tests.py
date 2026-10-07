@@ -117,7 +117,7 @@ class CheckoutDeliveryViewTests(TestCase):
         self.assertContains(response, "Τρόπος πληρωμής")
         self.assertContains(response, "Παράδοση από υπάλληλο")
         self.assertContains(response, "Αποστολή με courier")
-        self.assertContains(response, "Παράδοση σε BOX NOW locker")
+        self.assertContains(response, "BOX NOW Lockers | Γρήγορη παράδοση, 24/7")
         self.assertContains(response, "+3,20 €")
         self.assertNotContains(response, "ELTA")
         self.assertNotContains(response, "ΕΛΤΑ")

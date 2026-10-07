@@ -59,7 +59,8 @@ def build_payment_options(
                 "δεν αποθηκεύονται στον server μας."
                 if cod_allowed
                 else (
-                    "Για παράδοση σε BOX NOW locker απαιτείται προπληρωμή με κάρτα."
+                    "Για BOX NOW απαιτείται πληρωμή online με κάρτα "
+                    "(δεν υποστηρίζονται μετρητά ή POS στο locker)."
                 )
             ),
             "cod_surcharge": Decimal("0.00"),

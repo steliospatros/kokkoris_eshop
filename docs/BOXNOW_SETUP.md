@@ -21,7 +21,7 @@ BOXNOW_OAUTH_CLIENT_ID=...
 BOXNOW_OAUTH_CLIENT_SECRET=...
 BOXNOW_API_URL=https://api-stage.boxnow.gr
 BOXNOW_LOCATION_API_URL=https://locationapi-stage.boxnow.gr
-BOXNOW_ORIGIN_LOCATION_ID=8
+BOXNOW_ORIGIN_LOCATION_ID=2
 BOXNOW_NOTIFY_EMAIL=orders@kokkorispetfood.gr
 BOXNOW_ORIGIN_CONTACT_NAME=Kokkoris Pet Food
 BOXNOW_ORIGIN_CONTACT_PHONE=+30210...
@@ -51,7 +51,7 @@ python manage.py check_boxnow --latlng=37.9755,23.7348
 
 ## 4. Checkout — τρόπος αποστολής
 
-Η επιλογή **«Παράδοση σε BOX NOW locker»** εμφανίζεται πάντα. Δείχνει:
+Η επιλογή **«BOX NOW Lockers | Γρήγορη παράδοση, 24/7»** εμφανίζεται πάντα. Δείχνει:
 
 - μέγεθος θήκης (1 μικρή / 2 μεσαία / 3 μεγάλη) από τις **επίσημες διαστάσεις locker**
 - χρεώσιμο βάρος και όριο **20 kg**

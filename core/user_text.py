@@ -25,7 +25,10 @@ CHECKOUT_BAD_DELIVERY = "Επίλεξε έναν έγκυρο τρόπο παρ�
 CHECKOUT_NEED_PAYMENT = "Επίλεξε τρόπο πληρωμής."
 CHECKOUT_INCOMPLETE = "Ολοκλήρωσε τα προηγούμενα βήματα για να συνεχίσεις την πληρωμή."
 CHECKOUT_STOCK = "Κάποιο προϊόν στο καλάθι δεν είναι πλέον διαθέσιμο."
-CHECKOUT_BOXNOW_COD = "Στο BOX NOW locker η πληρωμή γίνεται μόνο με κάρτα."
+CHECKOUT_BOXNOW_COD = (
+    "Στο BOX NOW δεν γίνεται αντικαταβολή με μετρητά ή POS. "
+    "Επίλεξε πληρωμή με κάρτα."
+)
 CHECKOUT_BOXNOW_LOCKER = "Επίλεξε σημείο παραλαβής BOX NOW από τον χάρτη."
 CHECKOUT_BOXNOW_UNAVAILABLE = "Η παράδοση BOX NOW δεν είναι διαθέσιμη προς το παρόν."
 CARD_UNAVAILABLE = "Η πληρωμή με κάρτα δεν είναι διαθέσιμη αυτή τη στιγμή."
