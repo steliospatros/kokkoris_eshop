@@ -1,11 +1,6 @@
 {% load i18n static %}
-{# Part 2 — white "about us" body (PDF page 1, between the teal hero   #}
-{# collage and the 4-pet photo strip). Copy is taken verbatim from       #}
-{# SEL_1/ΓΡΑΜΜΑΤΟΣΕΙΡΑ.docx; typography matches the mockup spec there   #}
-{# (Geologica Thin, 30 pt body / 45 pt leading). The brand carousel     #}
-{# between the intro and closing paragraphs is a deliberate empty shell #}
-{# for now — logos/buttons will be wired in once the client supplies    #}
-{# the final brand assets.                                              #}
+{# Part 2 — white "about us" body (between the teal hero collage and the  #}
+{# 4-pet photo strip). Copy from client; brand logos sit after the colon. #}
 <section class="w-full bg-white">
     <div class="max-w-[1920px] mx-auto px-6 lg:px-[150px] pt-6 lg:pt-10 pb-10 lg:pb-16 text-center font-geologica font-thin text-slate-900">
 
@@ -15,22 +10,31 @@
 
         <div class="mx-auto max-w-[1350px] space-y-6 lg:space-y-8 text-[clamp(16px,1.95vw,30px)] leading-[1.5] tracking-[0.04em]">
             <p>
-                Είμαστε εξειδικευμένοι προμηθευτές ξηρών τροφών για σκύλους και γάτες στην Ελλάδα!
+                Τα αγαπημένα μας κατοικίδια αξίζουν την καλύτερη ξηρά τροφή και η Kokkoris Pet Food είναι εδώ για να σας την προμηθεύσει σε προσιτή τιμή, διαθέτοντας εξαιρετικές μάρκες άριστης ποιότητας και ποικιλίας.
             </p>
             <p>
-                Εδώ διαθέτουμε μια ιδιαίτερη συλλογή από κορυφαίες μάρκες ξηρών τροφών για σκύλους και γάτες. Αντιπροσωπεύουμε επίσημα στην ελληνική αγορά τις μάρκες:
+                Αντιπροσωπεύουμε επίσημα στην ελληνική αγορά τις μάρκες:
             </p>
         </div>
 
-        {# Brand carousel — populated from Company.logo (see hero-brands.html). #}
+        {# Brand carousel — after the colon, same as before. #}
         {% include "partials/hero-brands.html" %}
 
         <div class="mx-auto max-w-[1350px] space-y-6 lg:space-y-8 text-[clamp(16px,1.95vw,30px)] leading-[1.5] tracking-[0.04em]">
             <p>
-                Επιπλέον, προσφέρουμε την αξιόπιστη και οικονομική μάρκα Gaherdog — Gahercat για όσους αναζητούν μια πολύ οικονομική λύση στη διατροφή του σκύλου και της γάτας τους. Άλλωστε, στην Kokkoris Pet Food δεν εστιάζουμε απλώς στην ποιότητα, αλλά και στην ποικιλία και την προσιτή τιμή.
+                Η εταιρία μας εξειδικεύεται στην ξηρά τροφή για σκύλους και γάτες – στειρωμένα ή μη – και διαθέτει μία ευρείας και ξεχωριστής γκάμας συλλογή, από τους κορυφαίους του είδους.
             </p>
             <p>
-                Με χρόνια εμπειρίας στον χώρο της λιανικής, της χονδρικής και των εισαγωγών, διασφαλίζουμε την επιλογή των καλύτερων προϊόντων για τους τετράποδους φίλους σας. Επισκεφθείτε τώρα το ηλεκτρονικό μας κατάστημα για να βρείτε τις ιδανικές ξηρές τροφές για τον σκύλο και τη γάτα σας!
+                Οι μάρκες μας είναι ιδιαίτερες και καλύπτουν τις ορέξεις και τις διατροφικές ανάγκες όλων των κατοικίδιων.
+            </p>
+            <p>
+                Πλούσιες τροφές σε πρωτεΐνη και θρεπτικά συστατικά, συμβάλλουν στην υγεία και την σωστή ανάπτυξη των μικρών μας φίλων.
+            </p>
+            <p>
+                Με χρόνια εμπειρίας στον χώρο της λιανικής, της χονδρικής και των εισαγωγών, η Kokkoris Pet Food διασφαλίζει την επιλογή των καλύτερων προϊόντων για τους τετράποδους φίλους μας.
+            </p>
+            <p>
+                Επισκεφθείτε τώρα το ηλεκτρονικό μας κατάστημα για να βρείτε τις ιδανικές ξηρές τροφές για τον σκύλο και τη γάτα σας!
             </p>
         </div>
 
