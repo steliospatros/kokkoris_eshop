@@ -2,6 +2,52 @@
 <div class="mt-4 rounded-xl border border-slate-200 bg-white p-4 space-y-4">
     <h4 class="font-medium text-slate-800">{% trans "Ενέργειες διαχείρισης" %}</h4>
 
+    {% if order.delivery_method == "box_now" %}
+        <div class="rounded-lg border border-emerald-200 bg-emerald-50/60 p-3 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-emerald-900">BOX NOW</p>
+                    <p class="text-xs text-slate-700 mt-0.5">
+                        Locker ID: <strong>{{ order.boxnow_locker_id|default:"—" }}</strong>
+                        {% if order.boxnow_locker_name %}· {{ order.boxnow_locker_name }}{% endif %}
+                        {% if order.boxnow_parcel_id %}
+                            · Parcel ID: <strong>{{ order.boxnow_parcel_id }}</strong>
+                        {% endif %}
+                    </p>
+                </div>
+                {% if order.boxnow_parcel_id %}
+                    <a href="{% url 'administration:boxnow_label' order.id %}"
+                       class="inline-flex items-center rounded-lg bg-emerald-700 px-3 py-2 font-inter text-xs font-semibold text-white hover:bg-emerald-800">
+                        {% trans "Λήψη Voucher (PDF)" %}
+                    </a>
+                {% endif %}
+            </div>
+            <form method="post"
+                  action="{% url 'administration:update_order' order.id %}"
+                  class="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-2">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="boxnow_voucher">
+                <input type="hidden" name="next" value="{{ order_next }}">
+                <label class="block min-w-[9rem]">
+                    <span class="block text-xs text-slate-600 mb-1">{% trans "BOX NOW Locker ID" %}</span>
+                    <input type="text"
+                           name="boxnow_locker_id"
+                           value="{{ order.boxnow_locker_id }}"
+                           placeholder="π.χ. 4"
+                           class="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm">
+                </label>
+                <button type="submit"
+                        class="min-h-9 rounded-lg bg-slate-800 px-3 py-1.5 font-inter text-xs font-semibold text-white hover:bg-slate-700">
+                    {% if order.boxnow_parcel_id %}
+                        {% trans "Ενημέρωση Locker & Επανέκδοση Voucher" %}
+                    {% else %}
+                        {% trans "Έκδοση BOX NOW Voucher" %}
+                    {% endif %}
+                </button>
+            </form>
+        </div>
+    {% endif %}
+
     {% if order.status != "cancelled" %}
         <form method="post"
               action="{% url 'administration:update_order' order.id %}"

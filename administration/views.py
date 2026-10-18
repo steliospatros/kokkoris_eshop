@@ -1,7 +1,10 @@
 from django.contrib import messages
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
+
+from checkout.boxnow_client import BoxNowAPIError, fetch_parcel_label_pdf
 
 from administration.decorators import administration_user_required, shop_admin_required
 from administration.inventory import ADMIN_AVAILABILITY_CHOICES, build_inventory_sections
@@ -179,9 +182,7 @@ def administration_offer_edit_view(request, offer_id=None):
 @require_POST
 def administration_offer_delete_view(request, offer_id):
     offer = get_object_or_404(Offer, pk=offer_id)
-    title = offer.title
     offer.delete()
-    messages.success(request, f"Η προσφορά «{title}» διαγράφηκε.")
     return redirect("administration:offers")
 
 
@@ -341,6 +342,7 @@ def administration_update_order_view(request, order_id):
         status=(request.POST.get("status") or "").strip(),
         payment_method=(request.POST.get("payment_method") or "").strip(),
         cancellation_reason=request.POST.get("cancellation_reason") or "",
+        boxnow_locker_id=(request.POST.get("boxnow_locker_id") or "").strip(),
     )
     if ok:
         messages.success(request, message)
@@ -350,6 +352,24 @@ def administration_update_order_view(request, order_id):
     if not next_url.startswith("/administration/orders"):
         next_url = reverse("administration:orders")
     return redirect(next_url)
+
+
+@shop_admin_required
+def administration_boxnow_label_view(request, order_id):
+    order = get_object_or_404(Order, pk=order_id)
+    if not order.boxnow_parcel_id:
+        messages.error(request, "Δεν έχει εκδοθεί ακόμα BOX NOW Parcel ID για αυτή την παραγγελία.")
+        return redirect("administration:order_detail", order_id=order.pk)
+    try:
+        pdf_bytes = fetch_parcel_label_pdf(order.boxnow_parcel_id)
+    except BoxNowAPIError as exc:
+        messages.error(request, f"Σφάλμα λήψης BOX NOW Voucher PDF: {exc}")
+        return redirect("administration:order_detail", order_id=order.pk)
+    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'attachment; filename="boxnow-voucher-{order.boxnow_parcel_id}.pdf"'
+    )
+    return response
 
 
 @administration_user_required

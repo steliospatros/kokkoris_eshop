@@ -3,6 +3,8 @@ from django.db import transaction
 from django.utils import timezone
 
 from accounts.profile_labels import ORDER_STATUS_LABELS
+from checkout.boxnow_client import BoxNowAPIError
+from checkout.boxnow_service import create_delivery_request_for_order
 from checkout.stripe_service import StripeNotConfiguredError
 from orders.models import Order
 from orders.refunds import (
@@ -29,6 +31,7 @@ PAYMENT_CHOICES = (
 ACTION_CANCEL = "cancel"
 ACTION_MARK_PAID = "mark_paid"
 ACTION_SET_STATUS = "set_status"
+ACTION_BOXNOW_VOUCHER = "boxnow_voucher"
 
 
 def _safe_next_url(next_url):
@@ -115,6 +118,25 @@ def set_order_status(order, status, *, cancellation_reason=""):
     )
 
 
+def issue_boxnow_voucher(order, *, boxnow_locker_id=""):
+    if order.delivery_method != Order.DELIVERY_METHOD_BOX_NOW:
+        return False, "Η παραγγελία δεν είναι BOX NOW."
+    locker_id = (boxnow_locker_id or order.boxnow_locker_id or "").strip()
+    if not locker_id:
+        return False, "Συμπλήρωσε το BOX NOW Locker ID (π.χ. 4)."
+    if locker_id != order.boxnow_locker_id:
+        order.boxnow_locker_id = locker_id
+        order.save(update_fields=["boxnow_locker_id"])
+    try:
+        create_delivery_request_for_order(order)
+    except BoxNowAPIError as exc:
+        return False, f"Σφάλμα BOX NOW API: {exc}"
+    return True, (
+        f"Το BOX NOW Voucher εκδόθηκε (Locker #{order.boxnow_locker_id}, "
+        f"Parcel ID: {order.boxnow_parcel_id})."
+    )
+
+
 def apply_order_admin_action(order, *, action, **payload):
     if action == ACTION_CANCEL:
         return cancel_order_by_admin(order, payload.get("cancellation_reason", ""))
@@ -125,5 +147,10 @@ def apply_order_admin_action(order, *, action, **payload):
             order,
             payload.get("status", ""),
             cancellation_reason=payload.get("cancellation_reason", ""),
+        )
+    if action == ACTION_BOXNOW_VOUCHER:
+        return issue_boxnow_voucher(
+            order,
+            boxnow_locker_id=payload.get("boxnow_locker_id", ""),
         )
     return False, "Άγνωστη ενέργεια."

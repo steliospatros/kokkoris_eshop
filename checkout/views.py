@@ -21,6 +21,7 @@ from orders.presentation import build_order_detail_context
 from orders.stock import InsufficientStockError, reserve_stock_for_cart
 from products.favourites import increment_favourite_counts
 
+from .boxnow_client import BoxNowAPIError, list_destinations
 from .boxnow_service import schedule_boxnow_delivery
 from .boxnow_webhooks import (
     BoxNowWebhookError,
@@ -682,6 +683,35 @@ def boxnow_webhook_view(request):
         return JsonResponse({"error": str(exc)}, status=400)
 
     return JsonResponse({"received": True})
+
+
+@login_required
+def boxnow_lockers_api_view(request):
+    """Return nearby Box Now lockers from the Partner Location API."""
+    checkout_data = _get_checkout_session(request)
+    lat = (request.GET.get("lat") or checkout_data.get("latitude") or "").strip()
+    lng = (request.GET.get("lng") or checkout_data.get("longitude") or "").strip()
+    if lat and lng:
+        latlng = f"{lat},{lng}"
+    else:
+        latlng = "37.9838,23.7275"
+    try:
+        raw = list_destinations(latlng=latlng, radius=25000)
+    except BoxNowAPIError as exc:
+        logger.warning("Box Now destinations lookup failed: %s", exc)
+        return JsonResponse({"ok": False, "lockers": []}, status=200)
+
+    lockers = []
+    for item in raw[:40]:
+        lockers.append(
+            {
+                "id": str(item.get("id", "")),
+                "name": item.get("name") or item.get("title") or f"Locker #{item.get('id', '')}",
+                "address": item.get("addressLine1") or "",
+                "postal_code": str(item.get("postalCode") or ""),
+            }
+        )
+    return JsonResponse({"ok": True, "lockers": lockers})
 
 
 @login_required

@@ -23,7 +23,7 @@
 <link rel="stylesheet" href="{% static 'css/checkout.css' %}">
 <link rel="stylesheet" href="{% static 'css/account-details.css' %}?v=floor-5">
 <script src="{% static 'js/checkout-profile.js' %}?v=floor-5"></script>
-<script src="{% static 'js/greece-address-map.js' %}"></script>
+<script src="{% static 'js/greece-address-map.js' %}?v=places-new-1"></script>
 {% if google_maps_api_key %}
 <script>
     function initCheckoutAddressMap() {
@@ -35,12 +35,13 @@
             lngInputId: "id_longitude",
             placeIdInputId: "id_address_place_id",
             hintId: "checkout-address-map-hint",
+            apiKey: "{{ google_maps_api_key|escapejs }}",
             initialLat: "{{ form.latitude.value|default_if_none:'' }}",
             initialLng: "{{ form.longitude.value|default_if_none:'' }}",
             initialPlaceId: "{{ form.address_place_id.value|default:'' }}",
         });
     }
 </script>
-<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places&language=el&region=gr&loading=async&callback=initCheckoutAddressMap" async defer></script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&language=el&region=gr&loading=async&callback=initCheckoutAddressMap" async defer></script>
 {% endif %}
 {% endblock %}

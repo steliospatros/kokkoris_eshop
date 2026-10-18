@@ -304,14 +304,14 @@
 {% block extra_body %}
 <link rel="stylesheet" href="{% static 'css/account-details.css' %}?v=floor-5">
 <script src="{% static 'js/account-details.js' %}?v=floor-5"></script>
-<script src="{% static 'js/greece-address-map.js' %}"></script>
+<script src="{% static 'js/greece-address-map.js' %}?v=places-new-1"></script>
 {% if google_maps_api_key %}
 <script>
     window.gm_authFailure = function () {
         var hint = document.getElementById("account-address-map-hint");
         if (hint) {
             hint.textContent =
-                "Ο χάρτης δεν φορτώθηκε. Έλεγξε στο Google Cloud: billing, Maps JavaScript API, Places API, και HTTP referrers http://127.0.0.1:8000/* και http://localhost:8000/* (python manage.py check_maps).";
+                "Ο χάρτης δεν φορτώθηκε. Έλεγξε στο Google Cloud: billing, Maps JavaScript API, Places API (New), Geocoding API και τα website referrers.";
         }
     };
 
@@ -325,6 +325,7 @@
             lngInputId: "id_longitude",
             placeIdInputId: "id_address_place_id",
             hintId: "account-address-map-hint",
+            apiKey: "{{ google_maps_api_key|escapejs }}",
             initialLat: "{{ form.latitude.value|default_if_none:'' }}",
             initialLng: "{{ form.longitude.value|default_if_none:'' }}",
             initialPlaceId: "{{ form.address_place_id.value|default:'' }}",
@@ -342,6 +343,6 @@
         }
     }
 </script>
-<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places&language=el&region=gr&loading=async&callback=initAccountDetailsMap" async defer></script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&language=el&region=gr&loading=async&callback=initAccountDetailsMap" async defer></script>
 {% endif %}
 {% endblock %}

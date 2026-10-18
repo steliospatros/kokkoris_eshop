@@ -39,6 +39,11 @@ urlpatterns = [
         views.administration_update_order_view,
         name="update_order",
     ),
+    path(
+        "orders/<int:order_id>/boxnow-label/",
+        views.administration_boxnow_label_view,
+        name="boxnow_label",
+    ),
     path("deliveries/", views.administration_deliveries_view, name="deliveries"),
     path(
         "deliveries/<int:order_id>/mark/",

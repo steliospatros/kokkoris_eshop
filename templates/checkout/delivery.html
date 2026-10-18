@@ -79,7 +79,16 @@
                                         {% endif %}
                                     </p>
                                 </div>
-                                <div id="boxnowmap" class="checkout-boxnow-map hidden" aria-hidden="true"></div>
+                                <div id="boxnow-fallback-picker" class="mt-3 hidden">
+                                    <label class="block text-xs font-inter text-slate-600 mb-1">
+                                        {% trans "Ή επίλεξε απευθείας κοντινό BOX NOW Locker:" %}
+                                    </label>
+                                    <select id="boxnow-fallback-select"
+                                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-inter text-slate-800">
+                                        <option value="">{% trans "— Επίλεξε σημείο BOX NOW —" %}</option>
+                                    </select>
+                                </div>
+                                <div id="boxnowmap" class="checkout-boxnow-map" aria-hidden="true"></div>
                             </div>
                             {% endif %}
                         </div>
@@ -173,29 +182,79 @@
     var summaryEl = document.getElementById("boxnow-locker-summary");
     var summaryNameEl = document.getElementById("boxnow-locker-summary-name");
     var summaryAddressEl = document.getElementById("boxnow-locker-summary-address");
+    var fallbackWrap = document.getElementById("boxnow-fallback-picker");
+    var fallbackSelect = document.getElementById("boxnow-fallback-select");
 
+    function applySelectedLocker(lockerId, lockerName, lockerAddress, lockerPostal) {
+        lockerIdInput.value = lockerId || "";
+        lockerNameInput.value = lockerName || "";
+        lockerAddressInput.value = lockerAddress || "";
+        lockerPostalInput.value = lockerPostal || "";
+
+        summaryNameEl.textContent = lockerName || ("Locker #" + lockerId);
+        summaryAddressEl.textContent = lockerAddress + (lockerPostal ? ", " + lockerPostal : "");
+        summaryEl.classList.remove("hidden");
+    }
+
+    // Load nearby lockers from the Partner API so the customer can also pick
+    // directly from the dropdown (and as a fallback if the popup map is blocked).
+    if (fallbackWrap && fallbackSelect && window.fetch) {
+        window
+            .fetch("{% url 'checkout:boxnow_lockers_api' %}", { credentials: "same-origin" })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                var lockers = (data && data.lockers) || [];
+                if (!lockers.length) return;
+                lockers.forEach(function (l) {
+                    var opt = document.createElement("option");
+                    opt.value = l.id;
+                    opt.dataset.name = l.name || "";
+                    opt.dataset.address = l.address || "";
+                    opt.dataset.postal = l.postal_code || "";
+                    opt.textContent = l.name + (l.address ? " — " + l.address : "") + (l.postal_code ? " (" + l.postal_code + ")" : "");
+                    if (lockerIdInput.value && String(lockerIdInput.value) === String(l.id)) {
+                        opt.selected = true;
+                    }
+                    fallbackSelect.appendChild(opt);
+                });
+                fallbackWrap.classList.remove("hidden");
+            })
+            .catch(function () {});
+
+        fallbackSelect.addEventListener("change", function () {
+            var opt = fallbackSelect.options[fallbackSelect.selectedIndex];
+            if (!opt || !opt.value) return;
+            applySelectedLocker(
+                opt.value,
+                opt.dataset.name || "",
+                opt.dataset.address || "",
+                opt.dataset.postal || ""
+            );
+        });
+    }
+
+    // Note: Box Now v5.js throws if `gps` is a string instead of a boolean.
     window._bn_map_widget_config = {
         partnerId: {{ boxnow_partner_id|default:"0" }},
         parentElement: "#boxnowmap",
         type: "popup",
         buttonSelector: ".boxnow-widget-button",
         zip: "{{ checkout_postal_code|escapejs }}",
-        gps: "yes",
+        gps: true,
+        autoselect: false,
+        autoclose: true,
         requiredSize: {{ boxnow_required_size|default:1 }},
         afterSelect: function (selected) {
-            var lockerId = selected.boxnowLockerId || "";
-            var lockerName = selected.boxnowLockerTitle || selected.boxnowLockerName || "";
-            var lockerAddress = selected.boxnowLockerAddressLine1 || "";
-            var lockerPostal = selected.boxnowLockerPostalCode || "";
-
-            lockerIdInput.value = lockerId;
-            lockerNameInput.value = lockerName;
-            lockerAddressInput.value = lockerAddress;
-            lockerPostalInput.value = lockerPostal;
-
-            summaryNameEl.textContent = lockerName;
-            summaryAddressEl.textContent = lockerAddress + (lockerPostal ? ", " + lockerPostal : "");
-            summaryEl.classList.remove("hidden");
+            if (!selected) return;
+            var lockerId = selected.boxnowLockerId || selected.id || "";
+            if (!lockerId) return;
+            var lockerName = selected.boxnowLockerTitle || selected.boxnowLockerName || selected.name || "";
+            var lockerAddress = selected.boxnowLockerAddressLine1 || selected.addressLine1 || "";
+            var lockerPostal = selected.boxnowLockerPostalCode || selected.postalCode || "";
+            applySelectedLocker(lockerId, lockerName, lockerAddress, lockerPostal);
+            if (fallbackSelect) {
+                fallbackSelect.value = String(lockerId);
+            }
         }
     };
 

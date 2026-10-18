@@ -392,5 +392,10 @@
 }
 
 .checkout-boxnow-map {
-    display: none;
+    position: relative;
+    z-index: 9999;
+}
+
+.checkout-boxnow-map iframe {
+    z-index: 9999;
 }
