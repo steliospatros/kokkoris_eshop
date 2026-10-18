@@ -96,9 +96,11 @@ class BoxNowDeliveryOptionsTests(SimpleTestCase):
         )
         self.assertTrue(box_now["requires_locker"])
         self.assertEqual(box_now["fee"], Decimal("1.80"))
-        self.assertIn("8×45×60", box_now["description"])
-        self.assertIn("20", box_now["description"])
+        self.assertEqual(box_now["label"], "Παραλαβή από BOX NOW")
         self.assertIn("24ωρο", box_now["description"])
+        self.assertIn("θυρίδα", box_now["description"])
+        self.assertNotIn("Θήκη", box_now["description"])
+        self.assertNotIn("χρεώσιμο", box_now["description"])
 
     def test_calculate_courier_fee_for_box_now(self):
         fee = calculate_courier_fee(

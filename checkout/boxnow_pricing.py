@@ -173,32 +173,28 @@ def build_boxnow_option_copy(cart_items, *, too_heavy, fee, free_minimum):
     weight = calculate_cart_chargeable_weight_kg(cart_items)
     weight_label = format_decimal_greek(weight)
     max_label = format_decimal_greek(max_locker_weight_kg())
-    compartment = determine_compartment_size(cart_items)
 
     if too_heavy:
         return (
-            "Μη διαθέσιμο — το δέμα δεν χωρά σε locker BOX NOW.",
+            "Μη διαθέσιμο για την τρέχουσα παραγγελία.",
             (
-                f"Το BOX NOW δέχεται έως {max_label} kg και μέγιστες διαστάσεις "
-                f"μεγάλης θήκης {COMPARTMENT_DIM_LABELS[COMPARTMENT_LARGE]}. "
-                f"Το καλάθι σου ζυγίζει {weight_label} kg (χρεώσιμο βάρος). "
-                "Επίλεξε αποστολή με courier."
+                f"Το BOX NOW δέχεται δέματα έως {max_label} kg "
+                f"(μέγιστες διαστάσεις "
+                f"{COMPARTMENT_DIM_LABELS[COMPARTMENT_LARGE]}). "
+                f"Το καλάθι σας είναι {weight_label} kg. "
+                "Επιλέξτε αποστολή με courier."
             ),
         )
 
-    dim_label = COMPARTMENT_DIM_LABELS.get(compartment, "")
-    size_label = COMPARTMENT_LABELS.get(compartment, "")
     if fee:
-        price_bit = f"Χρέωση {format_decimal_greek(fee)} €."
+        description = (
+            "Παραλαβή από αυτόματη θυρίδα, όλο το 24ωρο, "
+            "εντός 3 εργάσιμων ημερών."
+        )
     else:
-        price_bit = (
-            f"Δωρεάν μεταφορικά — η παραγγελία σου ξεπερνά τα "
+        description = (
+            "Παραλαβή από αυτόματη θυρίδα, όλο το 24ωρο. "
+            f"Δωρεάν μεταφορικά για παραγγελίες από "
             f"{format_decimal_greek(free_minimum)} €."
         )
-    description = (
-        f"Παράλαβε από BOX NOW locker όλο το 24ωρο. "
-        f"Θήκη {size_label} ({dim_label}) · βάρος {weight_label} kg "
-        f"(όριο {max_label} kg). {price_bit} "
-        "Επίλεξε σημείο παραλαβής στον χάρτη."
-    )
     return description, ""

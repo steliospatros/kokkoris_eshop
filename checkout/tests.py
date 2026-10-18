@@ -117,7 +117,7 @@ class CheckoutDeliveryViewTests(TestCase):
         self.assertContains(response, "Τρόπος πληρωμής")
         self.assertContains(response, "Παράδοση από υπάλληλο")
         self.assertContains(response, "Αποστολή με courier")
-        self.assertContains(response, "BOX NOW Lockers | Γρήγορη παράδοση, 24/7")
+        self.assertContains(response, "Παραλαβή από BOX NOW")
         self.assertContains(response, "+3,20 €")
         self.assertNotContains(response, "ELTA")
         self.assertNotContains(response, "ΕΛΤΑ")
@@ -175,8 +175,10 @@ class DeliveryOptionsTests(TestCase):
         self.assertEqual(len(options), 3)
         self.assertEqual(options[0]["value"], Order.DELIVERY_METHOD_COMPANY)
         self.assertFalse(options[0]["disabled"])
-        self.assertIn("έως 3 εργάσιμες", options[0]["description"])
-        self.assertIn("έως 3 εργάσιμες", options[1]["description"])
+        self.assertIn("3 εργάσιμων", options[0]["description"])
+        self.assertIn("3 εργάσιμων", options[1]["description"])
+        self.assertNotIn("Εναλλακτικά", options[1]["description"])
+        self.assertNotIn("Σταθερή χρέωση", options[1]["description"])
 
     def test_outlying_area_company_disabled_courier_only_selectable(self):
         options, within = build_delivery_options(
@@ -187,7 +189,7 @@ class DeliveryOptionsTests(TestCase):
         self.assertFalse(within)
         self.assertEqual(len(options), 3)
         self.assertTrue(options[0]["disabled"])
-        self.assertIn("υπάλληλο", options[0]["unavailable_message"])
+        self.assertIn("Αθήνας", options[0]["unavailable_message"])
         self.assertFalse(options[1]["disabled"])
         self.assertEqual(options[1]["value"], Order.DELIVERY_METHOD_COURIER)
         self.assertEqual(options[1]["label"], "Αποστολή με courier")

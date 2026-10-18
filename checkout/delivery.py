@@ -99,14 +99,16 @@ def build_delivery_options(*, cart_total, postal_code, cart=None):
         {
             "value": Order.DELIVERY_METHOD_COMPANY,
             "label": "Παράδοση από υπάλληλο",
-            "description": "Δωρεάν παράδοση στην πόρτα σου, έως 3 εργάσιμες ημέρες.",
+            "description": (
+                "Δωρεάν παράδοση στην πόρτα σας, εντός 3 εργάσιμων ημερών."
+            ),
             "fee": Decimal("0.00"),
             "fee_display": "Δωρεάν",
             "total": cart_total,
             "total_display": format_decimal_greek(cart_total),
             "disabled": not within_urban_area,
             "unavailable_message": (
-                "Η παράδοση από υπάλληλο δεν γίνεται στην περιοχή που δήλωσες"
+                "Διαθέσιμη μόνο στην ευρύτερη περιοχή της Αθήνας."
                 if not within_urban_area
                 else ""
             ),
@@ -123,25 +125,21 @@ def build_delivery_options(*, cart_total, postal_code, cart=None):
 
     free_minimum = get_free_shipping_minimum()
     courier_total = cart_total + courier_fee
-    free_note = (
-        f" (δωρεάν μεταφορικά — η παραγγελία σου ξεπερνά τα {format_decimal_greek(free_minimum)} €)"
-        if courier_fee == 0 and cart_total >= free_minimum
-        else ""
-    )
-    courier_desc_base = (
-        "Αποστολή με courier σε όλη την Ελλάδα, έως 3 εργάσιμες ημέρες"
-        if not within_urban_area
-        else "Εναλλακτικά, αποστολή με courier, έως 3 εργάσιμες ημέρες"
-    )
+    if courier_fee == 0 and cart_total >= free_minimum:
+        courier_description = (
+            "Παράδοση σε όλη την Ελλάδα, εντός 3 εργάσιμων ημερών. "
+            f"Δωρεάν μεταφορικά για παραγγελίες από "
+            f"{format_decimal_greek(free_minimum)} €."
+        )
+    else:
+        courier_description = (
+            "Παράδοση σε όλη την Ελλάδα, εντός 3 εργάσιμων ημερών."
+        )
     options.append(
         {
             "value": Order.DELIVERY_METHOD_COURIER,
             "label": "Αποστολή με courier",
-            "description": (
-                f"{courier_desc_base}. "
-                f"Σταθερή χρέωση αποστολής"
-                f"{free_note}."
-            ),
+            "description": courier_description,
             "fee": courier_fee,
             "fee_display": (
                 f"+{format_decimal_greek(courier_fee)} €"
@@ -177,7 +175,7 @@ def build_delivery_options(*, cart_total, postal_code, cart=None):
     options.append(
         {
             "value": Order.DELIVERY_METHOD_BOX_NOW,
-            "label": "BOX NOW Lockers | Γρήγορη παράδοση, 24/7",
+            "label": "Παραλαβή από BOX NOW",
             "description": description,
             "fee": boxnow_fee,
             "fee_display": (
