@@ -371,6 +371,7 @@ def checkout_delivery_view(request):
         "checkout_data": checkout_data,
         "selected_method": selected_method,
         "boxnow_widget_enabled": settings.BOXNOW_WIDGET_ENABLED,
+        "boxnow_widget_interactive": settings.BOXNOW_WIDGET_INTERACTIVE,
         "boxnow_partner_id": settings.BOXNOW_PARTNER_ID or "",
         "boxnow_required_size": next(
             (
