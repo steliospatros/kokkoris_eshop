@@ -411,10 +411,9 @@ BOXNOW_CHECKOUT_ENABLED = _env_bool("BOXNOW_CHECKOUT_ENABLED", default=True)
 # Map widget needs partnerId. Hidden when checkout option is off.
 BOXNOW_WIDGET_ENABLED = bool(BOXNOW_PARTNER_ID) and BOXNOW_CHECKOUT_ENABLED
 # When false the locker button is shown but does nothing (no widget / API).
-# Flip to true (or set BOXNOW_WIDGET_INTERACTIVE=1 in .env) when ready to go live.
 BOXNOW_WIDGET_INTERACTIVE = (
     BOXNOW_WIDGET_ENABLED
-    and _env_bool("BOXNOW_WIDGET_INTERACTIVE", default=False)
+    and _env_bool("BOXNOW_WIDGET_INTERACTIVE", default=True)
 )
 
 # -----------------------------------------------------------------------------
