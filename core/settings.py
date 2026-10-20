@@ -124,6 +124,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    # Outer wrapper: strips Set-Cookie from /sitemap.xml and /robots.txt after
+    # SessionMiddleware, so Google can fetch the sitemap cleanly.
+    'core.middleware_crawler.StripCrawlerCookiesMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

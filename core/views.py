@@ -1,11 +1,21 @@
 from django.conf import settings
+from django.contrib.sitemaps.views import sitemap as django_sitemap
 from django.http import HttpResponse, HttpResponseServerError
 from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.urls import reverse
+from django.views.decorators.cache import cache_page
+from django.views.decorators.http import require_GET
 
 from core import user_text
 from core.http import json_error
+from core.sitemaps import BrandSitemap, ProductSitemap, StaticViewSitemap
+
+SITEMAPS = {
+    "static": StaticViewSitemap,
+    "products": ProductSitemap,
+    "brands": BrandSitemap,
+}
 
 
 def robots_txt(request):
@@ -22,6 +32,27 @@ def robots_txt(request):
         request=request,
     )
     return HttpResponse(body, content_type="text/plain; charset=utf-8")
+
+
+@require_GET
+@cache_page(60 * 60)
+def sitemap_xml(request):
+    """
+    Public sitemap for Google Search Console / Bing.
+
+    Strips session cookies and varies so crawlers get a clean, cacheable XML
+    response (Django's default sitemap view otherwise sets a session cookie).
+    """
+    response = django_sitemap(request, sitemaps=SITEMAPS)
+    response["Content-Type"] = "application/xml; charset=utf-8"
+    # Avoid Set-Cookie / Vary: Cookie which can make Google report "Couldn't fetch".
+    if hasattr(response, "cookies"):
+        response.cookies.clear()
+    for header in ("Set-Cookie", "Vary", "Cross-Origin-Opener-Policy"):
+        if header in response:
+            del response[header]
+    response["Cache-Control"] = "public, max-age=3600"
+    return response
 
 
 def _wants_json(request):
