@@ -73,7 +73,7 @@ if not DEBUG:
         )
     if not ALLOWED_HOSTS:
         raise ImproperlyConfigured(
-            "Set ALLOWED_HOSTS (e.g. www.kokkorispetfood.gr,kokkorispetfood.gr) "
+            "Set ALLOWED_HOSTS (e.g. www.kokkoris-petfood.gr,kokkoris-petfood.gr) "
             "before running with DEBUG=false."
         )
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

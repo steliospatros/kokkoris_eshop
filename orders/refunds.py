@@ -43,7 +43,7 @@ def create_stripe_refund_for_order(order: Order):
         metadata={
             "order_id": str(order.pk),
             "order_code": order.order_code,
-            "site": "kokkorispetfood.gr",
+            "site": "kokkoris-petfood.gr",
         },
     )
     if refund.status not in ("succeeded", "pending"):

@@ -7,24 +7,47 @@
     <title>{% block title %}Kokkoris Pet Food{% endblock %}</title>
     <meta name="description" content="{% block meta_description %}Kokkoris Pet Food — ηλεκτρονικό κατάστημα για τροφές και είδη σκύλου και γάτας. Παράδοση στην Ελλάδα.{% endblock %}">
     <meta name="csrf-token" content="{{ csrf_token }}">
-    <link rel="canonical" href="{% block canonical_url %}{{ request.scheme }}://{{ request.get_host }}{{ request.path }}{% endblock %}">
+    <link rel="canonical" href="{% block canonical_url %}{{ site_base_url }}{{ request.path }}{% endblock %}">
     <meta property="og:site_name" content="Kokkoris Pet Food">
     <meta property="og:title" content="{% block og_title %}Kokkoris Pet Food{% endblock %}">
     <meta property="og:description" content="{% block og_description %}Ηλεκτρονικό κατάστημα για τροφές και είδη σκύλου και γάτας.{% endblock %}">
     <meta property="og:type" content="{% block og_type %}website{% endblock %}">
-    <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+    <meta property="og:url" content="{{ site_base_url }}{{ request.path }}">
     <meta property="og:locale" content="el_GR">
-    <meta property="og:image" content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'images/brand/og-image.png' %}{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ site_base_url }}{% static 'images/brand/og-image.png' %}{% endblock %}">
     <meta property="og:image:width" content="512">
     <meta property="og:image:height" content="512">
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'images/brand/og-image.png' %}">
+    <meta name="twitter:image" content="{{ site_base_url }}{% static 'images/brand/og-image.png' %}">
+    {# Google Search requires a square favicon that is a multiple of 48px. #}
+    <link rel="icon" type="image/png" sizes="48x48" href="{% static 'images/brand/favicon-48.png' %}">
+    <link rel="icon" type="image/png" sizes="96x96" href="{% static 'images/brand/favicon-96.png' %}">
     <link rel="icon" href="{% static 'favicon.ico' %}" sizes="any">
+    <link rel="shortcut icon" href="{% static 'images/brand/favicon-48.png' %}">
     <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/brand/favicon-32.png' %}">
     <link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/brand/favicon-16.png' %}">
     <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/brand/apple-touch-icon.png' %}">
     <link rel="manifest" href="{% static 'site.webmanifest' %}">
     <meta name="theme-color" content="#59a599">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Kokkoris Pet Food",
+      "url": "{{ site_base_url }}/",
+      "logo": "{{ brand_logo_url }}",
+      "image": "{{ site_base_url }}{% static 'images/brand/og-image.png' %}",
+      "email": "{{ brand_contact_email }}",
+      "telephone": "+302106038727",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Κρήτης 5",
+        "addressLocality": "Παλλήνη",
+        "postalCode": "15351",
+        "addressCountry": "GR"
+      }
+    }
+    </script>
     {# Tailwind via CDN: zero build-step for now. Will be replaced by a proper #}
     {# compiled Tailwind pipeline once the real UI/UX design work starts (Part 5). #}
     <script src="https://cdn.tailwindcss.com"></script>
