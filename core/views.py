@@ -5,7 +5,7 @@ from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.views.decorators.cache import cache_page
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_http_methods
 
 from core import user_text
 from core.http import json_error
@@ -34,7 +34,7 @@ def robots_txt(request):
     return HttpResponse(body, content_type="text/plain; charset=utf-8")
 
 
-@require_GET
+@require_http_methods(["GET", "HEAD"])
 @cache_page(60 * 60)
 def sitemap_xml(request):
     """
@@ -42,6 +42,7 @@ def sitemap_xml(request):
 
     Strips session cookies and varies so crawlers get a clean, cacheable XML
     response (Django's default sitemap view otherwise sets a session cookie).
+    Googlebot often probes with HEAD — that must return 200, not 405.
     """
     response = django_sitemap(request, sitemaps=SITEMAPS)
     response["Content-Type"] = "application/xml; charset=utf-8"
